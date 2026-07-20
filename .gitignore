@@ -44,13 +44,14 @@ log/
 ### Environment variables ###
 .env
 .env.*
+.env.local
+.env.*.local
 !.env.example
 !.env.*.example
 
 ### Local Spring configuration ###
 src/main/resources/application-local.yml
 src/main/resources/application-local.yaml
-src/main/resources/application-local.properties
 
 ### Test and coverage reports ###
 coverage/
