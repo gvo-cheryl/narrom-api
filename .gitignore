@@ -81,3 +81,6 @@ firebase-adminsdk-*.json
 *.pem
 *.p12
 *.keystore
+
+### Preflight
+docs/development/
