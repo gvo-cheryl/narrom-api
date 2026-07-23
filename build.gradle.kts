@@ -32,6 +32,8 @@ dependencies {
 
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
+	implementation("org.springframework.boot:spring-boot-starter-security")
+
 	runtimeOnly("org.flywaydb:flyway-database-postgresql")
 	runtimeOnly("org.postgresql:postgresql")
 
@@ -39,6 +41,7 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("org.springframework.security:spring-security-test")
 	testImplementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

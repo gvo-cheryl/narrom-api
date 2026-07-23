@@ -17,9 +17,14 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/HealthResponse"
+                $ref: "#/components/schemas/ApiResponseHealthResponse"
 components:
   schemas:
+    ApiResponseHealthResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/HealthResponse"
     HealthResponse:
       type: object
       properties:
