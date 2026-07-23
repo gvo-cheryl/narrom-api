@@ -21,8 +21,8 @@
 
 | 항목 | 값 |
 |---|---|
-| Access Token TTL | 30분 |
-| Refresh Token TTL | 30일 |
+| Access Token TTL | 1시간(`JWT_ACCESS_TOKEN_EXPIRATION`, 기본 3600000ms) |
+| Refresh Token TTL | 14일(`JWT_REFRESH_TOKEN_EXPIRATION`, 기본 1209600000ms) |
 | Refresh Token 저장 | `auth_sessions.refresh_token_hash`(단방향 해시, 원문 미저장) |
 | Refresh 시 세션 유지 | 재발급해도 `auth_sessions.id`(`sid`)는 유지하고 `refresh_token_hash`만 교체한다(세션을 새로 만들지 않는다) |
 
@@ -101,7 +101,7 @@ JWT에는 이메일, 닉네임, 카카오 사용자 ID를 넣지 않는다.
     "authenticated": true,
     "session": {
       "id": "a4d01048-b488-491d-9b30-c16aef48bdf5",
-      "expiresAt": "2026-08-22T09:30:15.123Z"
+      "expiresAt": "2026-08-06T09:30:15.123Z"
     },
     "account": {
       "memberId": "4d8b1818-38dc-4ee8-9b14-b8676f353e06",
@@ -168,12 +168,12 @@ POST /api/v1/auth/kakao/login
   "data": {
     "tokenType": "Bearer",
     "accessToken": "<access-token>",
-    "accessTokenExpiresAt": "2026-07-23T10:00:15.123Z",
+    "accessTokenExpiresAt": "2026-07-23T10:30:15.123Z",
     "refreshToken": "<refresh-token>",
-    "refreshTokenExpiresAt": "2026-08-22T09:30:15.123Z",
+    "refreshTokenExpiresAt": "2026-08-06T09:30:15.123Z",
     "session": {
       "id": "a4d01048-b488-491d-9b30-c16aef48bdf5",
-      "expiresAt": "2026-08-22T09:30:15.123Z"
+      "expiresAt": "2026-08-06T09:30:15.123Z"
     },
     "account": {
       "memberId": "4d8b1818-38dc-4ee8-9b14-b8676f353e06",
