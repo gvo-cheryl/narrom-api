@@ -23,6 +23,7 @@ public class ApiAccessDeniedHandler implements AccessDeniedHandler {
 			HttpServletRequest request,
 			HttpServletResponse response,
 			AccessDeniedException accessDeniedException) throws IOException {
+		// TODO: 권한(role/scope) 모델이 생기면 사유별로 다른 코드가 필요할 수 있다. 지금은 인가 실패가 전부 AUTH_FORBIDDEN 하나뿐.
 		securityProblemWriter.write(request, response, AuthErrorCode.AUTH_FORBIDDEN);
 	}
 

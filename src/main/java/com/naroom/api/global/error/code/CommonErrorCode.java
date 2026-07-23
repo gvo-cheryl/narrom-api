@@ -2,6 +2,7 @@ package com.naroom.api.global.error.code;
 
 import org.springframework.http.HttpStatus;
 
+// 특정 기능에 속하지 않는 cross-cutting 오류 코드. docs/api/error-response.md "공통 오류" 표와 동기화한다.
 public enum CommonErrorCode implements ErrorCode {
 
 	VALIDATION_FAILED(

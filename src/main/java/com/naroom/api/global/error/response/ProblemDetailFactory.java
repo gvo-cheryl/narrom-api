@@ -64,6 +64,7 @@ public class ProblemDetailFactory {
 		problemDetail.setProperty("traceId", traceIdOf(request));
 	}
 
+	// RequestTraceFilter가 먼저 실행돼야 값이 있다(필터 순서는 RequestTraceFilter 참고). 못 찾으면 null을 그대로 둔다.
 	private String traceIdOf(HttpServletRequest request) {
 		Object traceId = request.getAttribute(RequestTraceFilter.TRACE_ID_ATTRIBUTE);
 		return traceId != null ? traceId.toString() : null;

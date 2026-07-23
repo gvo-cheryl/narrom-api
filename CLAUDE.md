@@ -145,6 +145,19 @@ Do not perform unrelated refactoring, renaming, cleanup, dependency upgrades, or
 - Follow the existing code style and approved project structure.
 - Explain the reason and impact when changing a public request or response contract.
 
+## Code Comment Rules
+
+Default to no comments. Add one only when it earns its place:
+
+- A DB-level constraint or meaning that is not visible from the Java code alone (a CHECK constraint spanning two columns, a column that is only non-null in one specific state, a nullable FK caused by `ON DELETE SET NULL`, etc.).
+- The reasoning behind a non-obvious choice (why a field is `Short` instead of `Integer` to match a `smallint` column and pass `ddl-auto=validate`, why a value is fixed instead of environment-specific, why two similar-looking fields are conceptually different).
+- Deferred or incomplete work and known caveats, prefixed with `// TODO:` (why something is intentionally minimal now, what has to be added when a later feature lands, a known limitation).
+- A one-line class-level comment or short `/** */`, only when the class's role is not already clear from its name and package.
+
+Do not add comments that restate what the code already says: plain getters/setters, obvious field declarations, or a comment that just repeats a well-named method's name. No multi-paragraph Javadoc and no `@param`/`@return` boilerplate for internal (non-published-library) code — this is application code, not a library API.
+
+Prefer a single-line `//` right above the relevant field/line. Use a short `/** */` only for the rare class-level note. No emoji.
+
 ## API Contract and Documentation Rules
 
 A public API contract includes:
@@ -338,6 +351,8 @@ If the Gradle Wrapper must change, explain why and propose the official Wrapper 
 - Do not commit, push, merge, rebase, create a PR, close an Issue, or change remotes without explicit instruction.
 - Keep source, migration, documentation, generated contract, and AI-tool changes logically separated when practical.
 - Never commit local environment files, OMC runtime state, personal settings, secrets, user data, or authentication tokens.
+- Write commit messages in Korean. Keep original English technical terms, proper nouns, and identifiers as-is (e.g. `Spring Security`, `ProblemDetail`, class/method names) instead of translating them.
+- Write the commit body as short, technical bullet points (what changed), not narrative prose explaining rationale at length.
 
 ## Working Procedure
 

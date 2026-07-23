@@ -105,6 +105,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers,
 			HttpStatusCode status,
 			WebRequest request) {
+		// JSON 파싱 자체가 실패한 경우라 필드 단위 violations를 만들 수 없다.
 		return buildValidationResponse(request, List.of());
 	}
 
@@ -148,6 +149,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		return new ValidationViolation(fieldError.getField(), "INVALID", fieldError.getDefaultMessage());
 	}
 
+	// TODO: 컴파일 옵션에 -parameters가 없으면 getParameterName()이 null을 반환해 "parameter"로 뭉뚱그려진다.
+	// @Validated 쿼리/경로 파라미터 검증을 실제로 쓰게 되면 정확한 필드명이 필요한지 다시 확인한다.
 	private String parameterNameOf(ParameterValidationResult result) {
 		String name = result.getMethodParameter().getParameterName();
 		return name != null ? name : "parameter";

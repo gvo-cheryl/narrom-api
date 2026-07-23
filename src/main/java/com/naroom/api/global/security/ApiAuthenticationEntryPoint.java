@@ -25,6 +25,8 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
 			HttpServletRequest request,
 			HttpServletResponse response,
 			AuthenticationException authException) throws IOException {
+		// 아직 JWT 필터가 없어 지금은 항상 이 fallback(AUTH_REQUIRED)만 탄다.
+		// 필터가 ApiAuthenticationException으로 구체적인 사유(만료/위조 등)를 던지기 시작하면 그 코드를 그대로 쓴다.
 		ErrorCode errorCode = (authException instanceof ApiAuthenticationException apiAuthenticationException)
 				? apiAuthenticationException.errorCode()
 				: AuthErrorCode.AUTH_REQUIRED;

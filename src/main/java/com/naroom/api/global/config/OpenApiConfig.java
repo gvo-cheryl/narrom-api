@@ -22,6 +22,8 @@ public class OpenApiConfig {
 						.title("Naroom API")
 						.description("Naroom 모바일 앱을 위한 백엔드 API")
 						.version("v1"))
+				// 상대 경로로 고정하지 않으면 springdoc이 생성 시점의 host:port를 채워 넣어서
+				// docs/api/openapi.yaml을 재생성할 때마다 의미 없는 diff가 생긴다.
 				.servers(List.of(new Server().url("/")))
 				.components(new Components()
 						.addSecuritySchemes(BEARER_AUTH_SCHEME_NAME, new SecurityScheme()
