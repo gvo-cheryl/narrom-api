@@ -87,11 +87,14 @@ tasks.register("generateOpenApiDocs") {
 			.redirectErrorStream(true)
 			.redirectOutput(logFile)
 
-		// Gradle daemon 프로세스 환경에 빈 값으로 남아있는 secret 변수가 있으면 OS 환경변수가
-		// .env.local의 config-import 값보다 우선순위가 높아 덮어써 버린다(재현 확인됨). 이 secret들은
-		// 항상 .env.local 파일 값만 쓰도록, 상속받은 값을 명시적으로 제거한다.
-		listOf("JWT_SECRET", "DB_PASSWORD", "REDIS_PASSWORD", "OPENAI_API_KEY").forEach {
-			processBuilder.environment().remove(it)
+		// Gradle daemon 프로세스 환경에 "빈 문자열"인 secret 변수가 남아 있으면(로컬에서 재현 확인됨) OS
+		// 환경변수가 .env.local의 config-import 값보다 우선순위가 높아 빈 값으로 덮어써 버린다. 값이 실제로
+		// 채워져 있는 경우(CI는 JWT_SECRET 등을 워크플로에서 직접 주입한다)는 그대로 둔다 — 빈 값만 제거한다.
+		listOf("JWT_SECRET", "DB_PASSWORD", "REDIS_PASSWORD", "OPENAI_API_KEY").forEach { key ->
+			val inherited = processBuilder.environment()[key]
+			if (inherited != null && inherited.isBlank()) {
+				processBuilder.environment().remove(key)
+			}
 		}
 
 		val process = processBuilder.start()
