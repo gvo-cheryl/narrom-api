@@ -6,6 +6,24 @@ info:
 servers:
 - url: /
 paths:
+  /api/v1/auth/kakao/login:
+    post:
+      tags:
+      - auth-controller
+      operationId: kakaoLogin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KakaoLoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseKakaoLoginResponse"
   /api/v1/health:
     get:
       tags:
@@ -20,6 +38,82 @@ paths:
                 $ref: "#/components/schemas/ApiResponseHealthResponse"
 components:
   schemas:
+    DeviceInfo:
+      type: object
+      properties:
+        installationKey:
+          type: string
+        platform:
+          type: string
+        appVersion:
+          type: string
+    KakaoLoginRequest:
+      type: object
+      properties:
+        providerAccessToken:
+          type: string
+          minLength: 1
+        device:
+          $ref: "#/components/schemas/DeviceInfo"
+      required:
+      - device
+      - providerAccessToken
+    Account:
+      type: object
+      properties:
+        memberId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - LOCKED
+          - PENDING_DELETION
+        onboardingCompletedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int64
+    ApiResponseKakaoLoginResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/KakaoLoginResponse"
+    KakaoLoginResponse:
+      type: object
+      properties:
+        tokenType:
+          type: string
+        accessToken:
+          type: string
+        accessTokenExpiresAt:
+          type: string
+          format: date-time
+        refreshToken:
+          type: string
+        refreshTokenExpiresAt:
+          type: string
+          format: date-time
+        session:
+          $ref: "#/components/schemas/Session"
+        account:
+          $ref: "#/components/schemas/Account"
+        nextAction:
+          type: string
+          enum:
+          - COMPLETE_ONBOARDING
+          - ENTER_APP
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
     ApiResponseHealthResponse:
       type: object
       properties:

@@ -73,17 +73,28 @@ tasks.register("generateOpenApiDocs") {
 		val logFile = layout.buildDirectory.file("openapi-docs/bootRun.log").get().asFile
 		logFile.parentFile.mkdirs()
 
-		val process = ProcessBuilder(
+		val processBuilder = ProcessBuilder(
 			javaExecutable.absolutePath,
 			"-cp", classpath,
 			"-Dserver.port=$openApiDocsPort",
 			"-Dspring.profiles.active=$openApiDocsProfile",
+			// spring-boot-devtools의 재시작 클래스로더가 이 단발성 boot에서 config-import(.env.local 등)
+			// 처리와 경합해 간헐적으로 실패한다(재현 확인됨). 문서 생성에는 live-reload가 필요 없으므로 끈다.
+			"-Dspring.devtools.restart.enabled=false",
 			"com.naroom.api.NaroomApiApplication"
 		)
 			.directory(rootDir)
 			.redirectErrorStream(true)
 			.redirectOutput(logFile)
-			.start()
+
+		// Gradle daemon 프로세스 환경에 빈 값으로 남아있는 secret 변수가 있으면 OS 환경변수가
+		// .env.local의 config-import 값보다 우선순위가 높아 덮어써 버린다(재현 확인됨). 이 secret들은
+		// 항상 .env.local 파일 값만 쓰도록, 상속받은 값을 명시적으로 제거한다.
+		listOf("JWT_SECRET", "DB_PASSWORD", "REDIS_PASSWORD", "OPENAI_API_KEY").forEach {
+			processBuilder.environment().remove(it)
+		}
+
+		val process = processBuilder.start()
 
 		try {
 			val deadline = System.currentTimeMillis() + 120_000

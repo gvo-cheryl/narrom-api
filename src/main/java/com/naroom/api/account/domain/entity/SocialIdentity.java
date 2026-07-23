@@ -83,17 +83,39 @@ public class SocialIdentity {
 	protected SocialIdentity() {
 	}
 
-	private SocialIdentity(Member member, SocialProvider provider, String providerUserId) {
+	private SocialIdentity(
+			Member member,
+			SocialProvider provider,
+			String providerUserId,
+			String email,
+			boolean emailVerified,
+			String profileName,
+			String profileImageUrl) {
 		this.member = member;
 		this.provider = provider;
 		this.providerUserId = providerUserId;
+		this.email = email;
+		this.emailVerified = emailVerified;
+		this.profileName = profileName;
+		this.profileImageUrl = profileImageUrl;
 		this.status = IdentityStatus.ACTIVE;
-		this.emailVerified = false;
 		this.connectedAt = Instant.now();
 	}
 
-	public static SocialIdentity connect(Member member, SocialProvider provider, String providerUserId) {
-		return new SocialIdentity(member, provider, providerUserId);
+	public static SocialIdentity connect(
+			Member member,
+			SocialProvider provider,
+			String providerUserId,
+			String email,
+			boolean emailVerified,
+			String profileName,
+			String profileImageUrl) {
+		return new SocialIdentity(member, provider, providerUserId, email, emailVerified, profileName, profileImageUrl);
+	}
+
+	// 로그인 성공마다 호출된다. 프로필 정보는 최초 연결 시점 스냅샷으로 두고 갱신하지 않는다(연락처 검색용).
+	public void recordLogin() {
+		this.lastLoginAt = Instant.now();
 	}
 
 	public UUID getId() {

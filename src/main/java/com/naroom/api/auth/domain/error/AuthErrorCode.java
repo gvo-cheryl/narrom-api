@@ -6,11 +6,60 @@ import com.naroom.api.global.error.code.ErrorStage;
 import org.springframework.http.HttpStatus;
 
 /**
- * Auth 도메인 오류 코드. 카카오 로그인·계정 상태(ACCOUNT_LOCKED 등)·온보딩 관련 코드는
- * 해당 기능(오늘 12번)을 구현하며 error-response.md의 "인증·시작 단계 오류" 표를 기준으로 추가한다.
- * 여기 있는 TOKEN/SESSION/DEVICE 코드는 JwtAuthenticationFilter·AuthSessionService가 실제로 던진다.
+ * Auth 도메인 오류 코드. error-response.md의 "인증·시작 단계 오류" 표를 기준으로 한다.
+ * 온보딩 관련 코드(ONBOARDING_*)는 해당 기능을 구현하며 추가한다.
  */
 public enum AuthErrorCode implements ErrorCode {
+
+	DEVICE_INSTALLATION_KEY_REQUIRED(
+			HttpStatus.BAD_REQUEST,
+			"DEVICE_INSTALLATION_KEY_REQUIRED",
+			"urn:naroom:problem:device-installation-key-required",
+			"설치 식별자가 필요합니다",
+			"기기 정보를 다시 확인해 주세요.",
+			ErrorStage.DEVICE,
+			ClientAction.CHECK_DEVICE,
+			false),
+
+	DEVICE_PLATFORM_UNSUPPORTED(
+			HttpStatus.BAD_REQUEST,
+			"DEVICE_PLATFORM_UNSUPPORTED",
+			"urn:naroom:problem:device-platform-unsupported",
+			"지원하지 않는 플랫폼입니다",
+			"앱을 최신 버전으로 업데이트해 주세요.",
+			ErrorStage.DEVICE,
+			ClientAction.CHECK_DEVICE,
+			false),
+
+	AUTH_KAKAO_TOKEN_INVALID(
+			HttpStatus.UNAUTHORIZED,
+			"AUTH_KAKAO_TOKEN_INVALID",
+			"urn:naroom:problem:auth-kakao-token-invalid",
+			"카카오 인증 정보가 올바르지 않습니다",
+			"카카오 로그인을 다시 시도해 주세요.",
+			ErrorStage.LOGIN,
+			ClientAction.LOGIN_REQUIRED,
+			false),
+
+	AUTH_KAKAO_UNAVAILABLE(
+			HttpStatus.SERVICE_UNAVAILABLE,
+			"AUTH_KAKAO_UNAVAILABLE",
+			"urn:naroom:problem:auth-kakao-unavailable",
+			"카카오 서비스에 일시적으로 연결할 수 없습니다",
+			"잠시 후 다시 시도해 주세요.",
+			ErrorStage.EXTERNAL,
+			ClientAction.RETRY,
+			true),
+
+	AUTH_SOCIAL_IDENTITY_REVOKED(
+			HttpStatus.FORBIDDEN,
+			"AUTH_SOCIAL_IDENTITY_REVOKED",
+			"urn:naroom:problem:auth-social-identity-revoked",
+			"소셜 로그인 연결이 비활성화되었습니다",
+			"고객센터에 문의해 주세요.",
+			ErrorStage.LOGIN,
+			ClientAction.CONTACT_SUPPORT,
+			false),
 
 	AUTH_REQUIRED(
 			HttpStatus.UNAUTHORIZED,
@@ -30,6 +79,26 @@ public enum AuthErrorCode implements ErrorCode {
 			"이 기능에 접근할 권한이 없습니다.",
 			ErrorStage.ACCOUNT,
 			ClientAction.CONTACT_SUPPORT,
+			false),
+
+	ACCOUNT_LOCKED(
+			HttpStatus.FORBIDDEN,
+			"ACCOUNT_LOCKED",
+			"urn:naroom:problem:account-locked",
+			"계정이 잠겼습니다",
+			"고객센터에 문의해 주세요.",
+			ErrorStage.ACCOUNT,
+			ClientAction.CONTACT_SUPPORT,
+			false),
+
+	ACCOUNT_PENDING_DELETION(
+			HttpStatus.CONFLICT,
+			"ACCOUNT_PENDING_DELETION",
+			"urn:naroom:problem:account-pending-deletion",
+			"계정이 삭제 대기 중입니다",
+			"삭제 취소 여부를 확인해 주세요.",
+			ErrorStage.ACCOUNT,
+			ClientAction.CONFIRM_ACCOUNT_RECOVERY,
 			false),
 
 	AUTH_ACCESS_TOKEN_EXPIRED(

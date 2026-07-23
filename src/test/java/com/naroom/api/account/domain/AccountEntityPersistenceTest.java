@@ -69,7 +69,8 @@ class AccountEntityPersistenceTest {
 
 		String providerUserId = UUID.randomUUID().toString();
 		SocialIdentity socialIdentity =
-				socialIdentityRepository.save(SocialIdentity.connect(member, SocialProvider.KAKAO, providerUserId));
+				socialIdentityRepository.save(SocialIdentity.connect(
+						member, SocialProvider.KAKAO, providerUserId, null, false, "지연", null));
 
 		String installationKey = UUID.randomUUID().toString();
 		DeviceInstallation device = deviceInstallationRepository.save(
