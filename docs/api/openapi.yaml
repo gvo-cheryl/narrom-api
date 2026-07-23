@@ -50,6 +50,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseKakaoLoginResponse"
+  /api/v1/account/onboarding/complete:
+    post:
+      tags:
+      - account-controller
+      operationId: completeOnboarding
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingCompleteRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseOnboardingCompleteResponse"
   /api/v1/health:
     get:
       tags:
@@ -125,7 +143,7 @@ components:
       required:
       - device
       - providerAccessToken
-    Account:
+    AccountSummary:
       type: object
       properties:
         memberId:
@@ -166,7 +184,91 @@ components:
         session:
           $ref: "#/components/schemas/SessionSummary"
         account:
-          $ref: "#/components/schemas/Account"
+          $ref: "#/components/schemas/AccountSummary"
+        nextAction:
+          type: string
+          enum:
+          - COMPLETE_ONBOARDING
+          - ENTER_APP
+    ConsentRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - TERMS
+          - PRIVACY
+          - AI_PROCESSING
+        documentVersion:
+          type: string
+          minLength: 1
+        agreed:
+          type: boolean
+      required:
+      - agreed
+      - documentVersion
+      - type
+    NotificationPreferenceRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - WEEKLY_REFLECTION
+          - EXPERIMENT_MISSION
+          - DAILY_QUOTE
+        enabled:
+          type: boolean
+        dayOfWeek:
+          type: integer
+          format: int32
+          maximum: 7
+          minimum: 1
+        localTime:
+          type: string
+      required:
+      - enabled
+      - type
+    OnboardingCompleteRequest:
+      type: object
+      properties:
+        version:
+          type: integer
+          format: int64
+        displayName:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          minLength: 1
+        locale:
+          type: string
+          minLength: 1
+        consents:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConsentRequest"
+          minItems: 1
+        notificationPreferences:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationPreferenceRequest"
+      required:
+      - consents
+      - displayName
+      - locale
+      - timezone
+      - version
+    ApiResponseOnboardingCompleteResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/OnboardingCompleteResponse"
+    OnboardingCompleteResponse:
+      type: object
+      properties:
+        account:
+          $ref: "#/components/schemas/AccountSummary"
         nextAction:
           type: string
           enum:

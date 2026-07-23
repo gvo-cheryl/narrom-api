@@ -2,6 +2,7 @@ package com.naroom.api.auth;
 
 import com.naroom.api.account.domain.entity.MemberStatus;
 import com.naroom.api.account.domain.repository.AuthSessionRepository;
+import com.naroom.api.account.dto.AccountSummary;
 import com.naroom.api.auth.domain.error.AuthErrorCode;
 import com.naroom.api.auth.dto.KakaoLoginResponse;
 import com.naroom.api.auth.dto.RefreshResponse;
@@ -75,7 +76,7 @@ class AuthControllerTest {
 				"refresh-token",
 				now.plusSeconds(1_209_600),
 				new SessionSummary(sessionId, now.plusSeconds(1_209_600)),
-				new KakaoLoginResponse.Account(memberId, MemberStatus.ACTIVE, null, 0L),
+				new AccountSummary(memberId, MemberStatus.ACTIVE, null, 0L),
 				NextAction.COMPLETE_ONBOARDING));
 
 		mockMvc.perform(post("/api/v1/auth/kakao/login")

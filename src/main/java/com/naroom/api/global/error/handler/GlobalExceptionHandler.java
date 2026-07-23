@@ -1,5 +1,6 @@
 package com.naroom.api.global.error.handler;
 
+import com.naroom.api.account.domain.error.AccountErrorCode;
 import com.naroom.api.global.error.code.CommonErrorCode;
 import com.naroom.api.global.error.code.ErrorCode;
 import com.naroom.api.global.error.exception.BusinessException;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -47,6 +49,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<ProblemDetail> handleBusinessException(BusinessException ex, HttpServletRequest request) {
 		ProblemDetail problemDetail = problemDetailFactory.create(ex.errorCode(), request, ex.context());
 		return ResponseEntity.status(ex.errorCode().httpStatus()).body(problemDetail);
+	}
+
+	// exception-handling.md: @Version(members.version) 충돌로 발생한 이 예외만 ACCOUNT_VERSION_CONFLICT로 변환한다.
+	// 다른 DataIntegrityViolationException까지 이 코드로 뭉뚱그리지 않는다.
+	@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+	public ResponseEntity<ProblemDetail> handleOptimisticLockingFailure(
+			ObjectOptimisticLockingFailureException ex,
+			HttpServletRequest request) {
+		ProblemDetail problemDetail =
+				problemDetailFactory.create(AccountErrorCode.ACCOUNT_VERSION_CONFLICT, request);
+		return ResponseEntity.status(AccountErrorCode.ACCOUNT_VERSION_CONFLICT.httpStatus()).body(problemDetail);
 	}
 
 	@ExceptionHandler(ConstraintViolationException.class)

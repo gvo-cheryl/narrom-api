@@ -8,6 +8,7 @@ import com.naroom.api.account.domain.entity.SocialProvider;
 import com.naroom.api.account.domain.repository.DeviceInstallationRepository;
 import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.account.domain.repository.SocialIdentityRepository;
+import com.naroom.api.account.dto.AccountSummary;
 import com.naroom.api.auth.domain.error.AuthErrorCode;
 import com.naroom.api.auth.dto.KakaoLoginRequest;
 import com.naroom.api.auth.dto.KakaoLoginResponse;
@@ -80,7 +81,7 @@ public class KakaoLoginService {
 				tokens.refreshToken(),
 				tokens.refreshTokenExpiresAt(),
 				new SessionSummary(tokens.session().getId(), tokens.session().getExpiresAt()),
-				new KakaoLoginResponse.Account(
+				new AccountSummary(
 						member.getId(), member.getStatus(), member.getOnboardingCompletedAt(), member.getVersion()),
 				nextAction);
 	}

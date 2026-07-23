@@ -83,6 +83,14 @@ public class Member {
 		return new Member(displayName, "Asia/Seoul", "ko-KR");
 	}
 
+	// 온보딩 완료 트랜잭션 전체가 성공해야만 호출된다(onboarding_completed_at은 마지막에 기록).
+	public void completeOnboarding(String displayName, String timezone, String locale) {
+		this.displayName = displayName;
+		this.timezone = timezone;
+		this.locale = locale;
+		this.onboardingCompletedAt = Instant.now();
+	}
+
 	public UUID getId() {
 		return id;
 	}
