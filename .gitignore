@@ -84,3 +84,18 @@ firebase-adminsdk-*.json
 
 ### Preflight
 docs/development/
+
+### Claude Code local-only configuration
+.claude/settings.local.json
+CLAUDE.local.md
+
+### OMC runtime state
+.omc/*
+!.omc/skills/
+!.omc/skills/**
+
+### Legacy OMX compatibility state
+.omx/
+
+### Generated documentation previews
+site/
