@@ -37,6 +37,8 @@ jobs:
       DB_URL: jdbc:postgresql://localhost:5432/naroom_ci
       DB_USERNAME: naroom_ci
       DB_PASSWORD: naroom_ci_password
+      SPRING_PROFILES_ACTIVE: ci
+      OPENAPI_DOCS_PROFILE: ci
 
     steps:
       - name: Checkout

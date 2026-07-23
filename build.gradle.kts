@@ -53,6 +53,7 @@ tasks.withType<Test> {
 }
 
 val openApiDocsPort = 8099
+val openApiDocsProfile = System.getenv("OPENAPI_DOCS_PROFILE") ?: "local"
 
 tasks.register("generateOpenApiDocs") {
 	group = "documentation"
@@ -69,7 +70,7 @@ tasks.register("generateOpenApiDocs") {
 			javaExecutable.absolutePath,
 			"-cp", classpath,
 			"-Dserver.port=$openApiDocsPort",
-			"-Dspring.profiles.active=local",
+			"-Dspring.profiles.active=$openApiDocsProfile",
 			"com.naroom.api.NaroomApiApplication"
 		)
 			.directory(rootDir)
