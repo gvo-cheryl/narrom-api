@@ -84,6 +84,8 @@ firebase-adminsdk-*.json
 
 ### Preflight
 docs/development/
+docs/foundation/
+docs/instruction/
 
 ### Claude Code local-only configuration
 .claude/settings.local.json
@@ -99,3 +101,4 @@ CLAUDE.local.md
 
 ### Generated documentation previews
 site/
+.venv-docs/

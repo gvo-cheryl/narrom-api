@@ -1,0 +1,42 @@
+site_name: Naroom API Documentation
+site_description: Naroom 백엔드 API 문서
+site_url: ""
+docs_dir: docs
+
+theme:
+  name: material
+  language: ko
+  features:
+    - navigation.sections
+    - content.code.copy
+
+exclude_docs: |
+  foundation/
+  instruction/
+  development/
+  database/
+  .DS_Store
+
+nav:
+  - 개요: index.md
+  - 제품 맥락: PRODUCT_CONTEXT.md
+  - Architecture:
+      - 개요: architecture/overview.md
+      - ADR:
+          - 소개: architecture/adr/README.md
+          - Template: architecture/adr/template.md
+  - Domain:
+      - Account: domain/account.md
+  - API:
+      - 소개: api/index.md
+      - 공통 규칙: api/conventions.md
+      - 인증: api/authentication.md
+      - 오류 응답: api/error-response.md
+  - Guides:
+      - API 문서 자동화: guides/api-documentation.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true

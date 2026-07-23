@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: Naroom API
+  description: Naroom 모바일 앱을 위한 백엔드 API
+  version: v1
+servers:
+- url: /
+paths:
+  /api/v1/health:
+    get:
+      tags:
+      - health-controller
+      operationId: health
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      name: bearerAuth
+      scheme: bearer
+      bearerFormat: JWT

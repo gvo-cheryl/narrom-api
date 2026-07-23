@@ -18,3 +18,7 @@ management:
     health:
       probes:
         enabled: true
+
+springdoc:
+  api-docs:
+    version: openapi_3_1
