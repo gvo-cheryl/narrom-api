@@ -32,6 +32,7 @@ nav:
       - 공통 규칙: api/conventions.md
       - 인증: api/authentication.md
       - 오류 응답: api/error-response.md
+      - 예외 처리 구조: api/exception-handling.md
   - Guides:
       - API 문서 자동화: guides/api-documentation.md
 
@@ -40,3 +41,6 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
