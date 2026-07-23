@@ -3,6 +3,7 @@ package com.naroom.api.auth;
 import com.naroom.api.account.domain.entity.AuthSession;
 import com.naroom.api.account.domain.entity.DeviceInstallation;
 import com.naroom.api.account.domain.entity.Member;
+import com.naroom.api.account.domain.entity.MemberStatus;
 import com.naroom.api.account.domain.repository.AuthSessionRepository;
 import com.naroom.api.auth.domain.error.AuthErrorCode;
 import com.naroom.api.auth.security.JwtProperties;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * 카카오 로그인(오늘 12번)·토큰 재발급(오늘 11번)이 공통으로 쓸 세션 발급·회전 로직.
@@ -51,10 +54,7 @@ public class AuthSessionService {
 		return buildIssuedTokens(session, rawRefreshToken);
 	}
 
-	/**
-	 * authentication.md 토큰 재발급 처리 순서: 해시로 세션 식별 → revoked/expires 확인 → 기기 일치 확인 → 회전.
-	 * members.status(LOCKED 등) 재확인은 이 메서드를 호출하는 쪽(카카오 로그인 기능)의 책임이다.
-	 */
+	/** authentication.md 토큰 재발급 처리 순서: 해시로 세션 식별 → revoked/expires·기기 일치 확인 → 회원 상태 재확인 → 회전. */
 	@Transactional
 	public IssuedTokens rotate(String rawRefreshToken, String installationKey) {
 		AuthSession session = authSessionRepository.findByRefreshTokenHash(refreshTokenGenerator.hash(rawRefreshToken))
@@ -70,6 +70,7 @@ public class AuthSessionService {
 				|| !session.getDeviceInstallation().getInstallationKey().equals(installationKey)) {
 			throw new BusinessException(AuthErrorCode.AUTH_DEVICE_MISMATCH);
 		}
+		requireLoginableStatus(session.getMember());
 
 		String newRawRefreshToken = refreshTokenGenerator.generate();
 		Instant newExpiresAt = Instant.now().plusMillis(jwtProperties.refreshTokenExpiration());
@@ -78,8 +79,28 @@ public class AuthSessionService {
 		return buildIssuedTokens(session, newRawRefreshToken);
 	}
 
+	// 카카오 로그인·재발급이 공통으로 쓰는 회원 상태 확인 (LOCKED·PENDING_DELETION이면 세션을 내주지 않는다).
+	public void requireLoginableStatus(Member member) {
+		if (member.getStatus() == MemberStatus.LOCKED) {
+			throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
+		}
+		if (member.getStatus() == MemberStatus.PENDING_DELETION) {
+			throw new BusinessException(
+					AuthErrorCode.ACCOUNT_PENDING_DELETION,
+					Map.of("scheduledDeletionAt", member.getScheduledDeletionAt()));
+		}
+	}
+
 	@Transactional
 	public void revoke(AuthSession session, String reason) {
+		session.revoke(reason);
+	}
+
+	// 로그아웃 전용: Access Token의 sid(JWT claim)로만 세션을 알 수 있으므로 UUID로 조회부터 한다.
+	@Transactional
+	public void revoke(UUID sessionId, String reason) {
+		AuthSession session = authSessionRepository.findById(sessionId)
+				.orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_SESSION_NOT_FOUND));
 		session.revoke(reason);
 	}
 

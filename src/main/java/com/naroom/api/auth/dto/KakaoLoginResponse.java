@@ -13,12 +13,9 @@ public record KakaoLoginResponse(
 		Instant accessTokenExpiresAt,
 		String refreshToken,
 		Instant refreshTokenExpiresAt,
-		Session session,
+		SessionSummary session,
 		Account account,
 		NextAction nextAction) {
-
-	public record Session(UUID id, Instant expiresAt) {
-	}
 
 	public record Account(UUID memberId, MemberStatus status, Instant onboardingCompletedAt, Long version) {
 	}

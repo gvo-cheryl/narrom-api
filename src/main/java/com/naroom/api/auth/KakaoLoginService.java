@@ -3,7 +3,6 @@ package com.naroom.api.auth;
 import com.naroom.api.account.domain.entity.DeviceInstallation;
 import com.naroom.api.account.domain.entity.IdentityStatus;
 import com.naroom.api.account.domain.entity.Member;
-import com.naroom.api.account.domain.entity.MemberStatus;
 import com.naroom.api.account.domain.entity.SocialIdentity;
 import com.naroom.api.account.domain.entity.SocialProvider;
 import com.naroom.api.account.domain.repository.DeviceInstallationRepository;
@@ -12,13 +11,13 @@ import com.naroom.api.account.domain.repository.SocialIdentityRepository;
 import com.naroom.api.auth.domain.error.AuthErrorCode;
 import com.naroom.api.auth.dto.KakaoLoginRequest;
 import com.naroom.api.auth.dto.KakaoLoginResponse;
+import com.naroom.api.auth.dto.SessionSummary;
 import com.naroom.api.auth.kakao.KakaoClient;
 import com.naroom.api.auth.kakao.KakaoUserInfoResponse;
 import com.naroom.api.global.error.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.Set;
 
 // authentication.md 카카오 로그인 처리 순서를 그대로 따른다.
@@ -63,7 +62,7 @@ public class KakaoLoginService {
 		}
 
 		Member member = socialIdentity.getMember();
-		requireLoginableStatus(member);
+		authSessionService.requireLoginableStatus(member);
 
 		socialIdentity.recordLogin();
 
@@ -80,7 +79,7 @@ public class KakaoLoginService {
 				tokens.accessTokenExpiresAt(),
 				tokens.refreshToken(),
 				tokens.refreshTokenExpiresAt(),
-				new KakaoLoginResponse.Session(tokens.session().getId(), tokens.session().getExpiresAt()),
+				new SessionSummary(tokens.session().getId(), tokens.session().getExpiresAt()),
 				new KakaoLoginResponse.Account(
 						member.getId(), member.getStatus(), member.getOnboardingCompletedAt(), member.getVersion()),
 				nextAction);
@@ -107,17 +106,6 @@ public class KakaoLoginService {
 				kakaoUser.nickname(),
 				kakaoUser.profileImageUrl());
 		return socialIdentityRepository.save(socialIdentity);
-	}
-
-	private void requireLoginableStatus(Member member) {
-		if (member.getStatus() == MemberStatus.LOCKED) {
-			throw new BusinessException(AuthErrorCode.ACCOUNT_LOCKED);
-		}
-		if (member.getStatus() == MemberStatus.PENDING_DELETION) {
-			throw new BusinessException(
-					AuthErrorCode.ACCOUNT_PENDING_DELETION,
-					Map.of("scheduledDeletionAt", member.getScheduledDeletionAt()));
-		}
 	}
 
 	private DeviceInstallation registerOrUpdateDevice(Member member, KakaoLoginRequest.DeviceInfo device) {
