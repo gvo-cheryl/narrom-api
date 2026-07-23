@@ -22,3 +22,11 @@ management:
 springdoc:
   api-docs:
     version: openapi_3_1
+
+naroom:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
+    issuer: naroom-api
+    audience: naroom-app

@@ -1,5 +1,6 @@
 package com.naroom.api.global.config;
 
+import com.naroom.api.auth.security.JwtAuthenticationFilter;
 import com.naroom.api.global.security.ApiAccessDeniedHandler;
 import com.naroom.api.global.security.ApiAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
@@ -9,10 +10,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-// TODO: 아직 UserDetailsService/AuthenticationProvider가 없어 Boot가 기동 시 임시 in-memory
-// 사용자 비밀번호를 로그에 찍는다. httpBasic/formLogin을 안 쓰므로 실제로는 무해하지만,
-// JWT 인증(오늘 10번)이 들어오면 이 경고는 자연히 사라진다.
+// TODO: AuthenticationManager/UserDetailsService를 쓰지 않는 구조라(JwtAuthenticationFilter가 SecurityContext를
+// 직접 채운다) Boot가 기동 시 임시 in-memory 사용자 비밀번호를 계속 로그에 찍는다. httpBasic/formLogin을 안 쓰므로
+// 실제로는 무해하다. 거슬리면 커스텀 AuthenticationManager 빈을 등록해 UserDetailsServiceAutoConfiguration을 끌 수 있다.
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -36,12 +38,15 @@ public class SecurityConfig {
 
 	private final ApiAuthenticationEntryPoint apiAuthenticationEntryPoint;
 	private final ApiAccessDeniedHandler apiAccessDeniedHandler;
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
 	public SecurityConfig(
 			ApiAuthenticationEntryPoint apiAuthenticationEntryPoint,
-			ApiAccessDeniedHandler apiAccessDeniedHandler) {
+			ApiAccessDeniedHandler apiAccessDeniedHandler,
+			JwtAuthenticationFilter jwtAuthenticationFilter) {
 		this.apiAuthenticationEntryPoint = apiAuthenticationEntryPoint;
 		this.apiAccessDeniedHandler = apiAccessDeniedHandler;
+		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
 	}
 
 	@Bean
@@ -56,7 +61,9 @@ public class SecurityConfig {
 						.anyRequest().authenticated())
 				.exceptionHandling(exceptionHandling -> exceptionHandling
 						.authenticationEntryPoint(apiAuthenticationEntryPoint)
-						.accessDeniedHandler(apiAccessDeniedHandler));
+						.accessDeniedHandler(apiAccessDeniedHandler))
+				// ExceptionTranslationFilter보다 앞에서 실행되어야 인증 실패가 ApiAuthenticationEntryPoint로 간다.
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}

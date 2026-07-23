@@ -1,8 +1,8 @@
 package com.naroom.api.global.security;
 
 import com.naroom.api.auth.domain.error.AuthErrorCode;
+import com.naroom.api.auth.security.JwtAuthenticationFilter;
 import com.naroom.api.global.error.code.ErrorCode;
-import com.naroom.api.global.error.exception.ApiAuthenticationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
@@ -25,10 +25,11 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
 			HttpServletRequest request,
 			HttpServletResponse response,
 			AuthenticationException authException) throws IOException {
-		// 아직 JWT 필터가 없어 지금은 항상 이 fallback(AUTH_REQUIRED)만 탄다.
-		// 필터가 ApiAuthenticationException으로 구체적인 사유(만료/위조 등)를 던지기 시작하면 그 코드를 그대로 쓴다.
-		ErrorCode errorCode = (authException instanceof ApiAuthenticationException apiAuthenticationException)
-				? apiAuthenticationException.errorCode()
+		// JwtAuthenticationFilter가 토큰을 시도했다가 실패한 구체적 사유(만료/위조 등)가 있으면 그걸 쓰고,
+		// 없으면(토큰 자체가 없었던 경우) 기본값인 AUTH_REQUIRED를 쓴다.
+		Object failureReason = request.getAttribute(JwtAuthenticationFilter.AUTH_FAILURE_ATTRIBUTE);
+		ErrorCode errorCode = (failureReason instanceof ErrorCode errorCodeAttribute)
+				? errorCodeAttribute
 				: AuthErrorCode.AUTH_REQUIRED;
 		securityProblemWriter.write(request, response, errorCode);
 	}

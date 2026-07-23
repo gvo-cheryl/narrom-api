@@ -39,6 +39,8 @@ jobs:
       DB_PASSWORD: naroom_ci_password
       SPRING_PROFILES_ACTIVE: ci
       OPENAPI_DOCS_PROFILE: ci
+      # CI 전용 더미 값. 운영 서명 키가 아니며 HS256 최소 길이(32바이트) 요건만 맞춘다.
+      JWT_SECRET: naroom-ci-test-jwt-secret-please-rotate-1234567890
 
     steps:
       - name: Checkout
