@@ -80,6 +80,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseHealthResponse"
+  /api/v1/auth/session:
+    get:
+      tags:
+      - auth-controller
+      operationId: session
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseSessionCheckResponse"
 components:
   schemas:
     RefreshRequest:
@@ -284,6 +296,25 @@ components:
       properties:
         status:
           type: string
+    ApiResponseSessionCheckResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/SessionCheckResponse"
+    SessionCheckResponse:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        session:
+          $ref: "#/components/schemas/SessionSummary"
+        account:
+          $ref: "#/components/schemas/AccountSummary"
+        nextAction:
+          type: string
+          enum:
+          - COMPLETE_ONBOARDING
+          - ENTER_APP
   securitySchemes:
     bearerAuth:
       type: http

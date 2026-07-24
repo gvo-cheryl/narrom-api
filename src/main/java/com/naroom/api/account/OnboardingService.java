@@ -121,9 +121,7 @@ public class OnboardingService {
 	}
 
 	private OnboardingCompleteResponse buildResponse(Member member) {
-		NextAction nextAction = member.getOnboardingCompletedAt() == null
-				? NextAction.COMPLETE_ONBOARDING
-				: NextAction.ENTER_APP;
+		NextAction nextAction = NextAction.forMember(member);
 		return new OnboardingCompleteResponse(
 				new AccountSummary(
 						member.getId(), member.getStatus(), member.getOnboardingCompletedAt(), member.getVersion()),

@@ -6,6 +6,7 @@ import com.naroom.api.account.dto.AccountSummary;
 import com.naroom.api.auth.domain.error.AuthErrorCode;
 import com.naroom.api.auth.dto.KakaoLoginResponse;
 import com.naroom.api.auth.dto.RefreshResponse;
+import com.naroom.api.auth.dto.SessionCheckResponse;
 import com.naroom.api.auth.dto.SessionSummary;
 import com.naroom.api.auth.security.JwtTokenProvider;
 import com.naroom.api.auth.security.MemberAuthentication;
@@ -29,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -57,6 +59,9 @@ class AuthControllerTest {
 
 	@MockitoBean
 	private AuthSessionService authSessionService;
+
+	@MockitoBean
+	private SessionCheckService sessionCheckService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -139,6 +144,45 @@ class AuthControllerTest {
 						.content(refreshRequestJson("bad-refresh-token", "installation-key")))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("AUTH_REFRESH_TOKEN_INVALID"));
+	}
+
+	@Test
+	void session_authenticated_returns200WithAccountState() throws Exception {
+		UUID memberId = UUID.randomUUID();
+		UUID sessionId = UUID.randomUUID();
+		Instant now = Instant.now();
+		when(sessionCheckService.check(memberId, sessionId)).thenReturn(new SessionCheckResponse(
+				true,
+				new SessionSummary(sessionId, now.plusSeconds(1_209_600)),
+				new AccountSummary(memberId, MemberStatus.ACTIVE, null, 0L),
+				NextAction.COMPLETE_ONBOARDING));
+
+		mockMvc.perform(get("/api/v1/auth/session")
+						.with(authentication(new MemberAuthentication(memberId, sessionId))))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.authenticated").value(true))
+				.andExpect(jsonPath("$.data.nextAction").value("COMPLETE_ONBOARDING"))
+				.andExpect(jsonPath("$.data.account.memberId").value(memberId.toString()));
+	}
+
+	@Test
+	void session_withoutAuthentication_returnsAuthRequired() throws Exception {
+		mockMvc.perform(get("/api/v1/auth/session"))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("AUTH_REQUIRED"));
+	}
+
+	@Test
+	void session_lockedMember_returnsProblemDetail() throws Exception {
+		UUID memberId = UUID.randomUUID();
+		UUID sessionId = UUID.randomUUID();
+		when(sessionCheckService.check(memberId, sessionId))
+				.thenThrow(new BusinessException(AuthErrorCode.ACCOUNT_LOCKED));
+
+		mockMvc.perform(get("/api/v1/auth/session")
+						.with(authentication(new MemberAuthentication(memberId, sessionId))))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("ACCOUNT_LOCKED"));
 	}
 
 	@Test

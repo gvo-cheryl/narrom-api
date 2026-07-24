@@ -70,9 +70,7 @@ public class KakaoLoginService {
 		DeviceInstallation device = registerOrUpdateDevice(member, request.device());
 		IssuedTokens tokens = authSessionService.issue(member, device);
 
-		NextAction nextAction = member.getOnboardingCompletedAt() == null
-				? NextAction.COMPLETE_ONBOARDING
-				: NextAction.ENTER_APP;
+		NextAction nextAction = NextAction.forMember(member);
 
 		return new KakaoLoginResponse(
 				"Bearer",

@@ -106,8 +106,6 @@ JWT에는 이메일, 닉네임, 카카오 사용자 ID를 넣지 않는다.
     "account": {
       "memberId": "4d8b1818-38dc-4ee8-9b14-b8676f353e06",
       "status": "ACTIVE",
-      "timezone": "Asia/Seoul",
-      "locale": "ko-KR",
       "onboardingCompletedAt": null,
       "version": 0
     },
@@ -115,6 +113,8 @@ JWT에는 이메일, 닉네임, 카카오 사용자 ID를 넣지 않는다.
   }
 }
 ```
+
+`account`는 카카오 로그인·온보딩 완료 응답과 같은 `AccountSummary` 구조를 그대로 재사용한다(`timezone`/`locale`은 포함하지 않는다).
 
 `version`은 `members.version`(낙관적 잠금)이다. 회원 정보를 직접 수정하는 API를 호출할 때 그대로 함께 전달한다. 자세한 규칙은 [conventions.md](conventions.md#낙관적-잠금버전-충돌) 참고.
 
