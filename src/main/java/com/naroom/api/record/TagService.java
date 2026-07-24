@@ -2,18 +2,25 @@ package com.naroom.api.record;
 
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
+import com.naroom.api.record.domain.entity.EmotionTagTopic;
+import com.naroom.api.record.domain.entity.EmotionTagTopicLink;
 import com.naroom.api.record.domain.entity.Tag;
 import com.naroom.api.record.domain.entity.TagCategory;
 import com.naroom.api.record.domain.entity.TagScope;
 import com.naroom.api.record.domain.error.RecordErrorCode;
+import com.naroom.api.record.domain.repository.EmotionTagTopicLinkRepository;
 import com.naroom.api.record.domain.repository.TagRepository;
+import com.naroom.api.record.dto.EmotionTagTopicResponse;
 import com.naroom.api.record.dto.TagResponse;
 import com.naroom.api.record.dto.UserTagCreateRequest;
 import com.naroom.api.global.error.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -23,10 +30,15 @@ public class TagService {
 
 	private final TagRepository tagRepository;
 	private final MemberRepository memberRepository;
+	private final EmotionTagTopicLinkRepository emotionTagTopicLinkRepository;
 
-	public TagService(TagRepository tagRepository, MemberRepository memberRepository) {
+	public TagService(
+			TagRepository tagRepository,
+			MemberRepository memberRepository,
+			EmotionTagTopicLinkRepository emotionTagTopicLinkRepository) {
 		this.tagRepository = tagRepository;
 		this.memberRepository = memberRepository;
+		this.emotionTagTopicLinkRepository = emotionTagTopicLinkRepository;
 	}
 
 	public List<TagResponse> listSystemTags() {
@@ -53,6 +65,17 @@ public class TagService {
 					Tag tag = Tag.createUserTag(owner, request.category(), request.name(), normalizedName);
 					return TagResponse.from(tagRepository.save(tag));
 				});
+	}
+
+	// 체크인 감정 선택 화면에서 하드코딩 없이 주제→태그 목록을 그대로 쓸 수 있도록 표시 순서대로 묶어 반환한다.
+	public List<EmotionTagTopicResponse> listEmotionTagTopics() {
+		Map<EmotionTagTopic, List<TagResponse>> tagsByTopic = new LinkedHashMap<>();
+		for (EmotionTagTopicLink link : emotionTagTopicLinkRepository.findAllByOrderByTopic_DisplayOrderAscDisplayOrderAsc()) {
+			tagsByTopic.computeIfAbsent(link.getTopic(), key -> new ArrayList<>()).add(TagResponse.from(link.getTag()));
+		}
+		return tagsByTopic.entrySet().stream()
+				.map(entry -> EmotionTagTopicResponse.of(entry.getKey(), entry.getValue()))
+				.collect(Collectors.toList());
 	}
 
 	Tag getTagOrThrow(UUID tagId) {

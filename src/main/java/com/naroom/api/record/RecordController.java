@@ -3,6 +3,7 @@ package com.naroom.api.record;
 import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.global.response.ApiResponse;
 import com.naroom.api.record.domain.entity.EntryType;
+import com.naroom.api.record.dto.EmotionTagTopicResponse;
 import com.naroom.api.record.dto.EntryCreateRequest;
 import com.naroom.api.record.dto.EntryResponse;
 import com.naroom.api.record.dto.EntrySelfReflectionRequest;
@@ -62,6 +63,11 @@ public class RecordController {
 	@PostMapping("/tags")
 	public ApiResponse<TagResponse> createMyTag(@Valid @RequestBody UserTagCreateRequest request) {
 		return ApiResponse.of(tagService.createUserTag(currentMemberId(), request));
+	}
+
+	@GetMapping("/tags/emotion-topics")
+	public ApiResponse<List<EmotionTagTopicResponse>> getEmotionTagTopics() {
+		return ApiResponse.of(tagService.listEmotionTagTopics());
 	}
 
 	@PostMapping("/entries")
