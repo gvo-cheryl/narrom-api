@@ -1,0 +1,14 @@
+package com.naroom.api.record.domain.entity;
+
+public enum EntryType {
+	FREE,
+	CHECK_IN,
+	GRATITUDE,
+	EMOTION,
+	PROMPT,
+	QUOTE_REFLECTION,
+	EXPERIMENT_MISSION,
+	EXPERIMENT_REVIEW,
+	WEEKLY_REFLECTION,
+	SELF_SUMMARY
+}
