@@ -37,6 +37,16 @@ public enum RecordErrorCode implements ErrorCode {
 			ClientAction.CHECK_REQUEST,
 			false),
 
+	ENTRY_TYPE_NOT_USER_CREATABLE(
+			HttpStatus.BAD_REQUEST,
+			"RECORD_ENTRY_TYPE_NOT_USER_CREATABLE",
+			"urn:naroom:problem:record-entry-type-not-user-creatable",
+			"요청 내용을 확인해 주세요",
+			"이 기록 유형은 해당 기능(체크인·실험·주간회고 등)을 통해서만 만들 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
 	TAG_NOT_FOUND(
 			HttpStatus.NOT_FOUND,
 			"RECORD_TAG_NOT_FOUND",

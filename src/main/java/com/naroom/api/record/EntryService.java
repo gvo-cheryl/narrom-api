@@ -17,13 +17,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 public class EntryService {
+
+	// CHECK_IN/EXPERIMENT_MISSION/EXPERIMENT_REVIEW/WEEKLY_REFLECTION/SELF_SUMMARY는
+	// 각 도메인(Check-in/Experiment/LifeTime) 서비스가 Entry.create()를 직접 호출해서만 만든다.
+	// 공개 API로는 사용자가 자유롭게 쓰는 유형만 허용한다.
+	private static final Set<EntryType> USER_CREATABLE_TYPES = EnumSet.of(
+			EntryType.FREE, EntryType.GRATITUDE, EntryType.EMOTION, EntryType.PROMPT, EntryType.QUOTE_REFLECTION);
 
 	private final EntryRepository entryRepository;
 	private final MemberRepository memberRepository;
@@ -37,6 +45,9 @@ public class EntryService {
 
 	@Transactional
 	public EntryResponse createEntry(UUID memberId, EntryCreateRequest request) {
+		if (!USER_CREATABLE_TYPES.contains(request.entryType())) {
+			throw new BusinessException(RecordErrorCode.ENTRY_TYPE_NOT_USER_CREATABLE);
+		}
 		Member member = memberRepository.getReferenceById(memberId);
 		Entry parentEntry = resolveParentEntry(memberId, request.parentEntryId());
 		Quote quote = resolveQuote(request.entryType(), request.quoteId());
