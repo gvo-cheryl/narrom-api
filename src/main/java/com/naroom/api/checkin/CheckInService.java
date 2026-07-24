@@ -3,19 +3,20 @@ package com.naroom.api.checkin;
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.checkin.domain.entity.CheckIn;
-import com.naroom.api.checkin.domain.entity.CheckInEmotion;
 import com.naroom.api.checkin.domain.error.CheckInErrorCode;
-import com.naroom.api.checkin.domain.repository.CheckInEmotionRepository;
 import com.naroom.api.checkin.domain.repository.CheckInRepository;
 import com.naroom.api.checkin.dto.CheckInResponse;
 import com.naroom.api.checkin.dto.CheckInUpsertRequest;
 import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.record.domain.entity.Entry;
+import com.naroom.api.record.domain.entity.EntryTag;
 import com.naroom.api.record.domain.entity.EntryType;
 import com.naroom.api.record.domain.entity.Tag;
 import com.naroom.api.record.domain.entity.TagCategory;
+import com.naroom.api.record.domain.entity.TagSource;
 import com.naroom.api.record.domain.error.RecordErrorCode;
 import com.naroom.api.record.domain.repository.EntryRepository;
+import com.naroom.api.record.domain.repository.EntryTagRepository;
 import com.naroom.api.record.domain.repository.TagRepository;
 import com.naroom.api.record.dto.TagResponse;
 import org.springframework.stereotype.Service;
@@ -31,24 +32,26 @@ import java.util.stream.Collectors;
 
 // 체크인은 항상 CHECK_IN 유형의 Entry와 1:1로 연결된다(entries.id NOT NULL UNIQUE, reference 스키마 기준).
 // 이 서비스만 EntryType.CHECK_IN Entry를 만들 수 있다(EntryService의 공개 API는 이 유형을 거부한다).
+// 체크인 감정은 별도 테이블 대신 entry_tags(source=CHECK_IN)에 저장한다 - AI가 감정을 추천하기 시작해도
+// 체크인 감정과 AI 추천 감정이 같은 entry_tags 하나로 조회된다(0725_AI-Domain-Schema-Review-Report.md 5.1 결정).
 @Service
 @Transactional(readOnly = true)
 public class CheckInService {
 
 	private final CheckInRepository checkInRepository;
-	private final CheckInEmotionRepository checkInEmotionRepository;
+	private final EntryTagRepository entryTagRepository;
 	private final EntryRepository entryRepository;
 	private final MemberRepository memberRepository;
 	private final TagRepository tagRepository;
 
 	public CheckInService(
 			CheckInRepository checkInRepository,
-			CheckInEmotionRepository checkInEmotionRepository,
+			EntryTagRepository entryTagRepository,
 			EntryRepository entryRepository,
 			MemberRepository memberRepository,
 			TagRepository tagRepository) {
 		this.checkInRepository = checkInRepository;
-		this.checkInEmotionRepository = checkInEmotionRepository;
+		this.entryTagRepository = entryTagRepository;
 		this.entryRepository = entryRepository;
 		this.memberRepository = memberRepository;
 		this.tagRepository = tagRepository;
@@ -92,7 +95,7 @@ public class CheckInService {
 	}
 
 	private void replaceEmotions(CheckIn checkIn, List<UUID> emotionTagIds) {
-		checkInEmotionRepository.deleteByCheckIn_Id(checkIn.getId());
+		entryTagRepository.deleteByEntry_IdAndSource(checkIn.getEntry().getId(), TagSource.CHECK_IN);
 		if (emotionTagIds == null || emotionTagIds.isEmpty()) {
 			return;
 		}
@@ -102,13 +105,14 @@ public class CheckInService {
 			if (tag.getCategory() != TagCategory.EMOTION) {
 				throw new BusinessException(CheckInErrorCode.CHECK_IN_EMOTION_TAG_INVALID);
 			}
-			checkInEmotionRepository.save(CheckInEmotion.select(checkIn, tag));
+			entryTagRepository.save(EntryTag.attachSystem(checkIn.getEntry(), tag, TagSource.CHECK_IN));
 		}
 	}
 
 	private CheckInResponse toResponse(CheckIn checkIn) {
-		List<TagResponse> emotions = checkInEmotionRepository.findByCheckIn_Id(checkIn.getId()).stream()
-				.map(checkInEmotion -> TagResponse.from(checkInEmotion.getTag()))
+		List<TagResponse> emotions = entryTagRepository.findByEntry_IdAndSource(checkIn.getEntry().getId(), TagSource.CHECK_IN)
+				.stream()
+				.map(entryTag -> TagResponse.from(entryTag.getTag()))
 				.collect(Collectors.toList());
 		return CheckInResponse.of(checkIn, emotions);
 	}

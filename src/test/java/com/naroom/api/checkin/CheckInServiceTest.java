@@ -4,15 +4,17 @@ import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.checkin.domain.entity.CheckIn;
 import com.naroom.api.checkin.domain.error.CheckInErrorCode;
-import com.naroom.api.checkin.domain.repository.CheckInEmotionRepository;
 import com.naroom.api.checkin.domain.repository.CheckInRepository;
 import com.naroom.api.checkin.dto.CheckInResponse;
 import com.naroom.api.checkin.dto.CheckInUpsertRequest;
 import com.naroom.api.global.error.exception.BusinessException;
+import com.naroom.api.record.domain.entity.EntryTag;
 import com.naroom.api.record.domain.entity.EntryType;
 import com.naroom.api.record.domain.entity.Tag;
 import com.naroom.api.record.domain.entity.TagCategory;
+import com.naroom.api.record.domain.entity.TagSource;
 import com.naroom.api.record.domain.repository.EntryRepository;
+import com.naroom.api.record.domain.repository.EntryTagRepository;
 import com.naroom.api.record.domain.repository.TagRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +44,7 @@ class CheckInServiceTest {
 	private CheckInRepository checkInRepository;
 
 	@Autowired
-	private CheckInEmotionRepository checkInEmotionRepository;
+	private EntryTagRepository entryTagRepository;
 
 	@Autowired
 	private EntryRepository entryRepository;
@@ -124,12 +126,9 @@ class CheckInServiceTest {
 		CheckInResponse first = checkInService.upsertCheckIn(member.getId(), upsertRequest(date, List.of(tagA.getId())));
 		checkInService.upsertCheckIn(member.getId(), upsertRequest(date, List.of(tagB.getId())));
 
-		List<TagCategory> remaining = checkInEmotionRepository.findByCheckIn_Id(first.id()).stream()
-				.map(selection -> selection.getTag().getCategory())
-				.toList();
-		assertEquals(1, checkInEmotionRepository.findByCheckIn_Id(first.id()).size());
-		assertTrue(checkInEmotionRepository.findByCheckIn_Id(first.id()).stream()
-				.anyMatch(selection -> selection.getTag().getId().equals(tagB.getId())));
+		List<EntryTag> remaining = entryTagRepository.findByEntry_IdAndSource(first.entryId(), TagSource.CHECK_IN);
+		assertEquals(1, remaining.size());
+		assertTrue(remaining.stream().anyMatch(selection -> selection.getTag().getId().equals(tagB.getId())));
 	}
 
 	@Test

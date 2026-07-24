@@ -47,6 +47,11 @@ public class EntryTag {
 	@Column(name = "state", nullable = false)
 	private TagState state;
 
+	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
+	@Column(name = "initiated_by", nullable = false, updatable = false)
+	private TagInitiator initiatedBy;
+
 	@Column(name = "confidence", precision = 5, scale = 4)
 	private BigDecimal confidence;
 
@@ -75,6 +80,7 @@ public class EntryTag {
 			Tag tag,
 			TagSource source,
 			TagState state,
+			TagInitiator initiatedBy,
 			BigDecimal confidence,
 			String evidenceExcerpt,
 			Integer evidenceStart,
@@ -83,6 +89,7 @@ public class EntryTag {
 		this.tag = tag;
 		this.source = source;
 		this.state = state;
+		this.initiatedBy = initiatedBy;
 		this.confidence = confidence;
 		this.evidenceExcerpt = evidenceExcerpt;
 		this.evidenceStart = evidenceStart;
@@ -91,19 +98,20 @@ public class EntryTag {
 
 	// 사용자가 직접 붙인 태그는 확인 절차 없이 바로 CONFIRMED로 시작한다.
 	public static EntryTag attachByUser(Entry entry, Tag tag) {
-		return new EntryTag(entry, tag, TagSource.USER, TagState.CONFIRMED, null, null, null, null);
+		return new EntryTag(entry, tag, TagSource.USER, TagState.CONFIRMED, TagInitiator.USER_SELECTED, null, null, null, null);
 	}
 
-	// 체크인/자기회고/실험처럼 시스템이 정한 태그는 사용자 확인 없이 SYSTEM 상태로 확정된다.
+	// 체크인처럼 사용자가 화면에서 직접 고른 태그를 시스템이 대신 붙이는 경우, 확인 절차 없이 SYSTEM 상태로 확정된다.
 	public static EntryTag attachSystem(Entry entry, Tag tag, TagSource source) {
-		return new EntryTag(entry, tag, source, TagState.SYSTEM, null, null, null, null);
+		return new EntryTag(entry, tag, source, TagState.SYSTEM, TagInitiator.USER_SELECTED, null, null, null, null);
 	}
 
 	// AI 제안은 사용자가 확인/거절하기 전까지 SUGGESTED 상태로 남는다.
 	public static EntryTag suggestByAi(
 			Entry entry, Tag tag, BigDecimal confidence, String evidenceExcerpt, Integer evidenceStart, Integer evidenceEnd) {
 		return new EntryTag(
-				entry, tag, TagSource.AI, TagState.SUGGESTED, confidence, evidenceExcerpt, evidenceStart, evidenceEnd);
+				entry, tag, TagSource.AI, TagState.SUGGESTED, TagInitiator.AI_INFERRED,
+				confidence, evidenceExcerpt, evidenceStart, evidenceEnd);
 	}
 
 	public void confirm() {
@@ -132,6 +140,10 @@ public class EntryTag {
 
 	public TagState getState() {
 		return state;
+	}
+
+	public TagInitiator getInitiatedBy() {
+		return initiatedBy;
 	}
 
 	public BigDecimal getConfidence() {
