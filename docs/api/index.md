@@ -10,6 +10,7 @@
 | [conventions.md](conventions.md) | 성공 응답, 상태 코드, 날짜·시간, 페이지네이션, 낙관적 잠금, 필드 표현 |
 | [error-response.md](error-response.md) | 공통 오류 응답, 단계별 오류 식별, 오류 코드 |
 | [authentication.md](authentication.md) | 기기 확인, 카카오 로그인, 세션, 온보딩, 탈퇴 대기 흐름 |
+| [content.md](content.md) | 오늘의 문장 조회·주제별 조회·저장 정책 |
 | [exception-handling.md](exception-handling.md) | 서버 구현에서 예외를 `ProblemDetail`로 변환하는 구조 |
 | `openapi.yaml` | 실제 엔드포인트와 요청·응답 스키마의 최종 계약 |
 
