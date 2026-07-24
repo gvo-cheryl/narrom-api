@@ -5,12 +5,14 @@ import com.naroom.api.content.dto.QuoteResponse;
 import com.naroom.api.content.dto.QuoteTopicResponse;
 import com.naroom.api.content.dto.SavedQuoteResponse;
 import com.naroom.api.global.response.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -47,11 +49,13 @@ public class ContentController {
 	}
 
 	@PostMapping("/quotes/{quoteId}/save")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void saveQuote(@PathVariable UUID quoteId) {
 		quoteService.saveQuote(currentMemberId(), quoteId);
 	}
 
 	@DeleteMapping("/quotes/{quoteId}/save")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void unsaveQuote(@PathVariable UUID quoteId) {
 		quoteService.unsaveQuote(currentMemberId(), quoteId);
 	}
