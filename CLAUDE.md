@@ -353,6 +353,12 @@ If the Gradle Wrapper must change, explain why and propose the official Wrapper 
 - Never commit local environment files, OMC runtime state, personal settings, secrets, user data, or authentication tokens.
 - Write commit messages in Korean. Keep original English technical terms, proper nouns, and identifiers as-is (e.g. `Spring Security`, `ProblemDetail`, class/method names) instead of translating them.
 - Write the commit body as short, technical bullet points (what changed), not narrative prose explaining rationale at length.
+- Do not include any mention of Claude, AI, or automated-generation tools in the commit message or body.
+- Do not add a `Generated with Claude Code` or similar signature.
+- Do not add a `Co-Authored-By: Claude` trailer.
+- Write the commit message concisely from the developer's perspective, describing the actual purpose of the change.
+- Keep each commit scoped to a single logical change.
+- Before running the commit, show the user the changed files and the commit message and get approval.
 
 ## Working Procedure
 
