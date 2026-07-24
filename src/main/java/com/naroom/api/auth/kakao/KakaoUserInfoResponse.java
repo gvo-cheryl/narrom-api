@@ -13,7 +13,7 @@ public record KakaoUserInfoResponse(
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public record KakaoAccount(
 			@JsonProperty("email") String email,
-			@JsonProperty("is_email_verified") boolean emailVerified,
+			@JsonProperty("is_email_verified") Boolean emailVerified,
 			@JsonProperty("profile") Profile profile) {
 
 		@JsonIgnoreProperties(ignoreUnknown = true)
@@ -28,7 +28,7 @@ public record KakaoUserInfoResponse(
 	}
 
 	public boolean emailVerified() {
-		return kakaoAccount != null && kakaoAccount.emailVerified();
+		return kakaoAccount != null && Boolean.TRUE.equals(kakaoAccount.emailVerified());
 	}
 
 	public String nickname() {

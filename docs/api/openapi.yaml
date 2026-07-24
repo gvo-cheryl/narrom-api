@@ -161,6 +161,8 @@ components:
         memberId:
           type: string
           format: uuid
+        displayName:
+          type: string
         status:
           type: string
           enum:

@@ -58,7 +58,7 @@ class AccountControllerTest {
 	void completeOnboarding_authenticated_returns200() throws Exception {
 		UUID memberId = UUID.randomUUID();
 		when(onboardingService.complete(any(), any())).thenReturn(new OnboardingCompleteResponse(
-				new AccountSummary(memberId, MemberStatus.ACTIVE, Instant.now(), 1L),
+				new AccountSummary(memberId, "지연", MemberStatus.ACTIVE, Instant.now(), 1L),
 				NextAction.ENTER_APP));
 
 		mockMvc.perform(post("/api/v1/account/onboarding/complete")

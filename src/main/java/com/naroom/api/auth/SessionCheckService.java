@@ -45,7 +45,11 @@ public class SessionCheckService {
 				true,
 				new SessionSummary(session.getId(), session.getExpiresAt()),
 				new AccountSummary(
-						member.getId(), member.getStatus(), member.getOnboardingCompletedAt(), member.getVersion()),
+						member.getId(),
+						member.getDisplayName(),
+						member.getStatus(),
+						member.getOnboardingCompletedAt(),
+						member.getVersion()),
 				NextAction.forMember(member));
 	}
 

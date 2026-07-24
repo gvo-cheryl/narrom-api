@@ -105,6 +105,7 @@ JWT에는 이메일, 닉네임, 카카오 사용자 ID를 넣지 않는다.
     },
     "account": {
       "memberId": "4d8b1818-38dc-4ee8-9b14-b8676f353e06",
+      "displayName": "지연",
       "status": "ACTIVE",
       "onboardingCompletedAt": null,
       "version": 0
@@ -177,6 +178,7 @@ POST /api/v1/auth/kakao/login
     },
     "account": {
       "memberId": "4d8b1818-38dc-4ee8-9b14-b8676f353e06",
+      "displayName": "지연",
       "status": "ACTIVE",
       "onboardingCompletedAt": null,
       "version": 0
@@ -270,6 +272,7 @@ ACTIVE 회원·유효 세션 확인
   "data": {
     "account": {
       "memberId": "4d8b1818-38dc-4ee8-9b14-b8676f353e06",
+      "displayName": "지연",
       "status": "ACTIVE",
       "onboardingCompletedAt": "2026-07-23T09:30:15.123Z",
       "version": 1

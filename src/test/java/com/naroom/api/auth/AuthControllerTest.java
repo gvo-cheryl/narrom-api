@@ -81,7 +81,7 @@ class AuthControllerTest {
 				"refresh-token",
 				now.plusSeconds(1_209_600),
 				new SessionSummary(sessionId, now.plusSeconds(1_209_600)),
-				new AccountSummary(memberId, MemberStatus.ACTIVE, null, 0L),
+				new AccountSummary(memberId, "지연", MemberStatus.ACTIVE, null, 0L),
 				NextAction.COMPLETE_ONBOARDING));
 
 		mockMvc.perform(post("/api/v1/auth/kakao/login")
@@ -154,7 +154,7 @@ class AuthControllerTest {
 		when(sessionCheckService.check(memberId, sessionId)).thenReturn(new SessionCheckResponse(
 				true,
 				new SessionSummary(sessionId, now.plusSeconds(1_209_600)),
-				new AccountSummary(memberId, MemberStatus.ACTIVE, null, 0L),
+				new AccountSummary(memberId, "지연", MemberStatus.ACTIVE, null, 0L),
 				NextAction.COMPLETE_ONBOARDING));
 
 		mockMvc.perform(get("/api/v1/auth/session")

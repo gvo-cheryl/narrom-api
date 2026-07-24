@@ -80,7 +80,11 @@ public class KakaoLoginService {
 				tokens.refreshTokenExpiresAt(),
 				new SessionSummary(tokens.session().getId(), tokens.session().getExpiresAt()),
 				new AccountSummary(
-						member.getId(), member.getStatus(), member.getOnboardingCompletedAt(), member.getVersion()),
+						member.getId(),
+						member.getDisplayName(),
+						member.getStatus(),
+						member.getOnboardingCompletedAt(),
+						member.getVersion()),
 				nextAction);
 	}
 

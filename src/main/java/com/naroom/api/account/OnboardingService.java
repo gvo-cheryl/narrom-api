@@ -124,7 +124,11 @@ public class OnboardingService {
 		NextAction nextAction = NextAction.forMember(member);
 		return new OnboardingCompleteResponse(
 				new AccountSummary(
-						member.getId(), member.getStatus(), member.getOnboardingCompletedAt(), member.getVersion()),
+						member.getId(),
+						member.getDisplayName(),
+						member.getStatus(),
+						member.getOnboardingCompletedAt(),
+						member.getVersion()),
 				nextAction);
 	}
 
