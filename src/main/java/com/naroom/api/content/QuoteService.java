@@ -56,6 +56,12 @@ public class QuoteService {
 		return QuoteResponse.of(quote, isSavedByMember(quote.getId(), memberId));
 	}
 
+	public QuoteResponse getQuote(UUID quoteId, UUID memberId) {
+		Quote quote = quoteRepository.findById(quoteId)
+				.orElseThrow(() -> new BusinessException(ContentErrorCode.QUOTE_NOT_FOUND));
+		return QuoteResponse.of(quote, isSavedByMember(quoteId, memberId));
+	}
+
 	public List<QuoteTopicResponse> getActiveTopics() {
 		return quoteTopicRepository.findByActiveTrue().stream()
 				.map(QuoteTopicResponse::from)

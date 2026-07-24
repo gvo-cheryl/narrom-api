@@ -31,6 +31,11 @@ public class ContentController {
 		return ApiResponse.of(quoteService.getTodayQuote(currentMemberId()));
 	}
 
+	@GetMapping("/quotes/{quoteId}")
+	public ApiResponse<QuoteResponse> getQuote(@PathVariable UUID quoteId) {
+		return ApiResponse.of(quoteService.getQuote(quoteId, currentMemberId()));
+	}
+
 	@GetMapping("/topics")
 	public ApiResponse<List<QuoteTopicResponse>> getTopics() {
 		return ApiResponse.of(quoteService.getActiveTopics());
