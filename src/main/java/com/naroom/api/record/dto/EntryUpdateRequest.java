@@ -5,6 +5,6 @@ import jakarta.validation.constraints.Size;
 
 public record EntryUpdateRequest(
 		@Size(max = 200) String title,
-		String body,
+		@Size(max = 2000) String body,
 		@NotNull Long version) {
 }

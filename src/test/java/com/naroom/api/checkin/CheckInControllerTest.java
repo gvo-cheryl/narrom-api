@@ -105,6 +105,31 @@ class CheckInControllerTest {
 	}
 
 	@Test
+	void upsertCheckIn_combinedTextExceedsLimit_returnsValidationFailed() throws Exception {
+		String memorableEvent = "가".repeat(500);
+		String gratitudeNote = "가".repeat(300);
+		String currentNeed = "가".repeat(200);
+		String freeNote = "가".repeat(1);
+
+		mockMvc.perform(put("/api/v1/checkin")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{
+								  "checkInDate": "2026-07-25",
+								  "emotionIntensity": 3,
+								  "energyLevel": 3,
+								  "memorableEvent": "%s",
+								  "gratitudeNote": "%s",
+								  "currentNeed": "%s",
+								  "freeNote": "%s"
+								}
+								""".formatted(memorableEvent, gratitudeNote, currentNeed, freeNote)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	@Test
 	void upsertCheckIn_validRequest_returnsUpsertedCheckIn() throws Exception {
 		UUID checkInId = UUID.randomUUID();
 		when(checkInService.upsertCheckIn(any(), any())).thenReturn(sampleCheckIn(checkInId));

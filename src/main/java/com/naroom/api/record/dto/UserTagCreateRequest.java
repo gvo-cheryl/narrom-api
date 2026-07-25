@@ -7,5 +7,5 @@ import jakarta.validation.constraints.Size;
 
 public record UserTagCreateRequest(
 		@NotNull TagCategory category,
-		@NotBlank @Size(max = 80) String name) {
+		@NotBlank @Size(max = 30) String name) {
 }

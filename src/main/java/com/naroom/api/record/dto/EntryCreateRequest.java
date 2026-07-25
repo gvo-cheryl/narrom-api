@@ -10,7 +10,7 @@ import java.util.UUID;
 public record EntryCreateRequest(
 		@NotNull EntryType entryType,
 		@Size(max = 200) String title,
-		String body,
+		@Size(max = 2000) String body,
 		@NotNull LocalDate recordDate,
 		UUID parentEntryId,
 		UUID quoteId,

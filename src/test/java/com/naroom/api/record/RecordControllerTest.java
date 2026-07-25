@@ -116,6 +116,49 @@ class RecordControllerTest {
 	}
 
 	@Test
+	void createMyTag_nameExceedsLimit_returnsValidationFailed() throws Exception {
+		String tooLong = "가".repeat(31);
+
+		mockMvc.perform(post("/api/v1/record/tags")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{ "category": "EMOTION", "name": "%s" }
+								""".formatted(tooLong)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	@Test
+	void createEntry_bodyExceedsLimit_returnsValidationFailed() throws Exception {
+		String tooLong = "가".repeat(2001);
+
+		mockMvc.perform(post("/api/v1/record/entries")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{ "entryType": "FREE", "body": "%s", "recordDate": "2026-07-25" }
+								""".formatted(tooLong)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	@Test
+	void createReflection_contentExceedsLimit_returnsValidationFailed() throws Exception {
+		String tooLong = "가".repeat(1001);
+		UUID entryId = UUID.randomUUID();
+
+		mockMvc.perform(post("/api/v1/record/entries/" + entryId + "/reflections")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{ "content": "%s" }
+								""".formatted(tooLong)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	@Test
 	void getEntry_notFound_returnsProblemDetail() throws Exception {
 		when(entryService.getEntry(any(), any())).thenThrow(new BusinessException(RecordErrorCode.ENTRY_NOT_FOUND));
 
