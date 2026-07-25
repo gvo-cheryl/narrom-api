@@ -760,6 +760,18 @@ AI가 만든 과거 해석보다 사용자의 직접 선택과 자기정리를 �
 
 `ai_feedback`은 만족도 평가이고 `ai_feedback_reports`는 신고이므로 분리한다.
 
+### 16.0 `feature_type` enum 확정
+
+`ai_jobs`, `ai_reflections` 등에서 공통으로 쓰는 기능 유형 enum은 다음 5개 값으로 확정한다(`docs/instruction/0724_AI-Integration-Review.md` 5.1절 제안, `0725_AI-Domain-Schema-Review-Report.md`에서 기존 코드와 충돌 없음을 확인한 값을 그대로 채택).
+
+| 값 | 의미 |
+|---|---|
+| `ENTRY_REFLECTION` | 개별 기록 AI 정리 |
+| `THREE_DAY_REFLECTION` | 3일 회고 |
+| `WEEKLY_REFLECTION` | 주간 회고 |
+| `CONVERSATION_REPLY` | 후속 대화 응답 |
+| `CONVERSATION_SUMMARY` | 후속 대화 요약 |
+
 ## 16.1 AI 결과 필수 추적 정보
 
 - `member_id`
@@ -1034,14 +1046,14 @@ OpenAI가 처리할 본문을 별도의 암호문 상태로 보내면 모델이 
 
 # 24. 권장 구현 순서
 
-## 24.1 1단계: 정책과 계약
+## 24.1 1단계: 정책과 계약 (완료, 2026-07-25, 이슈 #23)
 
-- AI 기능 유형 enum 확정
-- AI 상태 enum 확정
-- 감정 출처 enum 확정
-- 입력 글자 수 상수 확정
-- 토큰·호출·재생성 제한 설정 확정
-- AI 처리 동의와 기록별 AI 제외 규칙 확정
+- [x] AI 기능 유형 enum 확정 — §16.0, `ENTRY_REFLECTION`/`THREE_DAY_REFLECTION`/`WEEKLY_REFLECTION`/`CONVERSATION_REPLY`/`CONVERSATION_SUMMARY`
+- [x] AI 상태 enum 확정 — §8.3, `PENDING`/`PROCESSING`/`COMPLETED`/`BLOCKED`/`SAFETY_SUPPORT`/`FAILED`
+- [x] 감정 출처 enum 확정 — §9.2, 기존 `TagInitiator`+`TagState` 조합 재사용
+- [x] 입력 글자 수 상수 확정 — §4, DTO에 `@Size` 검증으로 구현 완료
+- [x] 토큰·호출·재생성 제한 설정 확정 — §5.3/§6.1에 수치 확정(Java 설정 클래스화는 실제 소비하는 4단계에서 진행)
+- [x] AI 처리 동의와 기록별 AI 제외 규칙 확정 — §23/§3.3, 기존 `member_consents.AI_PROCESSING` + `entries.ai_processing_allowed` 재사용(DTO 노출은 4단계에서 진행)
 
 ## 24.2 2단계: 데이터 구조
 
