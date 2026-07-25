@@ -741,20 +741,21 @@ AI가 만든 과거 해석보다 사용자의 직접 선택과 자기정리를 �
 
 ---
 
-# 16. 권장 데이터 구조
+# 16. 권장 데이터 구조 (2단계 구현 완료, V12)
 
-기존 ERD의 `ai_reflections`, `ai_feedback_reports`를 유지하되 역할을 명확히 하고 다음 구조를 추가·확장한다.
+기존 ERD의 `ai_reflections`, `ai_feedback_reports`를 유지하되 역할을 명확히 하고 다음 구조를 추가·확장한다. `ai_reflections`는 개별 기록 결과만 담당하고, 모델·토큰·프롬프트 버전·안전 분류 이력은 `ai_generation_runs`로 분리했다(0725 AI 도메인 스키마 검토 결정).
 
 | 테이블 | 용도 |
 |---|---|
-| `ai_reflections` | 개별 기록·3일·주간 AI 결과 |
-| `ai_feedback_reports` | 부적절·위험·오류 AI 응답 신고 |
+| `ai_reflections` | 개별 기록 AI 결과(사용자 표시용); 3일·주간 회고는 별도 처리 |
+| `ai_generation_runs` | 모델 호출 1회의 이력; 모델명·토큰·프롬프트 버전·안전 분류 결과 전담 |
+| `ai_feedback_reports` | 부적절·위험·오류 AI 응답 신고; `ai_generation_run_id` 기준 |
 | `ai_conversations` | 회원별·기능별 후속 대화 단위 |
 | `ai_messages` | 사용자 메시지와 AI 응답 원본 |
 | `ai_conversation_summaries` | 긴 대화의 압축 맥락 |
 | `member_ai_preferences` | 사용자가 확정한 AI 응답 선호 |
-| `ai_feedback` | 개별 결과의 도움 여부와 개선 사유 |
-| `ai_prompt_versions` | 생성 당시 지침·스키마 버전 |
+| `ai_feedback` | 개별 결과의 도움 여부와 개선 사유; `ai_generation_run_id` 기준 |
+| `ai_prompt_versions` | 공통 지침·기능별 지침·출력 스키마 버전; `scope`(COMMON/FEATURE)로 구분 |
 | `ai_usage_daily` | 일별 호출·토큰·재생성·비용 집계 |
 | `ai_jobs` | 비동기 작업 상태·재시도·멱등성 관리 |
 
@@ -1055,15 +1056,15 @@ OpenAI가 처리할 본문을 별도의 암호문 상태로 보내면 모델이 
 - [x] 토큰·호출·재생성 제한 설정 확정 — §5.3/§6.1에 수치 확정(Java 설정 클래스화는 실제 소비하는 4단계에서 진행)
 - [x] AI 처리 동의와 기록별 AI 제외 규칙 확정 — §23/§3.3, 기존 `member_consents.AI_PROCESSING` + `entries.ai_processing_allowed` 재사용(DTO 노출은 4단계에서 진행)
 
-## 24.2 2단계: 데이터 구조
+## 24.2 2단계: 데이터 구조 (완료, 2026-07-25, 이슈 #24, V12)
 
-- 기존 `ai_reflections`, `ai_feedback_reports` 역할 재확인
-- `ai_jobs` 추가
-- `ai_conversations`, `ai_messages`, `ai_conversation_summaries` 추가
-- `member_ai_preferences`, `ai_feedback` 추가
-- `ai_prompt_versions`, `ai_usage_daily` 추가
-- 감정 출처와 사용자 확인 상태 반영
-- 기록 삭제 cascade·보존 정책 검증
+- [x] 기존 `ai_reflections`, `ai_feedback_reports` 역할 재확인 — `ai_generation_runs` 분리, `ai_generation_run_id` 기준으로 통일
+- [x] `ai_jobs` 추가
+- [x] `ai_conversations`, `ai_messages`, `ai_conversation_summaries` 추가
+- [x] `member_ai_preferences`, `ai_feedback` 추가
+- [x] `ai_prompt_versions`, `ai_usage_daily` 추가
+- [x] 감정 출처와 사용자 확인 상태 반영 — 9.2절 `TagInitiator`+`TagState` 조합 그대로 유지, 신규 테이블에 별도 반영 불필요
+- [x] 기록 삭제 cascade·보존 정책 검증 — `entries`/`check_ins` 삭제 시 `entry_tags`/`ai_jobs`/`ai_reflections`/`ai_conversations` 등 CASCADE, `entry_self_reflections.ai_reflection_id`는 SET NULL로 자기정리 원문 보존
 
 ## 24.3 3단계: 보안
 

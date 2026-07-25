@@ -93,8 +93,8 @@
 | "정리 없이 저장" 토글 | 요청 DTO에 aiProcessingAllowed 추가 필요 | entries.ai_processing_allowed | 부분 구현 / 계약 공백 | `EntryCreateRequest`에 필드 없음(엔티티엔 있음) |
 | 임시 저장 | `POST /record/entries`(status=DRAFT) | entries.status='DRAFT' | 부분 구현 | 서버 DRAFT 흐름 매핑 결정 필요 |
 | 수정 저장(최초 작성일 보존) | `PATCH /record/entries/{id}` | entries | 구현됨 | |
-| 나로움의 정리 — 생성 요청/폴링 | `POST /record/entries/{id}/reflections:generate`, `GET .../reflection`(제안) | ai_reflections(status QUEUED→…→COMPLETED/FAILED) | 미구현 | |
-| 정리 피드백(공감/다름/모름) | `PATCH /record/entries/{id}/reflection` | ai_reflections.user_feedback | 미구현 | §공백 6(코드값 매핑) |
+| 나로움의 정리 — 생성 요청/폴링 | `POST /record/entries/{id}/reflections:generate`, `GET .../reflection`(제안) | ai_reflections(status PENDING→PROCESSING→COMPLETED/BLOCKED/SAFETY_SUPPORT/FAILED) | 미구현 | 스키마 구현됨(V12) |
+| 정리 피드백(도움됨/조금 아쉬움/도움 안 됨) | `PATCH /record/entries/{id}/reflection` | ai_feedback.helpfulness(ai_generation_run_id 기준) | 미구현 | §공백 6(코드값 매핑); ai_reflections.user_feedback는 ai_feedback 테이블로 분리됨 |
 | 정리 숨기기/다시보기 | `POST .../reflection/hide`, `/show`(제안) | ai_reflections.hidden_at | 미구현 | |
 | 정리 재생성(자동 덮어쓰기 금지) | `POST .../reflection:regenerate`(제안) | ai_reflections.version_no(UNIQUE entry_id, version_no) | 미구현 | |
 | 내 생각 추가(AI와 분리 저장) | `POST /record/entries/{id}/reflections` | entry_self_reflections | 구현됨 | |
@@ -107,7 +107,7 @@
 | 흐름 | 필요 API (제안) | 관련 스키마 | 상태 | 비고 |
 |---|---|---|---|---|
 | 위기 감지 안내 | AI 정리 응답에 safety_code 분기 | ai_reflections.safety_code | 미구현 | AI 원칙: 단정 금지, 기록 우선 저장 유지 |
-| 응답 신고 | `POST /record/ai-reports`(제안) | ai_feedback_reports(member+ai_reflection UNIQUE) | 미구현 | §공백 6 |
+| 응답 신고 | `POST /record/ai-reports`(제안) | ai_feedback_reports(member+ai_generation_run UNIQUE) | 미구현 | §공백 6; 스키마 구현됨(V12) |
 | 정책·약관 문서 조회 | `GET /content/policies/{type}`(제안) 또는 정적 배포 | (문서 본문 소스 없음) | 미구현 / 스키마 공백 | §공백 5 |
 | 알림 권한 안내 | `GET\|PUT /account/notification-preferences`(제안) | notification_preferences | 미구현 | |
 
