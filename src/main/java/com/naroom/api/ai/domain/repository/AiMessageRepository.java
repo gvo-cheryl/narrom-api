@@ -1,0 +1,13 @@
+package com.naroom.api.ai.domain.repository;
+
+import com.naroom.api.ai.domain.entity.AiMessage;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.UUID;
+
+public interface AiMessageRepository extends JpaRepository<AiMessage, UUID> {
+
+	List<AiMessage> findByConversation_IdOrderByCreatedAtAsc(UUID conversationId);
+
+}

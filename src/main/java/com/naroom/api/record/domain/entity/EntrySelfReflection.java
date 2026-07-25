@@ -1,5 +1,6 @@
 package com.naroom.api.record.domain.entity;
 
+import com.naroom.api.ai.domain.entity.AiReflection;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,8 +16,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.util.UUID;
 
-// ai_reflection_id는 reference 스키마상 ai_reflections를 참조하지만 AI 도메인이 아직 없어
-// FK 없는 순수 컬럼으로만 둔다(V5 마이그레이션 주석 참고). AI 도메인 구현 시 FK와 연관관계를 추가한다.
 // 하나의 기록에 여러 개의 자기회고가 있을 수 있다(reference 스키마에 entry_id UNIQUE 제약 없음).
 @Entity
 @Table(name = "entry_self_reflections")
@@ -31,8 +30,9 @@ public class EntrySelfReflection {
 	@JoinColumn(name = "entry_id", nullable = false, updatable = false)
 	private Entry entry;
 
-	@Column(name = "ai_reflection_id", updatable = false)
-	private UUID aiReflectionId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "ai_reflection_id", updatable = false)
+	private AiReflection aiReflection;
 
 	@Column(name = "content", nullable = false)
 	private String content;
@@ -48,9 +48,9 @@ public class EntrySelfReflection {
 	protected EntrySelfReflection() {
 	}
 
-	private EntrySelfReflection(Entry entry, UUID aiReflectionId, String content) {
+	private EntrySelfReflection(Entry entry, AiReflection aiReflection, String content) {
 		this.entry = entry;
-		this.aiReflectionId = aiReflectionId;
+		this.aiReflection = aiReflection;
 		this.content = content;
 	}
 
@@ -58,8 +58,8 @@ public class EntrySelfReflection {
 		return new EntrySelfReflection(entry, null, content);
 	}
 
-	public static EntrySelfReflection createFromAiReflection(Entry entry, UUID aiReflectionId, String content) {
-		return new EntrySelfReflection(entry, aiReflectionId, content);
+	public static EntrySelfReflection createFromAiReflection(Entry entry, AiReflection aiReflection, String content) {
+		return new EntrySelfReflection(entry, aiReflection, content);
 	}
 
 	public void update(String content) {
@@ -74,8 +74,8 @@ public class EntrySelfReflection {
 		return entry;
 	}
 
-	public UUID getAiReflectionId() {
-		return aiReflectionId;
+	public AiReflection getAiReflection() {
+		return aiReflection;
 	}
 
 	public String getContent() {
