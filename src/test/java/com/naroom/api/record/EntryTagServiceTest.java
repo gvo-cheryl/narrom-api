@@ -99,4 +99,38 @@ class EntryTagServiceTest {
 		assertEquals(RecordErrorCode.ENTRY_TAG_NOT_FOUND, exception.errorCode());
 	}
 
+	// 근거(evidence_excerpt 등)는 entry_tags에 담기므로, 소유하지 않은 기록의 entry_tags 접근은
+	// 존재 여부를 드러내지 않고 ENTRY_NOT_FOUND로만 응답해야 한다(보안 3단계: 근거 ID 접근 통제).
+	@Test
+	void listEntryTags_otherMembersEntry_throwsEntryNotFound() {
+		Member owner = memberRepository.save(Member.create("소유자"));
+		Member intruder = memberRepository.save(Member.create("다른회원"));
+		Entry entry = entryRepository.save(
+				Entry.create(owner, EntryType.FREE, null, "민감한 원문", LocalDate.now(), null, null, null));
+		Tag tag = tagRepository.save(
+				Tag.createUserTag(owner, TagCategory.CUSTOM, "태그", "태그" + System.nanoTime()));
+		entryTagService.attachUserTag(owner.getId(), entry.getId(), tag.getId());
+
+		BusinessException exception = assertThrows(
+				BusinessException.class,
+				() -> entryTagService.listEntryTags(intruder.getId(), entry.getId()));
+		assertEquals(RecordErrorCode.ENTRY_NOT_FOUND, exception.errorCode());
+	}
+
+	@Test
+	void confirmTag_otherMembersEntry_throwsEntryNotFound() {
+		Member owner = memberRepository.save(Member.create("소유자"));
+		Member intruder = memberRepository.save(Member.create("다른회원"));
+		Entry entry = entryRepository.save(
+				Entry.create(owner, EntryType.FREE, null, "민감한 원문", LocalDate.now(), null, null, null));
+		Tag tag = tagRepository.save(
+				Tag.createUserTag(owner, TagCategory.CUSTOM, "태그", "태그" + System.nanoTime()));
+		EntryTagResponse attached = entryTagService.attachUserTag(owner.getId(), entry.getId(), tag.getId());
+
+		BusinessException exception = assertThrows(
+				BusinessException.class,
+				() -> entryTagService.confirmTag(intruder.getId(), entry.getId(), attached.id()));
+		assertEquals(RecordErrorCode.ENTRY_NOT_FOUND, exception.errorCode());
+	}
+
 }
