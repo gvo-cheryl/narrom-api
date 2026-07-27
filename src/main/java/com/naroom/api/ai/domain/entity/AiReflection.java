@@ -106,6 +106,22 @@ public class AiReflection {
 		this.completedAt = completedAt;
 	}
 
+	// 8.3절: 출력 Moderation에 걸린 경우에도 실제로 생성은 일어났으므로 generationRun은 연결해 감사 이력을 남기되,
+	// 안전하지 않다고 판단된 내용 자체(reflectionText/questionText)는 저장하지 않는다.
+	public void blockAsUnsafe(AiGenerationRun generationRun, String safetyCode, Instant completedAt) {
+		this.generationRun = generationRun;
+		this.safetyCode = safetyCode;
+		this.status = AiJobStatus.BLOCKED;
+		this.completedAt = completedAt;
+	}
+
+	public void markSafetySupport(AiGenerationRun generationRun, String safetyCode, Instant completedAt) {
+		this.generationRun = generationRun;
+		this.safetyCode = safetyCode;
+		this.status = AiJobStatus.SAFETY_SUPPORT;
+		this.completedAt = completedAt;
+	}
+
 	public void hide(Instant hiddenAt) {
 		this.hiddenAt = hiddenAt;
 	}
