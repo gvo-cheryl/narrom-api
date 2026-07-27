@@ -25,6 +25,16 @@ public enum AiErrorCode implements ErrorCode {
 			"존재하지 않거나 다른 회원의 대화입니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	REFLECTION_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"AI_REFLECTION_NOT_FOUND",
+			"urn:naroom:problem:ai-reflection-not-found",
+			"AI 정리를 찾을 수 없습니다",
+			"존재하지 않거나, 이 기록의 것이 아니거나, 아직 완료되지 않은 AI 정리입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

@@ -134,7 +134,8 @@ public class RecordController {
 	@PostMapping("/entries/{entryId}/reflections")
 	public ApiResponse<EntrySelfReflectionResponse> createReflection(
 			@PathVariable UUID entryId, @Valid @RequestBody EntrySelfReflectionRequest request) {
-		return ApiResponse.of(entrySelfReflectionService.createReflection(currentMemberId(), entryId, request.content()));
+		return ApiResponse.of(entrySelfReflectionService.createReflection(
+				currentMemberId(), entryId, request.content(), request.aiReflectionId()));
 	}
 
 	@PatchMapping("/entries/{entryId}/reflections/{reflectionId}")
