@@ -6,6 +6,267 @@ info:
 servers:
 - url: /
 paths:
+  /api/v1/checkin:
+    get:
+      tags:
+      - check-in-controller
+      operationId: getCheckIn
+      parameters:
+      - name: date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseCheckInResponse"
+    put:
+      tags:
+      - check-in-controller
+      operationId: upsertCheckIn
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckInUpsertRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseCheckInResponse"
+  /api/v1/record/tags:
+    post:
+      tags:
+      - record-controller
+      operationId: createMyTag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserTagCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseTagResponse"
+  /api/v1/record/entries:
+    get:
+      tags:
+      - record-controller
+      operationId: getEntries
+      parameters:
+      - name: entryType
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - FREE
+          - CHECK_IN
+          - GRATITUDE
+          - EMOTION
+          - PROMPT
+          - QUOTE_REFLECTION
+          - EXPERIMENT_MISSION
+          - EXPERIMENT_REVIEW
+          - WEEKLY_REFLECTION
+          - SELF_SUMMARY
+      - name: recordDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEntryResponse"
+    post:
+      tags:
+      - record-controller
+      operationId: createEntry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntryResponse"
+  /api/v1/record/entries/{entryId}/tags:
+    get:
+      tags:
+      - record-controller
+      operationId: getEntryTags
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEntryTagResponse"
+    post:
+      tags:
+      - record-controller
+      operationId: attachEntryTag
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryTagAttachRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntryTagResponse"
+  /api/v1/record/entries/{entryId}/tags/{entryTagId}/reject:
+    post:
+      tags:
+      - record-controller
+      operationId: rejectEntryTag
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: entryTagId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntryTagResponse"
+  /api/v1/record/entries/{entryId}/tags/{entryTagId}/confirm:
+    post:
+      tags:
+      - record-controller
+      operationId: confirmEntryTag
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: entryTagId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntryTagResponse"
+  /api/v1/record/entries/{entryId}/reflections:
+    get:
+      tags:
+      - record-controller
+      operationId: getReflections
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEntrySelfReflectionResponse"
+    post:
+      tags:
+      - record-controller
+      operationId: createReflection
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntrySelfReflectionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntrySelfReflectionResponse"
+  /api/v1/record/entries/{entryId}/publish:
+    post:
+      tags:
+      - record-controller
+      operationId: publishEntry
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntryResponse"
   /api/v1/content/quotes/{quoteId}/save:
     post:
       tags:
@@ -19,8 +280,8 @@ paths:
           type: string
           format: uuid
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
     delete:
       tags:
       - content-controller
@@ -33,8 +294,8 @@ paths:
           type: string
           format: uuid
       responses:
-        "200":
-          description: OK
+        "204":
+          description: No Content
   /api/v1/auth/refresh:
     post:
       tags:
@@ -97,6 +358,130 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseOnboardingCompleteResponse"
+  /api/v1/record/entries/{entryId}:
+    get:
+      tags:
+      - record-controller
+      operationId: getEntry
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntryResponse"
+    delete:
+      tags:
+      - record-controller
+      operationId: deleteEntry
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: No Content
+    patch:
+      tags:
+      - record-controller
+      operationId: updateEntry
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntryResponse"
+  /api/v1/record/entries/{entryId}/reflections/{reflectionId}:
+    patch:
+      tags:
+      - record-controller
+      operationId: updateReflection
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: reflectionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntrySelfReflectionRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntrySelfReflectionResponse"
+  /api/v1/record/tags/system:
+    get:
+      tags:
+      - record-controller
+      operationId: getSystemTags
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTagResponse"
+  /api/v1/record/tags/mine:
+    get:
+      tags:
+      - record-controller
+      operationId: getMyTags
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTagResponse"
+  /api/v1/record/tags/emotion-topics:
+    get:
+      tags:
+      - record-controller
+      operationId: getEmotionTagTopics
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEmotionTagTopicResponse"
   /api/v1/health:
     get:
       tags:
@@ -140,6 +525,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListQuoteResponse"
+  /api/v1/content/quotes/{quoteId}:
+    get:
+      tags:
+      - content-controller
+      operationId: getQuote
+      parameters:
+      - name: quoteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseQuoteResponse"
   /api/v1/content/quotes/today:
     get:
       tags:
@@ -164,6 +568,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListSavedQuoteResponse"
+  /api/v1/checkin/today:
+    get:
+      tags:
+      - check-in-controller
+      operationId: getTodayCheckIn
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseCheckInResponse"
   /api/v1/auth/session:
     get:
       tags:
@@ -178,6 +594,307 @@ paths:
                 $ref: "#/components/schemas/ApiResponseSessionCheckResponse"
 components:
   schemas:
+    CheckInUpsertRequest:
+      type: object
+      properties:
+        checkInDate:
+          type: string
+          format: date
+        emotionIntensity:
+          type: integer
+          format: int32
+          maximum: 5
+          minimum: 1
+        energyLevel:
+          type: integer
+          format: int32
+          maximum: 5
+          minimum: 1
+        memorableEvent:
+          type: string
+          maxLength: 500
+          minLength: 0
+        gratitudeNote:
+          type: string
+          maxLength: 300
+          minLength: 0
+        currentNeed:
+          type: string
+          maxLength: 200
+          minLength: 0
+        freeNote:
+          type: string
+          maxLength: 500
+          minLength: 0
+        emotionTagIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - checkInDate
+    ApiResponseCheckInResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/CheckInResponse"
+    CheckInResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        entryId:
+          type: string
+          format: uuid
+        checkInDate:
+          type: string
+          format: date
+        emotionIntensity:
+          type: integer
+          format: int32
+        energyLevel:
+          type: integer
+          format: int32
+        memorableEvent:
+          type: string
+        gratitudeNote:
+          type: string
+        currentNeed:
+          type: string
+        freeNote:
+          type: string
+        emotions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagResponse"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int64
+    TagResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          enum:
+          - SYSTEM
+          - USER
+        category:
+          type: string
+          enum:
+          - EMOTION
+          - SITUATION
+          - NEED
+          - VALUE
+          - ACTION
+          - RECOVERY
+          - CUSTOM
+        name:
+          type: string
+    UserTagCreateRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          enum:
+          - EMOTION
+          - SITUATION
+          - NEED
+          - VALUE
+          - ACTION
+          - RECOVERY
+          - CUSTOM
+        name:
+          type: string
+          maxLength: 30
+          minLength: 0
+      required:
+      - category
+      - name
+    ApiResponseTagResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/TagResponse"
+    EntryCreateRequest:
+      type: object
+      properties:
+        entryType:
+          type: string
+          enum:
+          - FREE
+          - CHECK_IN
+          - GRATITUDE
+          - EMOTION
+          - PROMPT
+          - QUOTE_REFLECTION
+          - EXPERIMENT_MISSION
+          - EXPERIMENT_REVIEW
+          - WEEKLY_REFLECTION
+          - SELF_SUMMARY
+        title:
+          type: string
+          maxLength: 200
+          minLength: 0
+        body:
+          type: string
+          maxLength: 2000
+          minLength: 0
+        recordDate:
+          type: string
+          format: date
+        parentEntryId:
+          type: string
+          format: uuid
+        quoteId:
+          type: string
+          format: uuid
+        promptSnapshot:
+          type: string
+      required:
+      - entryType
+      - recordDate
+    ApiResponseEntryResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/EntryResponse"
+    EntryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        entryType:
+          type: string
+          enum:
+          - FREE
+          - CHECK_IN
+          - GRATITUDE
+          - EMOTION
+          - PROMPT
+          - QUOTE_REFLECTION
+          - EXPERIMENT_MISSION
+          - EXPERIMENT_REVIEW
+          - WEEKLY_REFLECTION
+          - SELF_SUMMARY
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+        title:
+          type: string
+        body:
+          type: string
+        recordDate:
+          type: string
+          format: date
+        parentEntryId:
+          type: string
+          format: uuid
+        quoteId:
+          type: string
+          format: uuid
+        aiProcessingAllowed:
+          type: boolean
+        publishedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int64
+    EntryTagAttachRequest:
+      type: object
+      properties:
+        tagId:
+          type: string
+          format: uuid
+      required:
+      - tagId
+    ApiResponseEntryTagResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/EntryTagResponse"
+    EntryTagResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tag:
+          $ref: "#/components/schemas/TagResponse"
+        source:
+          type: string
+          enum:
+          - USER
+          - AI
+          - CHECK_IN
+          - REFLECTION
+          - EXPERIMENT
+        state:
+          type: string
+          enum:
+          - SUGGESTED
+          - CONFIRMED
+          - REJECTED
+          - SYSTEM
+        initiatedBy:
+          type: string
+          enum:
+          - USER_SELECTED
+          - USER_ENTERED
+          - AI_INFERRED
+    EntrySelfReflectionRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          maxLength: 1000
+          minLength: 0
+        aiReflectionId:
+          type: string
+          format: uuid
+      required:
+      - content
+    ApiResponseEntrySelfReflectionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/EntrySelfReflectionResponse"
+    EntrySelfReflectionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        aiReflectionId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     RefreshRequest:
       type: object
       properties:
@@ -372,6 +1089,71 @@ components:
           enum:
           - COMPLETE_ONBOARDING
           - ENTER_APP
+    EntryUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+          minLength: 0
+        body:
+          type: string
+          maxLength: 2000
+          minLength: 0
+        version:
+          type: integer
+          format: int64
+      required:
+      - version
+    ApiResponseListTagResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagResponse"
+    ApiResponseListEmotionTagTopicResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmotionTagTopicResponse"
+    EmotionTagTopicResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagResponse"
+    ApiResponseListEntryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryResponse"
+    ApiResponseListEntryTagResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryTagResponse"
+    ApiResponseListEntrySelfReflectionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntrySelfReflectionResponse"
     ApiResponseHealthResponse:
       type: object
       properties:
