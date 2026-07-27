@@ -2,6 +2,8 @@ package com.naroom.api.record;
 
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
+import com.naroom.api.ai.AiJobService;
+import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.content.domain.entity.Quote;
 import com.naroom.api.content.domain.error.ContentErrorCode;
 import com.naroom.api.content.domain.repository.QuoteRepository;
@@ -13,8 +15,15 @@ import com.naroom.api.record.domain.repository.EntryRepository;
 import com.naroom.api.record.dto.EntryCreateRequest;
 import com.naroom.api.record.dto.EntryResponse;
 import com.naroom.api.record.dto.EntryUpdateRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.util.EnumSet;
@@ -33,14 +42,26 @@ public class EntryService {
 	private static final Set<EntryType> USER_CREATABLE_TYPES = EnumSet.of(
 			EntryType.FREE, EntryType.GRATITUDE, EntryType.EMOTION, EntryType.PROMPT, EntryType.QUOTE_REFLECTION);
 
+	private static final Logger log = LoggerFactory.getLogger(EntryService.class);
+
 	private final EntryRepository entryRepository;
 	private final MemberRepository memberRepository;
 	private final QuoteRepository quoteRepository;
+	private final AiJobService aiJobService;
+	private final TransactionTemplate requiresNewTransactionTemplate;
 
-	public EntryService(EntryRepository entryRepository, MemberRepository memberRepository, QuoteRepository quoteRepository) {
+	public EntryService(
+			EntryRepository entryRepository,
+			MemberRepository memberRepository,
+			QuoteRepository quoteRepository,
+			AiJobService aiJobService,
+			PlatformTransactionManager transactionManager) {
 		this.entryRepository = entryRepository;
 		this.memberRepository = memberRepository;
 		this.quoteRepository = quoteRepository;
+		this.aiJobService = aiJobService;
+		this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager);
+		this.requiresNewTransactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 	}
 
 	@Transactional
@@ -61,7 +82,34 @@ public class EntryService {
 				parentEntry,
 				quote,
 				request.promptSnapshot());
-		return EntryResponse.from(entryRepository.save(entry));
+		Entry savedEntry = entryRepository.save(entry);
+		scheduleAiReflectionAfterCommit(memberId, savedEntry);
+		return EntryResponse.from(savedEntry);
+	}
+
+	// §7.2: 기록 저장 성공과 AI 생성 성공은 서로 다른 결과다 - AI 작업 생성이 실패해도 기록 저장 자체는 실패로
+	// 돌리지 않는다. 이 트랜잭션이 커밋된 뒤에만 실행되게 등록한다 - 커밋 전에 바로 호출하면 아직 커밋되지 않은
+	// 이 기록을 보지 못해 매번 실패한다. afterCommit() 콜백 안의 코드는 (Spring 문서 기준) 별도 트랜잭션임을
+	// 명시하지 않으면 이미 커밋된 원래 트랜잭션의 리소스에 그대로 참여해버려 저장한 내용이 실제로 커밋되지
+	// 않는다 - 그래서 AiJobService.createForEntry 자체가 아니라 이 호출 지점에서만 REQUIRES_NEW 트랜잭션
+	// 템플릿을 쓴다(createForEntry의 propagation을 REQUIRES_NEW로 바꾸면, 같은 트랜잭션 안에서 회원·기록을
+	// 만들고 바로 createForEntry를 호출하는 기존 테스트 다수가 그 회원·기록을 보지 못해 깨진다).
+	private void scheduleAiReflectionAfterCommit(UUID memberId, Entry entry) {
+		if (!entry.isAiProcessingAllowed()) {
+			return;
+		}
+		UUID entryId = entry.getId();
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				try {
+					requiresNewTransactionTemplate.executeWithoutResult(status -> aiJobService.createForEntry(
+							memberId, AiFeatureType.ENTRY_REFLECTION, entryId, "entry-reflection-" + entryId));
+				} catch (RuntimeException e) {
+					log.warn("failed to create AI job for entry. entryId={} errorType={}", entryId, e.getClass().getSimpleName());
+				}
+			}
+		});
 	}
 
 	public EntryResponse getEntry(UUID memberId, UUID entryId) {
