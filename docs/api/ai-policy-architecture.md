@@ -1084,14 +1084,18 @@ OpenAI가 처리할 본문을 별도의 암호문 상태로 보내면 모델이 
 
 ## 24.4 4단계: AI 파이프라인
 
-- 비동기 AI 작업 생성
-- 입력 Moderation
-- 기능별 프롬프트 조립기
-- Structured Output 스키마
-- 백엔드 코드·ID 검증
-- 출력 Moderation
-- 결과·토큰·프롬프트 버전 저장
-- 재시도·멱등성·상태 전이
+**세분화(2026-07-27, 이슈 #26):** 7장 처리 흐름과 21장 실패 분리 원칙을 기준으로 아래 순서로 나눠 구현한다. 각 단계는 이전 단계의 저장 구조(2단계 V12 엔티티)에 의존하며, 4-C부터는 OpenAI 실제 연동이 필요해 별도 승인 대상이다.
+
+- [x] 4-A. AI 작업 골격(2026-07-27, 이슈 #26): `AiJobService` 구현 — 기록·대화 기준 작업 생성(멱등키로 중복 방지), 소유권 검증 조회, `markProcessing/markCompleted/markFailed/markBlocked/markSafetySupport` 상태 전이. 상태 전이는 사용자 요청이 아닌 내부 파이프라인 주체라 memberId 검증 없이 jobId로만 처리. 아직 컨트롤러·API 계약은 없음(승인된 공개 계약이 없어 이번 단계에서 추가하지 않음)
+- [ ] 4-B. 비동기 실행 방식 결정: 기록 저장 API 이후 AI 작업을 어떤 방식으로 트리거할지(`@Async`/스케줄러 폴링 vs 별도 큐·Redis) 결정. Redis는 `.env.example`에 자리만 있고 의존성 미설치 — 도입 여부는 별도 승인 필요
+- [ ] 4-C. OpenAI 연동 준비: SDK 방식 결정(공식 SDK 신규 의존성 vs 기존 `RestClient` 기반 REST 호출), `OPENAI_API_KEY`/`OPENAI_MODEL` 값 관리 정책 확인. 신규 의존성·외부 서비스 연동이라 승인 필요
+- [ ] 4-D. 입력 Moderation 연동: `omni-moderation-latest` 호출, 8장 기준 차단·안전 지원 상태 분기
+- [ ] 4-E. 기능별 프롬프트 조립기: 14장 5단계 조립 구조(공통 지침·기능별 지침·회원 선호도·현재 맥락·출력 스키마)를 `ai_prompt_versions` 기준으로 구현
+- [ ] 4-F. Structured Output 스키마 + 백엔드 코드·ID 검증: 9장 기준 JSON Schema 정의, 저장값 검증·중복 제거·코드 매핑
+- [ ] 4-G. 출력 Moderation + 결과 저장: `ai_reflections`/`ai_generation_runs`에 결과·토큰·프롬프트 버전 저장
+- [ ] 4-H. 재시도·멱등성·상태 전이 마무리: 21장 기준 자동 재시도(네트워크·일시 오류만, 지수 백오프)와 사용자 재생성 카운트 분리
+
+원래 목록(비동기 AI 작업 생성 / 입력 Moderation / 기능별 프롬프트 조립기 / Structured Output 스키마 / 백엔드 코드·ID 검증 / 출력 Moderation / 결과·토큰·프롬프트 버전 저장 / 재시도·멱등성·상태 전이)은 위 4-A~4-H에 그대로 대응한다.
 
 ## 24.5 5단계: 사용자 경험
 
