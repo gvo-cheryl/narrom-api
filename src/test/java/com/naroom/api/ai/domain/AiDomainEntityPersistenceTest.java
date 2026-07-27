@@ -113,7 +113,6 @@ class AiDomainEntityPersistenceTest {
 
 		AiJob entryJob = aiJobRepository.save(
 				AiJob.forEntry(member, AiFeatureType.ENTRY_REFLECTION, entry, "idem-" + System.nanoTime()));
-		entryJob.markProcessing(Instant.now());
 		entryJob.markCompleted(Instant.now());
 
 		AiGenerationRun entryRun = aiGenerationRunRepository.save(

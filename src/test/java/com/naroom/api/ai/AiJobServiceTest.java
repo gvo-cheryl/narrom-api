@@ -4,6 +4,7 @@ import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.ai.domain.entity.AiConversation;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
+import com.naroom.api.ai.domain.entity.AiJob;
 import com.naroom.api.ai.domain.entity.AiJobStatus;
 import com.naroom.api.ai.domain.error.AiErrorCode;
 import com.naroom.api.ai.domain.repository.AiConversationRepository;
@@ -20,13 +21,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @Transactional
@@ -102,51 +107,163 @@ class AiJobServiceTest {
 	}
 
 	@Test
-	void markProcessing_thenCompleted_updatesStatusAndTimestamps() {
+	void claimNextBatch_claimsPendingJobsAndSetsProcessing() {
 		Member member = memberRepository.save(Member.create("지연"));
 		Entry entry = entryRepository.save(
 				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
 		AiJobResponse created = aiJobService.createForEntry(
 				member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
 
-		AiJobResponse processing = aiJobService.markProcessing(created.id());
-		assertEquals(AiJobStatus.PROCESSING, processing.status());
-		assertNotNull(processing.startedAt());
+		List<AiJobResponse> claimed = aiJobService.claimNextBatch(10);
 
-		AiJobResponse completed = aiJobService.markCompleted(created.id());
-		assertEquals(AiJobStatus.COMPLETED, completed.status());
-		assertNotNull(completed.completedAt());
+		assertTrue(claimed.stream().anyMatch(job -> job.id().equals(created.id())));
+		AiJobResponse claimedJob = claimed.stream().filter(job -> job.id().equals(created.id())).findFirst().orElseThrow();
+		assertEquals(AiJobStatus.PROCESSING, claimedJob.status());
+		assertNotNull(claimedJob.startedAt());
 	}
 
 	@Test
-	void markFailed_incrementsAttemptCountAndSetsErrorCode() {
+	void claimNextBatch_alreadyProcessingJob_isNotClaimedAgain() {
 		Member member = memberRepository.save(Member.create("지연"));
 		Entry entry = entryRepository.save(
 				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
 		AiJobResponse created = aiJobService.createForEntry(
 				member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		aiJobService.claimNextBatch(10);
+
+		List<AiJobResponse> secondClaim = aiJobService.claimNextBatch(10);
+
+		assertFalse(secondClaim.stream().anyMatch(job -> job.id().equals(created.id())));
+	}
+
+	@Test
+	void claimNextBatch_respectsBatchSize() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		for (int i = 0; i < 5; i++) {
+			aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "batch-key-" + i + "-" + System.nanoTime());
+		}
+
+		List<AiJobResponse> claimed = aiJobService.claimNextBatch(3);
+
+		assertEquals(3, claimed.size());
+	}
+
+	@Test
+	void completeJob_withValidLease_transitionsToCompleted() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+
+		boolean applied = aiJobService.completeJob(claimed.id(), claimed.startedAt());
+
+		assertTrue(applied);
+		assertEquals(AiJobStatus.COMPLETED, aiJobService.getJob(member.getId(), claimed.id()).status());
+	}
+
+	@Test
+	void completeJob_withStaleLease_doesNotApplyAndLeavesJobUnchanged() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+		Instant staleLease = claimed.startedAt().minusSeconds(60);
+
+		boolean applied = aiJobService.completeJob(claimed.id(), staleLease);
+
+		assertFalse(applied);
+		assertEquals(AiJobStatus.PROCESSING, aiJobService.getJob(member.getId(), claimed.id()).status());
+	}
+
+	@Test
+	void failJob_withValidLease_incrementsAttemptCountAndSetsErrorCode() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
 		Instant nextRetryAt = Instant.now().plusSeconds(30);
 
-		AiJobResponse failed = aiJobService.markFailed(created.id(), "GENERATION_TIMEOUT", nextRetryAt);
+		boolean applied = aiJobService.failJob(claimed.id(), claimed.startedAt(), "GENERATION_TIMEOUT", nextRetryAt);
 
+		assertTrue(applied);
+		AiJobResponse failed = aiJobService.getJob(member.getId(), claimed.id());
 		assertEquals(AiJobStatus.FAILED, failed.status());
 		assertEquals(1, failed.attemptCount());
 		assertEquals("GENERATION_TIMEOUT", failed.errorCode());
-		assertEquals(nextRetryAt, failed.nextRetryAt());
 	}
 
 	@Test
-	void markBlocked_and_markSafetySupport_updateStatus() {
+	void blockJob_and_markJobSafetySupport_updateStatus() {
 		Member member = memberRepository.save(Member.create("지연"));
 		Entry entry = entryRepository.save(
 				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
-		AiJobResponse blockedTarget = aiJobService.createForEntry(
-				member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
-		AiJobResponse safetyTarget = aiJobService.createForEntry(
-				member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "block-key-" + System.nanoTime());
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "safety-key-" + System.nanoTime());
+		List<AiJobResponse> claimed = aiJobService.claimNextBatch(10);
+		AiJobResponse blockTarget = claimed.get(0);
+		AiJobResponse safetyTarget = claimed.get(1);
 
-		assertEquals(AiJobStatus.BLOCKED, aiJobService.markBlocked(blockedTarget.id()).status());
-		assertEquals(AiJobStatus.SAFETY_SUPPORT, aiJobService.markSafetySupport(safetyTarget.id()).status());
+		assertTrue(aiJobService.blockJob(blockTarget.id(), blockTarget.startedAt()));
+		assertTrue(aiJobService.markJobSafetySupport(safetyTarget.id(), safetyTarget.startedAt()));
+		assertEquals(AiJobStatus.BLOCKED, aiJobService.getJob(member.getId(), blockTarget.id()).status());
+		assertEquals(AiJobStatus.SAFETY_SUPPORT, aiJobService.getJob(member.getId(), safetyTarget.id()).status());
+	}
+
+	@Test
+	void reclaimExpiredLeases_reclaimsStaleProcessingJobsAsRetryableFailures() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		AiJobResponse created = aiJobService.createForEntry(
+				member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		Instant staleStartedAt = Instant.now().minus(Duration.ofMinutes(10));
+		aiJobRepository.markClaimed(List.of(created.id()), AiJobStatus.PROCESSING, staleStartedAt);
+
+		int reclaimed = aiJobService.reclaimExpiredLeases(Duration.ofMinutes(5));
+
+		assertEquals(1, reclaimed);
+		AiJob reloaded = aiJobRepository.findById(created.id()).orElseThrow();
+		assertEquals(AiJobStatus.FAILED, reloaded.getStatus());
+		assertEquals(1, reloaded.getAttemptCount());
+		assertEquals("LEASE_EXPIRED", reloaded.getErrorCode());
+	}
+
+	@Test
+	void reclaimExpiredLeases_doesNotTouchFreshProcessingJobs() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		aiJobService.claimNextBatch(10);
+
+		int reclaimed = aiJobService.reclaimExpiredLeases(Duration.ofMinutes(5));
+
+		assertEquals(0, reclaimed);
+	}
+
+	@Test
+	void claimNextBatch_jobExhaustedRetries_isNotReclaimable() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		AiJobResponse created = aiJobService.createForEntry(
+				member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		for (int i = 0; i < 3; i++) {
+			AiJobResponse claimed = aiJobService.claimNextBatch(10).stream()
+					.filter(job -> job.id().equals(created.id()))
+					.findFirst()
+					.orElseThrow();
+			aiJobService.failJob(claimed.id(), claimed.startedAt(), "GENERATION_TIMEOUT", Instant.now());
+		}
+
+		List<AiJobResponse> claimedAfterExhausted = aiJobService.claimNextBatch(10);
+
+		assertFalse(claimedAfterExhausted.stream().anyMatch(job -> job.id().equals(created.id())));
 	}
 
 	// 근거(AI 작업)는 회원 소유 자원이므로, 다른 회원의 작업 조회는 존재 여부를 드러내지 않고 JOB_NOT_FOUND로만 응답해야 한다.

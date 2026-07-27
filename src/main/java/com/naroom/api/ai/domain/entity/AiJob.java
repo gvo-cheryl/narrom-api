@@ -98,11 +98,6 @@ public class AiJob {
 		return new AiJob(member, featureType, null, conversation, idempotencyKey);
 	}
 
-	public void markProcessing(Instant startedAt) {
-		this.status = AiJobStatus.PROCESSING;
-		this.startedAt = startedAt;
-	}
-
 	public void markCompleted(Instant completedAt) {
 		this.status = AiJobStatus.COMPLETED;
 		this.completedAt = completedAt;

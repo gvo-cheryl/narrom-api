@@ -5,6 +5,7 @@ import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.ai.domain.entity.AiConversation;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.ai.domain.entity.AiJob;
+import com.naroom.api.ai.domain.entity.AiJobStatus;
 import com.naroom.api.ai.domain.error.AiErrorCode;
 import com.naroom.api.ai.domain.repository.AiConversationRepository;
 import com.naroom.api.ai.domain.repository.AiJobRepository;
@@ -16,12 +17,19 @@ import com.naroom.api.record.domain.repository.EntryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 public class AiJobService {
+
+	private static final String LEASE_EXPIRED_ERROR_CODE = "LEASE_EXPIRED";
 
 	private final AiJobRepository aiJobRepository;
 	private final MemberRepository memberRepository;
@@ -71,40 +79,60 @@ public class AiJobService {
 		return AiJobResponse.from(getOwnedJobOrThrow(memberId, jobId));
 	}
 
-	// 상태 전이는 실행 주체가 사용자 요청이 아니라 내부 AI 파이프라인/워커이므로 memberId 소유권 검증 없이 jobId만으로 처리한다.
+	// 큐 선점(4-B): SKIP LOCKED로 고른 id를 같은 트랜잭션 안에서 PROCESSING으로 일괄 전환한다.
+	// SELECT에서 잡은 행 잠금이 커밋까지 유지되므로 뒤이은 UPDATE·조회는 경쟁 없이 안전하다.
 	@Transactional
-	public AiJobResponse markProcessing(UUID jobId) {
-		AiJob job = getJobOrThrow(jobId);
-		job.markProcessing(Instant.now());
-		return AiJobResponse.from(job);
+	public List<AiJobResponse> claimNextBatch(int batchSize) {
+		List<UUID> claimableIds = aiJobRepository.selectClaimableIds(batchSize);
+		if (claimableIds.isEmpty()) {
+			return List.of();
+		}
+		aiJobRepository.markClaimed(claimableIds, AiJobStatus.PROCESSING, Instant.now());
+		return aiJobRepository.findAllById(claimableIds).stream()
+				.map(AiJobResponse::from)
+				.collect(Collectors.toList());
+	}
+
+	// leaseTimeout보다 오래 PROCESSING 상태인 작업(워커가 죽었거나 응답이 없는 경우)을 회수해 재시도 대상으로 되돌린다.
+	@Transactional
+	public int reclaimExpiredLeases(Duration leaseTimeout) {
+		Instant expiredBefore = Instant.now().minus(leaseTimeout);
+		return aiJobRepository.reclaimExpiredLeases(
+				AiJobStatus.PROCESSING, AiJobStatus.FAILED, LEASE_EXPIRED_ERROR_CODE, Instant.now(), expiredBefore);
+	}
+
+	// 아래 completeJob/failJob/blockJob/markJobSafetySupport는 claimNextBatch가 돌려준 startedAt(lease)을
+	// 그대로 넘겨받아야 한다. lease가 이미 만료되어 다른 워커에게 재할당된 작업이면 false를 반환하고 결과를 버린다.
+	@Transactional
+	public boolean completeJob(UUID jobId, Instant leaseStartedAt) {
+		return applyIfLeaseValid(jobId, leaseStartedAt, job -> job.markCompleted(Instant.now()));
 	}
 
 	@Transactional
-	public AiJobResponse markCompleted(UUID jobId) {
-		AiJob job = getJobOrThrow(jobId);
-		job.markCompleted(Instant.now());
-		return AiJobResponse.from(job);
+	public boolean failJob(UUID jobId, Instant leaseStartedAt, String errorCode, Instant nextRetryAt) {
+		return applyIfLeaseValid(jobId, leaseStartedAt, job -> job.markFailed(errorCode, nextRetryAt));
 	}
 
 	@Transactional
-	public AiJobResponse markFailed(UUID jobId, String errorCode, Instant nextRetryAt) {
-		AiJob job = getJobOrThrow(jobId);
-		job.markFailed(errorCode, nextRetryAt);
-		return AiJobResponse.from(job);
+	public boolean blockJob(UUID jobId, Instant leaseStartedAt) {
+		return applyIfLeaseValid(jobId, leaseStartedAt, job -> job.markBlocked(Instant.now()));
 	}
 
 	@Transactional
-	public AiJobResponse markBlocked(UUID jobId) {
-		AiJob job = getJobOrThrow(jobId);
-		job.markBlocked(Instant.now());
-		return AiJobResponse.from(job);
+	public boolean markJobSafetySupport(UUID jobId, Instant leaseStartedAt) {
+		return applyIfLeaseValid(jobId, leaseStartedAt, job -> job.markSafetySupport(Instant.now()));
 	}
 
-	@Transactional
-	public AiJobResponse markSafetySupport(UUID jobId) {
-		AiJob job = getJobOrThrow(jobId);
-		job.markSafetySupport(Instant.now());
-		return AiJobResponse.from(job);
+	// PESSIMISTIC_WRITE로 행을 잠근 뒤 메모리에서 status+startedAt을 비교한다. SKIP LOCKED 특수 타임아웃 값 없이도
+	// 같은 작업을 동시에 완료 처리하려는 시도끼리는 이 잠금으로 직렬화되어 안전하다.
+	private boolean applyIfLeaseValid(UUID jobId, Instant leaseStartedAt, Consumer<AiJob> transition) {
+		AiJob job = aiJobRepository.findByIdForUpdate(jobId)
+				.orElseThrow(() -> new BusinessException(AiErrorCode.JOB_NOT_FOUND));
+		if (job.getStatus() != AiJobStatus.PROCESSING || !Objects.equals(job.getStartedAt(), leaseStartedAt)) {
+			return false;
+		}
+		transition.accept(job);
+		return true;
 	}
 
 	private AiJob getOwnedJobOrThrow(UUID memberId, UUID jobId) {

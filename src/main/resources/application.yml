@@ -30,3 +30,9 @@ naroom:
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
     issuer: naroom-api
     audience: naroom-app
+  ai:
+    worker:
+      enabled: ${AI_WORKER_ENABLED:false}
+      batch-size: ${AI_WORKER_BATCH_SIZE:20}
+      lease-timeout: ${AI_WORKER_LEASE_TIMEOUT:5m}
+      poll-interval: ${AI_WORKER_POLL_INTERVAL:30s}
