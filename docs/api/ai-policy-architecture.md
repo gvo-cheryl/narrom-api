@@ -835,22 +835,26 @@ OpenAI가 처리할 본문을 별도의 암호문 상태로 보내면 모델이 
 
 문장형 필드는 `AES-256-GCM`과 같은 인증 암호화를 사용한다.
 
-## 17.3 키 관리
+## 17.3 키 관리 (Supabase Vault 채택, 2026-07-25)
 
 권장 구조:
 
 ```text
 회원별 DEK(Data Encryption Key)
-→ KMS의 KEK(Key Encryption Key)로 DEK 암호화
+→ Supabase Vault(pgsodium 기반) 프로젝트 루트 키로 DEK 암호화
 → 암호화된 DEK만 DB에 저장
 ```
 
-- 키는 DB와 분리된 KMS 또는 Secret Manager에서 관리한다.
-- 암호화 버전, 키 버전, nonce/IV, 인증 태그를 함께 관리한다.
+- 당초 검토안은 GCP Cloud KMS였으나, 이미 사용 중인 Supabase Vault를 키 관리자로 채택한다.
+- `pgsodium.create_key()`로 회원별 키를 발급할 수 있어 회원별 DEK 모델에 그대로 맞출 수 있다.
+- 루트 키는 Supabase가 내부적으로 생성·관리하며, SQL에서는 키 값 자체에 접근할 수 없고 키 ID로만 참조한다.
+- **트레이드오프(인지하고 채택)**: 데이터(Supabase Postgres)와 키(Supabase Vault)가 같은 벤더 경계 안에 있어, GCP KMS처럼 데이터 저장소와 키 관리자를 별도 주체로 분리하는 방어 심층화는 제공하지 않는다. Supabase 자체가 침해되는 최악의 시나리오에서는 데이터와 키가 함께 노출될 수 있다. DB 덤프 유출·SQL 인젝션 등 흔한 위협에는 여전히 유효하다(키가 평문 컬럼으로 노출되지 않음).
+- 암호화 버전, 키 버전(key id), nonce/IV, 인증 태그는 Vault의 AEAD 방식이 처리하되 애플리케이션에서도 키 버전을 함께 기록한다.
 - 키 교체와 과거 데이터 재암호화 절차를 마련한다.
 - 백업 복구 시 필요한 과거 키의 보존 정책을 정의한다.
-- 회원 최종 삭제 시 키 폐기를 통한 `crypto-shredding`을 검토한다.
+- 회원 최종 삭제 시 해당 회원의 키를 폐기하는 `crypto-shredding`을 적용한다.
 - 현재 탈퇴 후 7일 유예 정책이 있다면 최종 키 폐기는 유예 종료 후 수행한다.
+- KEK/DEK 봉투 구조 자체는 유지되므로, 이후 트래픽·컴플라이언스 요구가 커지면 키 관리자만 GCP 등 외부 KMS로 교체할 수 있다.
 
 ## 17.4 운영상 주의
 
@@ -1068,12 +1072,15 @@ OpenAI가 처리할 본문을 별도의 암호문 상태로 보내면 모델이 
 
 ## 24.3 3단계: 보안
 
-- 문장형 필드 암호화 모듈
-- KMS/Secret Manager 기반 키 관리
-- 로그 마스킹
-- 원문 로그 금지 테스트
-- 권한 없는 회원의 근거 ID 접근 차단 테스트
-- 삭제·키 폐기 절차 테스트
+**암호화 시점 결정(2026-07-25, 0725_AI-Domain-Schema-Review-Report.md 5.2절 관련):** 문장형 필드 암호화는 지금 선행 구현하지 않고 AI가 실제로 해당 필드를 읽기 시작하는 시점(4단계 AI 파이프라인 구현 직전)에 병행 진행한다. 그 전까지 `entries.title/body`, `check_ins`의 문장형 필드, `entry_self_reflections.content`, `ai_reflections.reflection_text/question_text`, `ai_messages.content`는 평문으로 유지한다. KMS/Secret Manager 연동은 외부 인프라 도입 건이라 이 결정과 별개로 승인이 필요하다.
+
+- [ ] 문장형 필드 암호화 모듈 — 4단계 착수 직전으로 이연
+- [x] 키 관리자 선정 — Supabase Vault 채택(§17.3, 2026-07-25). GCP KMS 대비 트레이드오프 인지
+- [ ] Vault 기반 키 관리 실제 구현(회원별 DEK 발급·교체·crypto-shredding) — 4단계 착수 직전으로 이연
+- [x] 로그 마스킹 — 코드 인스펙션으로 점검(2026-07-27). 현재 `log.*` 호출 지점은 `KakaoClient`(카카오 오류 응답 상태·바디만 기록, 토큰 자체는 인자로 넘기지 않음), `GlobalExceptionHandler`(traceId + 예외 스택만 기록), `RequestTraceFilter`(traceId만 기록) 3곳뿐이며 기록 원문·토큰 원문·PII를 로그 인자로 사용하는 지점 없음. `application*.yml`에도 SQL 파라미터 바인딩 로그(`show-sql`/trace 레벨)를 켜지 않음. AI 파이프라인(4단계) 구현 시 22.2절 금지 목록 기준으로 재점검 필요
+- [x] 원문 로그 금지 테스트 — `GlobalExceptionHandlerTest#handleUnexpected_neverExposesExceptionMessageInResponse`: 예외 메시지에 기록 원문이 섞여도 공개 `ProblemDetail` 응답에 노출되지 않음을 검증
+- [x] 권한 없는 회원의 근거 ID 접근 차단 테스트 — `EntryTagServiceTest#listEntryTags_otherMembersEntry_throwsEntryNotFound`, `#confirmTag_otherMembersEntry_throwsEntryNotFound`: 소유하지 않은 기록의 `entry_tags` 접근 시 존재 여부를 드러내지 않고 `ENTRY_NOT_FOUND`로만 응답
+- [ ] 삭제·키 폐기 절차 테스트 — 암호화 모듈 구현 후에만 가능
 
 ## 24.4 4단계: AI 파이프라인
 
