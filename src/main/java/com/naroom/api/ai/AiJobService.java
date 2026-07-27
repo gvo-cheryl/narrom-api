@@ -6,6 +6,7 @@ import com.naroom.api.ai.domain.entity.AiConversation;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.ai.domain.entity.AiJob;
 import com.naroom.api.ai.domain.entity.AiJobStatus;
+import com.naroom.api.ai.domain.entity.AiSafetyGrade;
 import com.naroom.api.ai.domain.error.AiErrorCode;
 import com.naroom.api.ai.domain.repository.AiConversationRepository;
 import com.naroom.api.ai.domain.repository.AiJobRepository;
@@ -121,6 +122,26 @@ public class AiJobService {
 	@Transactional
 	public boolean markJobSafetySupport(UUID jobId, Instant leaseStartedAt) {
 		return applyIfLeaseValid(jobId, leaseStartedAt, job -> job.markSafetySupport(Instant.now()));
+	}
+
+	// 4-D: 입력 Moderation 결과를 작업 상태로 옮긴다. NORMAL이면 파이프라인을 계속 진행해도 된다는 뜻으로 true를
+	// 반환하고, RESTRICTED/CRISIS면 8.3절 기준으로 BLOCKED/SAFETY_SUPPORT로 종결하고 false를 반환한다.
+	// BLOCKED_OUTPUT은 출력 Moderation(4-H) 전용이라 입력 단계에서는 나올 수 없는 값이다.
+	@Transactional
+	public boolean applyInputSafetyGrade(UUID jobId, Instant leaseStartedAt, AiSafetyGrade grade) {
+		return switch (grade) {
+			case NORMAL -> true;
+			case RESTRICTED -> {
+				blockJob(jobId, leaseStartedAt);
+				yield false;
+			}
+			case CRISIS -> {
+				markJobSafetySupport(jobId, leaseStartedAt);
+				yield false;
+			}
+			case BLOCKED_OUTPUT -> throw new IllegalArgumentException(
+					"BLOCKED_OUTPUT is only valid for output moderation, not input");
+		};
 	}
 
 	// PESSIMISTIC_WRITE로 행을 잠근 뒤 메모리에서 status+startedAt을 비교한다. SKIP LOCKED 특수 타임아웃 값 없이도

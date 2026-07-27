@@ -6,6 +6,7 @@ import com.naroom.api.ai.domain.entity.AiConversation;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.ai.domain.entity.AiJob;
 import com.naroom.api.ai.domain.entity.AiJobStatus;
+import com.naroom.api.ai.domain.entity.AiSafetyGrade;
 import com.naroom.api.ai.domain.error.AiErrorCode;
 import com.naroom.api.ai.domain.repository.AiConversationRepository;
 import com.naroom.api.ai.domain.repository.AiJobRepository;
@@ -212,6 +213,48 @@ class AiJobServiceTest {
 		assertTrue(aiJobService.markJobSafetySupport(safetyTarget.id(), safetyTarget.startedAt()));
 		assertEquals(AiJobStatus.BLOCKED, aiJobService.getJob(member.getId(), blockTarget.id()).status());
 		assertEquals(AiJobStatus.SAFETY_SUPPORT, aiJobService.getJob(member.getId(), safetyTarget.id()).status());
+	}
+
+	@Test
+	void applyInputSafetyGrade_normal_returnsTrueAndLeavesJobProcessing() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+
+		boolean proceed = aiJobService.applyInputSafetyGrade(claimed.id(), claimed.startedAt(), AiSafetyGrade.NORMAL);
+
+		assertTrue(proceed);
+		assertEquals(AiJobStatus.PROCESSING, aiJobService.getJob(member.getId(), claimed.id()).status());
+	}
+
+	@Test
+	void applyInputSafetyGrade_restricted_blocksJobAndReturnsFalse() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+
+		boolean proceed = aiJobService.applyInputSafetyGrade(claimed.id(), claimed.startedAt(), AiSafetyGrade.RESTRICTED);
+
+		assertFalse(proceed);
+		assertEquals(AiJobStatus.BLOCKED, aiJobService.getJob(member.getId(), claimed.id()).status());
+	}
+
+	@Test
+	void applyInputSafetyGrade_crisis_marksSafetySupportAndReturnsFalse() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+
+		boolean proceed = aiJobService.applyInputSafetyGrade(claimed.id(), claimed.startedAt(), AiSafetyGrade.CRISIS);
+
+		assertFalse(proceed);
+		assertEquals(AiJobStatus.SAFETY_SUPPORT, aiJobService.getJob(member.getId(), claimed.id()).status());
 	}
 
 	@Test
