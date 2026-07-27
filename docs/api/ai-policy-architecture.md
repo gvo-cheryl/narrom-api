@@ -1086,16 +1086,17 @@ OpenAI가 처리할 본문을 별도의 암호문 상태로 보내면 모델이 
 
 **세분화(2026-07-27, 이슈 #26):** 7장 처리 흐름과 21장 실패 분리 원칙을 기준으로 아래 순서로 나눠 구현한다. 각 단계는 이전 단계의 저장 구조(2단계 V12 엔티티)에 의존하며, 4-C부터는 OpenAI 실제 연동이 필요해 별도 승인 대상이다.
 
-- [x] 4-A. AI 작업 골격(2026-07-27, 이슈 #26): `AiJobService` 구현 — 기록·대화 기준 작업 생성(멱등키로 중복 방지), 소유권 검증 조회, `markProcessing/markCompleted/markFailed/markBlocked/markSafetySupport` 상태 전이. 상태 전이는 사용자 요청이 아닌 내부 파이프라인 주체라 memberId 검증 없이 jobId로만 처리. 아직 컨트롤러·API 계약은 없음(승인된 공개 계약이 없어 이번 단계에서 추가하지 않음)
-- [ ] 4-B. 비동기 실행 방식 결정: 기록 저장 API 이후 AI 작업을 어떤 방식으로 트리거할지(`@Async`/스케줄러 폴링 vs 별도 큐·Redis) 결정. Redis는 `.env.example`에 자리만 있고 의존성 미설치 — 도입 여부는 별도 승인 필요
+- [x] 4-A. AI 작업 골격(2026-07-27, 이슈 #26): `AiJobService` 구현 — 기록·대화 기준 작업 생성(멱등키로 중복 방지), 소유권 검증 조회, 상태 전이. 4-B에서 claim/lease 방식으로 재구성됨(아래 참고). 아직 컨트롤러·API 계약은 없음(승인된 공개 계약이 없어 이번 단계에서 추가하지 않음)
+- [x] 4-B. 비동기 실행 방식(2026-07-27, 이슈 #26): Redis 미도입, PostgreSQL `ai_jobs` + `FOR UPDATE SKIP LOCKED` 네이티브 쿼리로 큐 선점(`AiJobRepository.selectClaimableIds`), JPA lock 타임아웃 특수값 미사용. `naroom.ai.worker.enabled`로 활성화되는 `AiJobLeaseReclaimScheduler`가 `started_at` 기준 만료 임대를 회수(설정값 `lease-timeout`, 회수도 attempt_count에 포함). 완료 처리(`completeJob/failJob/blockJob/markJobSafetySupport`)는 `PESSIMISTIC_WRITE`로 잠근 뒤 status+startedAt을 재검증해 만료된 워커의 결과 저장을 차단. 동시 Worker 통합 테스트(`AiJobClaimConcurrencyTest`)로 중복 선점 없음을 검증. 큐 선점을 실제로 트리거하는 스케줄러(claim→처리기 dispatch)는 처리기가 생기는 4-D에서 추가 — bounded 스레드풀도 그때 같이 도입(현재는 아무것도 소비하지 않는 실행기를 미리 만들지 않음)
 - [ ] 4-C. OpenAI 연동 준비: SDK 방식 결정(공식 SDK 신규 의존성 vs 기존 `RestClient` 기반 REST 호출), `OPENAI_API_KEY`/`OPENAI_MODEL` 값 관리 정책 확인. 신규 의존성·외부 서비스 연동이라 승인 필요
-- [ ] 4-D. 입력 Moderation 연동: `omni-moderation-latest` 호출, 8장 기준 차단·안전 지원 상태 분기
+- [ ] 4-D. 입력 Moderation 연동: `omni-moderation-latest` 호출, 8.1절 기준 문장형 입력 전체(체크인 문장·자유 기록·감정/감사 기록·자기정리·사용자 입력 감정명/태그명·AI 후속 대화 메시지)에 적용, 8장 기준 차단·안전 지원 상태 분기. 태그·부적절 표현에 한정되지 않음
 - [ ] 4-E. 기능별 프롬프트 조립기: 14장 5단계 조립 구조(공통 지침·기능별 지침·회원 선호도·현재 맥락·출력 스키마)를 `ai_prompt_versions` 기준으로 구현
-- [ ] 4-F. Structured Output 스키마 + 백엔드 코드·ID 검증: 9장 기준 JSON Schema 정의, 저장값 검증·중복 제거·코드 매핑
-- [ ] 4-G. 출력 Moderation + 결과 저장: `ai_reflections`/`ai_generation_runs`에 결과·토큰·프롬프트 버전 저장
-- [ ] 4-H. 재시도·멱등성·상태 전이 마무리: 21장 기준 자동 재시도(네트워크·일시 오류만, 지수 백오프)와 사용자 재생성 카운트 분리
+- [ ] 4-F. Responses API 호출(store:false): 5.1/5.2절 기준 모든 생성 호출(개별 기록 요약·감정 추출·태그 추천, 3일 회고, 주간 회고, 후속 대화 응답/요약 전부 포함)이 Responses API를 사용. 3일·주간회고 전용이 아님
+- [ ] 4-G. Structured Output 스키마 + 백엔드 코드·ID 검증: 9장 기준 JSON Schema 정의, 저장값 검증·중복 제거·코드 매핑
+- [ ] 4-H. 출력 Moderation + 결과 저장: 8.1절 기준 AI 응답·회고 결과 전체(3일·주간회고 결과 포함)에 적용, `ai_reflections`/`ai_generation_runs`에 결과·토큰·프롬프트 버전 저장
+- [ ] 4-I. 재시도·멱등성·상태 전이 마무리: 21장 기준 자동 재시도(네트워크·일시 오류만, 지수 백오프)와 사용자 재생성 카운트 분리
 
-원래 목록(비동기 AI 작업 생성 / 입력 Moderation / 기능별 프롬프트 조립기 / Structured Output 스키마 / 백엔드 코드·ID 검증 / 출력 Moderation / 결과·토큰·프롬프트 버전 저장 / 재시도·멱등성·상태 전이)은 위 4-A~4-H에 그대로 대응한다.
+원래 목록(비동기 AI 작업 생성 / 입력 Moderation / 기능별 프롬프트 조립기 / Structured Output 스키마 / 백엔드 코드·ID 검증 / 출력 Moderation / 결과·토큰·프롬프트 버전 저장 / 재시도·멱등성·상태 전이)은 위 4-A~4-I에 그대로 대응하며, Responses API 호출(4-F)을 프롬프트 조립과 Structured Output 검증 사이의 별도 단계로 분리했다(2026-07-27).
 
 ## 24.5 5단계: 사용자 경험
 
