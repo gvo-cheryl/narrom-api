@@ -41,6 +41,8 @@ dependencies {
 	runtimeOnly("org.flywaydb:flyway-database-postgresql")
 	runtimeOnly("org.postgresql:postgresql")
 
+	implementation("com.openai:openai-java:4.45.0")
+
 	/* Test */
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
@@ -51,12 +53,29 @@ dependencies {
 }
 
 tasks.withType<Test> {
-	useJUnitPlatform()
 	testLogging {
 		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 		showCauses = true
 		showStackTraces = true
 	}
+}
+
+// 실제 OpenAI API를 호출하는 테스트는 @Tag("openai-integration")로 표시하고 기본 test 태스크에서 제외한다.
+// 실행하려면 OPENAI_API_KEY가 실제로 설정된 환경에서 ./gradlew openaiIntegrationTest를 명시적으로 실행한다.
+tasks.named<Test>("test") {
+	useJUnitPlatform {
+		excludeTags("openai-integration")
+	}
+}
+
+tasks.register<Test>("openaiIntegrationTest") {
+	group = "verification"
+	description = "Runs tests tagged @Tag(\"openai-integration\") against the real OpenAI API. Requires a real OPENAI_API_KEY; not part of the default test task or CI."
+	useJUnitPlatform {
+		includeTags("openai-integration")
+	}
+	testClassesDirs = sourceSets["test"].output.classesDirs
+	classpath = sourceSets["test"].runtimeClasspath
 }
 
 val openApiDocsPort = 8099
