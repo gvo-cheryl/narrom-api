@@ -1,6 +1,9 @@
 package com.naroom.api.ai.prompt;
 
 import com.naroom.api.ai.domain.entity.AiFeatureType;
+import com.naroom.api.ai.result.EntryReflectionSchema;
+
+import java.util.Map;
 
 // 14.6절: 공통·기능별 지침은 외부 Dashboard의 변경 가능한 Prompt 객체가 아니라 여기(백엔드 코드)에서 버전 관리한다.
 // 지침 텍스트를 바꾸면 반드시 버전 라벨도 같이 올린다 - AiGenerationRun에 버전이 기록되어 이전 결과와 비교 평가에 쓰인다.
@@ -68,10 +71,17 @@ public final class AiInstructionCatalog {
 		};
 	}
 
-	// 4-G에서 실제 JSON Schema 객체를 정의하기 전까지는 버전 라벨만 기록한다.
 	public static String outputSchemaVersion(AiFeatureType featureType) {
 		return switch (featureType) {
 			case ENTRY_REFLECTION -> "entry-reflection-schema-v1";
+			default -> throw unsupported(featureType);
+		};
+	}
+
+	// 4-G: 실제 Structured Output JSON Schema. outputSchemaVersion()의 라벨과 짝을 이룬다.
+	public static Map<String, Object> outputSchema(AiFeatureType featureType) {
+		return switch (featureType) {
+			case ENTRY_REFLECTION -> EntryReflectionSchema.SCHEMA;
 			default -> throw unsupported(featureType);
 		};
 	}
