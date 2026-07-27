@@ -36,6 +36,10 @@ naroom:
       batch-size: ${AI_WORKER_BATCH_SIZE:20}
       lease-timeout: ${AI_WORKER_LEASE_TIMEOUT:5m}
       poll-interval: ${AI_WORKER_POLL_INTERVAL:30s}
+      executor:
+        core-size: ${AI_WORKER_EXECUTOR_CORE_SIZE:4}
+        max-size: ${AI_WORKER_EXECUTOR_MAX_SIZE:8}
+        queue-capacity: ${AI_WORKER_EXECUTOR_QUEUE_CAPACITY:100}
     openai:
       api-key: ${OPENAI_API_KEY:}
       model: ${OPENAI_MODEL:}

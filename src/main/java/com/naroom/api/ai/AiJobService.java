@@ -114,6 +114,12 @@ public class AiJobService {
 		return applyIfLeaseValid(jobId, leaseStartedAt, job -> job.markFailed(errorCode, nextRetryAt));
 	}
 
+	// 21.2절: 잘못된 입력·권한 오류·정책 차단은 자동 재시도하지 않는다.
+	@Transactional
+	public boolean failJobPermanently(UUID jobId, Instant leaseStartedAt, String errorCode) {
+		return applyIfLeaseValid(jobId, leaseStartedAt, job -> job.markFailedPermanently(errorCode, Instant.now()));
+	}
+
 	@Transactional
 	public boolean blockJob(UUID jobId, Instant leaseStartedAt) {
 		return applyIfLeaseValid(jobId, leaseStartedAt, job -> job.markBlocked(Instant.now()));

@@ -199,6 +199,24 @@ class AiJobServiceTest {
 	}
 
 	@Test
+	void failJobPermanently_setsAttemptCountToMaxAndIsNotReclaimable() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+
+		boolean applied = aiJobService.failJobPermanently(claimed.id(), claimed.startedAt(), "UNSUPPORTED_FEATURE_TYPE");
+
+		assertTrue(applied);
+		AiJobResponse failed = aiJobService.getJob(member.getId(), claimed.id());
+		assertEquals(AiJobStatus.FAILED, failed.status());
+		assertEquals(failed.maxAttempts(), failed.attemptCount());
+		assertEquals("UNSUPPORTED_FEATURE_TYPE", failed.errorCode());
+		assertFalse(aiJobService.claimNextBatch(10).stream().anyMatch(job -> job.id().equals(claimed.id())));
+	}
+
+	@Test
 	void blockJob_and_markJobSafetySupport_updateStatus() {
 		Member member = memberRepository.save(Member.create("지연"));
 		Entry entry = entryRepository.save(

@@ -110,6 +110,15 @@ public class AiJob {
 		this.nextRetryAt = nextRetryAt;
 	}
 
+	// 21.2절: 잘못된 입력·권한 오류·정책 차단은 자동 재시도하지 않는다. attemptCount를 즉시 maxAttempts로 올려
+	// selectClaimableIds의 attempt_count < max_attempts 조건에 걸리게 해서 더 이상 선점되지 않게 한다.
+	public void markFailedPermanently(String errorCode, Instant completedAt) {
+		this.status = AiJobStatus.FAILED;
+		this.errorCode = errorCode;
+		this.attemptCount = this.maxAttempts;
+		this.completedAt = completedAt;
+	}
+
 	public void markBlocked(Instant completedAt) {
 		this.status = AiJobStatus.BLOCKED;
 		this.completedAt = completedAt;

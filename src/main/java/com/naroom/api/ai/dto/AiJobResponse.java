@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public record AiJobResponse(
 		UUID id,
+		UUID memberId,
 		AiFeatureType featureType,
 		UUID entryId,
 		UUID conversationId,
@@ -24,6 +25,7 @@ public record AiJobResponse(
 	public static AiJobResponse from(AiJob job) {
 		return new AiJobResponse(
 				job.getId(),
+				job.getMember().getId(),
 				job.getFeatureType(),
 				job.getEntry() == null ? null : job.getEntry().getId(),
 				job.getConversation() == null ? null : job.getConversation().getId(),
