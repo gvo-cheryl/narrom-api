@@ -69,7 +69,10 @@ LifeTime은 타임라인·캘린더·감정/에너지 흐름·태그 탐색·기
 - [x] 3-C. 파이프라인 연결(2026-07-28). `PeriodReflectionService.generate()`가 3-A(자격 확인)를 거쳐 봉투 Entry·`PeriodReflection`(PENDING)·`PeriodReflectionEntry`(근거 연결)를 만들고 기존 `AiJobService.createForEntry()`를 그대로 재사용해 AiJob을 생성 — 같은 기간 재요청은 새로 만들지 않고 기존 회고를 반환(멱등, "주차당 1개" 유지). `PeriodReflectionJobProcessor`가 `EntryReflectionJobProcessor`와 동일한 구조로 입력/출력 Moderation·생성 호출·파싱·재시도 분류를 수행하고, `PeriodReflectionOutcomeService`가 완료/차단/위기 상태를 전이(단, PeriodReflection은 요청 시점에 이미 존재해 AiReflection처럼 새로 만들지 않고 조회만 함). `AiJobClaimScheduler`는 feature_type에 따라 두 처리기 중 하나로 분기. 두 OutcomeService가 공유하던 프롬프트 버전 get-or-create 로직은 `AiPromptVersionResolver`로 추출
 - [x] 3-D. 조회 API(2026-07-28). `POST /api/v1/lifetime/period-reflections`(body `{"featureType": "WEEKLY_REFLECTION"|"THREE_DAY_REFLECTION"}`)로 생성 요청 — 같은 기간이면 기존 결과를 그대로 반환(멱등), 그 외 `featureType`은 `LIFETIME_PERIOD_REFLECTION_FEATURE_TYPE_INVALID`로 거부. `GET /api/v1/lifetime/period-reflections/{id}`는 소유권 검증 후 조회. `PeriodReflectionResponse`는 `insights`(jsonb) 문자열을 `PeriodReflectionInsights`(반복된 감정과 상황/어려웠던 순간/감사한 일/시도한 대응/도움이 된 조건)로 파싱해 구조화된 필드로 응답 — `safetyCode`/`errorCode` 등 내부 판정 원인은 `EntryAiReflectionResponse`와 동일한 원칙으로 노출하지 않음
 
+## 4단계: 나의 정리 (완료, 2026-07-28)
+
+`CURRENT_SELF` 범위만 다룬다. `GET /api/v1/lifetime/personal-summaries/current`(없으면 `data: null`) / `PUT .../current`(새로 작성 — 이전 것은 archive하고 새 Entry+PersonalSummary를 만듦, 기존 글을 고치지 않음) / `GET /api/v1/lifetime/personal-summaries`(이력). `WEEKLY`/`MONTHLY`/`QUARTERLY`/`EXPERIMENT` 범위는 스키마상 이미 확장 가능하지만(1단계 설계) 이번 화면 범위 밖. 글자 수 제한은 §4 "생각 덧붙이기·사용자 자기정리" 행(1,000자)을 그대로 적용.
+
 ## 아직 구현되지 않은 것
 
-- 나의 정리 CRUD API
 - 감정·에너지 흐름, 태그 탐색 집계 API
