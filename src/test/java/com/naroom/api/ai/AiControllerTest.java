@@ -3,6 +3,7 @@ package com.naroom.api.ai;
 import com.naroom.api.account.domain.repository.AuthSessionRepository;
 import com.naroom.api.ai.domain.entity.AiFeedbackHelpfulness;
 import com.naroom.api.ai.domain.error.AiErrorCode;
+import com.naroom.api.ai.dto.AiFeedbackReportResponse;
 import com.naroom.api.ai.dto.AiFeedbackResponse;
 import com.naroom.api.auth.security.JwtTokenProvider;
 import com.naroom.api.auth.security.MemberAuthentication;
@@ -28,6 +29,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,6 +49,9 @@ class AiControllerTest {
 
 	@MockitoBean
 	private AiFeedbackService aiFeedbackService;
+
+	@MockitoBean
+	private AiFeedbackReportService aiFeedbackReportService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -138,6 +143,51 @@ class AiControllerTest {
 								"""))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.code").value("AI_FEEDBACK_NOT_FOUND"));
+	}
+
+	@Test
+	void reportGenerationRun_validRequest_returnsReport() throws Exception {
+		UUID generationRunId = UUID.randomUUID();
+		when(aiFeedbackReportService.report(any(), any(), eq("INAPPROPRIATE"), any()))
+				.thenReturn(new AiFeedbackReportResponse(
+						UUID.randomUUID(), generationRunId, "INAPPROPRIATE", "이상해요", Instant.now()));
+
+		mockMvc.perform(post("/api/v1/ai/generation-runs/" + generationRunId + "/reports")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{ "reasonCode": "INAPPROPRIATE", "comment": "이상해요" }
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.reasonCode").value("INAPPROPRIATE"))
+				.andExpect(jsonPath("$.data.generationRunId").value(generationRunId.toString()));
+	}
+
+	@Test
+	void reportGenerationRun_missingReasonCode_returnsValidationFailed() throws Exception {
+		mockMvc.perform(post("/api/v1/ai/generation-runs/" + UUID.randomUUID() + "/reports")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{}
+								"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	@Test
+	void reportGenerationRun_generationRunNotFound_returnsProblemDetail() throws Exception {
+		when(aiFeedbackReportService.report(any(), any(), any(), any()))
+				.thenThrow(new BusinessException(AiErrorCode.GENERATION_RUN_NOT_FOUND));
+
+		mockMvc.perform(post("/api/v1/ai/generation-runs/" + UUID.randomUUID() + "/reports")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{ "reasonCode": "INAPPROPRIATE" }
+								"""))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("AI_GENERATION_RUN_NOT_FOUND"));
 	}
 
 	private AiFeedbackResponse sampleFeedback(

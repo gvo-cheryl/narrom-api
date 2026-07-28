@@ -1,6 +1,8 @@
 package com.naroom.api.ai;
 
 import com.naroom.api.ai.dto.AiFeedbackLongTermRequest;
+import com.naroom.api.ai.dto.AiFeedbackReportCreateRequest;
+import com.naroom.api.ai.dto.AiFeedbackReportResponse;
 import com.naroom.api.ai.dto.AiFeedbackResponse;
 import com.naroom.api.ai.dto.AiFeedbackSubmitRequest;
 import com.naroom.api.auth.security.MemberAuthentication;
@@ -9,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,9 +24,11 @@ import java.util.UUID;
 public class AiController {
 
 	private final AiFeedbackService aiFeedbackService;
+	private final AiFeedbackReportService aiFeedbackReportService;
 
-	public AiController(AiFeedbackService aiFeedbackService) {
+	public AiController(AiFeedbackService aiFeedbackService, AiFeedbackReportService aiFeedbackReportService) {
 		this.aiFeedbackService = aiFeedbackService;
+		this.aiFeedbackReportService = aiFeedbackReportService;
 	}
 
 	@PutMapping("/generation-runs/{generationRunId}/feedback")
@@ -38,6 +43,13 @@ public class AiController {
 			@PathVariable UUID generationRunId, @Valid @RequestBody AiFeedbackLongTermRequest request) {
 		return ApiResponse.of(aiFeedbackService.confirmLongTermApplication(
 				currentMemberId(), generationRunId, request.applyLongTerm()));
+	}
+
+	@PostMapping("/generation-runs/{generationRunId}/reports")
+	public ApiResponse<AiFeedbackReportResponse> reportGenerationRun(
+			@PathVariable UUID generationRunId, @Valid @RequestBody AiFeedbackReportCreateRequest request) {
+		return ApiResponse.of(aiFeedbackReportService.report(
+				currentMemberId(), generationRunId, request.reasonCode(), request.comment()));
 	}
 
 	// JwtAuthenticationFilter가 SecurityContextHolder에 직접 채워 넣는 방식이라 여기서도 직접 꺼낸다

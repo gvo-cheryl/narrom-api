@@ -365,6 +365,31 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseKakaoLoginResponse"
+  /api/v1/ai/generation-runs/{generationRunId}/reports:
+    post:
+      tags:
+      - ai-controller
+      operationId: reportGenerationRun
+      parameters:
+      - name: generationRunId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiFeedbackReportCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAiFeedbackReportResponse"
   /api/v1/account/onboarding/complete:
     post:
       tags:
@@ -1148,6 +1173,38 @@ components:
           enum:
           - COMPLETE_ONBOARDING
           - ENTER_APP
+    AiFeedbackReportCreateRequest:
+      type: object
+      properties:
+        reasonCode:
+          type: string
+          maxLength: 50
+          minLength: 0
+        comment:
+          type: string
+      required:
+      - reasonCode
+    AiFeedbackReportResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        generationRunId:
+          type: string
+          format: uuid
+        reasonCode:
+          type: string
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ApiResponseAiFeedbackReportResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AiFeedbackReportResponse"
     ConsentRequest:
       type: object
       properties:
