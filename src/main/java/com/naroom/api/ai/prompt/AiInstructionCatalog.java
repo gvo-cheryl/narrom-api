@@ -2,6 +2,7 @@ package com.naroom.api.ai.prompt;
 
 import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.ai.result.EntryReflectionSchema;
+import com.naroom.api.ai.result.PeriodReflectionSchema;
 
 import java.util.Map;
 
@@ -57,9 +58,50 @@ public final class AiInstructionCatalog {
 			- 안전 분류 상태(safetyStatus)
 			""";
 
+	// L6 화면 흐름(§24.5 5-F, 이슈 #21 3단계)을 지침으로 옮긴 것. 3일/주간 회고는 같은 형식·기간만 다르므로
+	// (§3.2) 출력 스키마는 공유하되, 기간 표현과 "근거가 적을 때" 안내 문구만 다르게 둔다.
+	private static final String WEEKLY_REFLECTION_INSTRUCTIONS = """
+			지금 정리할 것은 사용자의 지난 한 주(월요일부터 일요일까지) 기록이다. 여러 날에 걸친 기록이므로
+			하루짜리 감정 상태를 일반화하지 않는다.
+
+			다음을 한 번의 응답으로 함께 제공한다:
+			- 이번 주 기록을 종합한 요약(summary)
+			- 반복해서 나타난 감정과 상황(repeatedEmotionsAndSituations) - 한두 번뿐인 것은 반복으로 단정하지 않는다
+			- 어려웠던 순간(difficultMoments)
+			- 감사하거나 다행이었던 일(gratefulMoments)
+			- 사용자가 실제로 시도한 대응(triedResponses)
+			- 도움이 되었던 조건(helpfulConditions)
+			- 사용자가 스스로 생각해볼 후속 질문 1개(reflectionQuestion)
+			- 분석의 근거가 된 기록 ID(evidenceEntryIds)
+			- 안전 분류 상태(safetyStatus)
+
+			근거 기록이 적을 때(3건 안팎)는 패턴을 단정하지 말고, 판단할 근거가 아직 충분하지 않다는 점을
+			summary에서 솔직하게 밝힌다.
+			""";
+
+	private static final String THREE_DAY_REFLECTION_INSTRUCTIONS = """
+			지금 정리할 것은 사용자의 최근 3일간 기록이다. 짧은 관찰 구간이므로 장기 패턴이나 성격처럼 말하지 않는다.
+
+			다음을 한 번의 응답으로 함께 제공한다:
+			- 최근 3일 기록을 종합한 요약(summary)
+			- 반복해서 나타난 감정과 상황(repeatedEmotionsAndSituations) - 3일뿐이므로 반복 단정에 특히 신중할 것
+			- 어려웠던 순간(difficultMoments)
+			- 감사하거나 다행이었던 일(gratefulMoments)
+			- 사용자가 실제로 시도한 대응(triedResponses)
+			- 도움이 되었던 조건(helpfulConditions)
+			- 사용자가 스스로 생각해볼 후속 질문 1개(reflectionQuestion)
+			- 분석의 근거가 된 기록 ID(evidenceEntryIds)
+			- 안전 분류 상태(safetyStatus)
+
+			근거 기록이 1~2건처럼 적을 때는 지금은 짧게만 살펴볼 수 있다는 점을 summary에서 솔직하게 밝히고,
+			성급한 결론을 내지 않는다.
+			""";
+
 	public static String featureInstructionsVersion(AiFeatureType featureType) {
 		return switch (featureType) {
 			case ENTRY_REFLECTION -> "entry-reflection-v1";
+			case WEEKLY_REFLECTION -> "weekly-reflection-v1";
+			case THREE_DAY_REFLECTION -> "three-day-reflection-v1";
 			default -> throw unsupported(featureType);
 		};
 	}
@@ -67,6 +109,8 @@ public final class AiInstructionCatalog {
 	public static String featureInstructions(AiFeatureType featureType) {
 		return switch (featureType) {
 			case ENTRY_REFLECTION -> ENTRY_REFLECTION_INSTRUCTIONS;
+			case WEEKLY_REFLECTION -> WEEKLY_REFLECTION_INSTRUCTIONS;
+			case THREE_DAY_REFLECTION -> THREE_DAY_REFLECTION_INSTRUCTIONS;
 			default -> throw unsupported(featureType);
 		};
 	}
@@ -74,6 +118,7 @@ public final class AiInstructionCatalog {
 	public static String outputSchemaVersion(AiFeatureType featureType) {
 		return switch (featureType) {
 			case ENTRY_REFLECTION -> "entry-reflection-schema-v1";
+			case WEEKLY_REFLECTION, THREE_DAY_REFLECTION -> "period-reflection-schema-v1";
 			default -> throw unsupported(featureType);
 		};
 	}
@@ -82,13 +127,14 @@ public final class AiInstructionCatalog {
 	public static Map<String, Object> outputSchema(AiFeatureType featureType) {
 		return switch (featureType) {
 			case ENTRY_REFLECTION -> EntryReflectionSchema.SCHEMA;
+			case WEEKLY_REFLECTION, THREE_DAY_REFLECTION -> PeriodReflectionSchema.SCHEMA;
 			default -> throw unsupported(featureType);
 		};
 	}
 
 	private static UnsupportedOperationException unsupported(AiFeatureType featureType) {
 		return new UnsupportedOperationException(
-				featureType + " 기능 지침은 아직 준비되지 않았습니다(4-E는 ENTRY_REFLECTION만 지원, 3일/주간 회고는 다음 단계)");
+				featureType + " 기능 지침은 아직 준비되지 않았습니다(ENTRY_REFLECTION/WEEKLY_REFLECTION/THREE_DAY_REFLECTION만 지원)");
 	}
 
 	private AiInstructionCatalog() {

@@ -1,8 +1,13 @@
 package com.naroom.api.ai.prompt;
 
+import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
+import com.naroom.api.ai.domain.entity.AiReflection;
 import com.naroom.api.ai.domain.entity.MemberAiPreference;
+import com.naroom.api.ai.domain.repository.AiReflectionRepository;
 import com.naroom.api.ai.domain.repository.MemberAiPreferenceRepository;
+import com.naroom.api.checkin.domain.entity.CheckIn;
+import com.naroom.api.checkin.domain.repository.CheckInRepository;
 import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.record.domain.entity.Entry;
 import com.naroom.api.record.domain.entity.EntrySelfReflection;
@@ -16,7 +21,12 @@ import com.naroom.api.record.domain.repository.EntryTagRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,20 +36,28 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class PromptAssembler {
 
+	private static final Set<TagState> CONFIRMED_TAG_STATES = EnumSet.of(TagState.CONFIRMED, TagState.SYSTEM);
+
 	private final EntryRepository entryRepository;
 	private final EntryTagRepository entryTagRepository;
 	private final EntrySelfReflectionRepository entrySelfReflectionRepository;
 	private final MemberAiPreferenceRepository memberAiPreferenceRepository;
+	private final CheckInRepository checkInRepository;
+	private final AiReflectionRepository aiReflectionRepository;
 
 	public PromptAssembler(
 			EntryRepository entryRepository,
 			EntryTagRepository entryTagRepository,
 			EntrySelfReflectionRepository entrySelfReflectionRepository,
-			MemberAiPreferenceRepository memberAiPreferenceRepository) {
+			MemberAiPreferenceRepository memberAiPreferenceRepository,
+			CheckInRepository checkInRepository,
+			AiReflectionRepository aiReflectionRepository) {
 		this.entryRepository = entryRepository;
 		this.entryTagRepository = entryTagRepository;
 		this.entrySelfReflectionRepository = entrySelfReflectionRepository;
 		this.memberAiPreferenceRepository = memberAiPreferenceRepository;
+		this.checkInRepository = checkInRepository;
+		this.aiReflectionRepository = aiReflectionRepository;
 	}
 
 	public AssembledPrompt assembleForEntryReflection(UUID entryId) {
@@ -72,6 +90,45 @@ public class PromptAssembler {
 	// 확인 전이고 REJECTED는 사용자가 거부한 것이라 둘 다 현재 맥락에 포함하지 않는다.
 	private boolean isConfirmed(EntryTag entryTag) {
 		return entryTag.getState() == TagState.CONFIRMED || entryTag.getState() == TagState.SYSTEM;
+	}
+
+	// 3단계 3-B: §12.3 우선순위(1.사용자 선택 감정·강도 2.에너지 3.확정 태그 4.자기정리 5.개별 기록 AI 요약
+	// 6.도움이 된 행동 7.선별 원문 8.근거 entryId 9.회원 선호도)를 따르되, 1차 구현이라 6(도움이 된 행동 평가)과
+	// 7의 정교한 선별은 적용하지 않는다 - evidenceEntries 전체(3-A가 이미 "발행된 기록 전부"로 단순화한 것)를
+	// 원문으로 포함하고, 회원 선호도는 기존 buildPreferenceInstructions를 그대로 재사용한다.
+	public AssembledPrompt assembleForPeriodReflection(
+			Member member, AiFeatureType featureType, LocalDate periodStart, LocalDate periodEnd, List<Entry> evidenceEntries) {
+		List<UUID> entryIds = evidenceEntries.stream().map(Entry::getId).toList();
+
+		List<CheckIn> checkIns = checkInRepository.findByMember_IdAndCheckInDateBetween(member.getId(), periodStart, periodEnd);
+
+		Map<UUID, List<EntryTag>> confirmedTagsByEntry = entryTagRepository
+				.findByEntry_IdInAndStateIn(entryIds, CONFIRMED_TAG_STATES).stream()
+				.collect(Collectors.groupingBy(tag -> tag.getEntry().getId()));
+
+		Map<UUID, List<EntrySelfReflection>> selfReflectionsByEntry = entrySelfReflectionRepository
+				.findByEntry_IdIn(entryIds).stream()
+				.collect(Collectors.groupingBy(reflection -> reflection.getEntry().getId()));
+
+		Map<UUID, String> aiSummaryByEntry = aiReflectionRepository.findByEntry_IdIn(entryIds).stream()
+				.filter(reflection -> reflection.getReflectionText() != null)
+				.collect(Collectors.toMap(
+						reflection -> reflection.getEntry().getId(),
+						AiReflection::getReflectionText,
+						(first, second) -> second));
+
+		MemberAiPreference preference = memberAiPreferenceRepository.findByMember_Id(member.getId()).orElse(null);
+
+		return new AssembledPrompt(
+				AiInstructionCatalog.COMMON_INSTRUCTIONS_VERSION,
+				AiInstructionCatalog.COMMON_INSTRUCTIONS,
+				AiInstructionCatalog.featureInstructionsVersion(featureType),
+				AiInstructionCatalog.featureInstructions(featureType),
+				buildPreferenceInstructions(preference),
+				buildPeriodContextContent(
+						periodStart, periodEnd, checkIns, evidenceEntries,
+						confirmedTagsByEntry, selfReflectionsByEntry, aiSummaryByEntry),
+				AiInstructionCatalog.outputSchemaVersion(featureType));
 	}
 
 	// 14.3절: 회원 선호도는 공통 안전 규칙(금지 원칙)보다 우선할 수 없다. 이 레이어는 스타일 지시만 담고,
@@ -120,6 +177,55 @@ public class PromptAssembler {
 		if (!selfReflections.isEmpty()) {
 			sb.append("[사용자가 직접 작성한 자기정리]\n");
 			selfReflections.forEach(reflection -> sb.append("- ").append(reflection.getContent()).append('\n'));
+		}
+		return sb.toString();
+	}
+
+	private String buildPeriodContextContent(
+			LocalDate periodStart,
+			LocalDate periodEnd,
+			List<CheckIn> checkIns,
+			List<Entry> evidenceEntries,
+			Map<UUID, List<EntryTag>> confirmedTagsByEntry,
+			Map<UUID, List<EntrySelfReflection>> selfReflectionsByEntry,
+			Map<UUID, String> aiSummaryByEntry) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("[기간] ").append(periodStart).append(" ~ ").append(periodEnd).append('\n');
+
+		// §12.3 우선순위 1~2: 사용자가 직접 선택한 감정 강도·에너지 수치.
+		if (!checkIns.isEmpty()) {
+			sb.append("[체크인 감정·에너지 추이]\n");
+			checkIns.stream()
+					.sorted(Comparator.comparing(CheckIn::getCheckInDate))
+					.forEach(checkIn -> sb.append("- ")
+							.append(checkIn.getCheckInDate())
+							.append(": 감정 강도=").append(checkIn.getEmotionIntensity())
+							.append(", 에너지=").append(checkIn.getEnergyLevel())
+							.append('\n'));
+		}
+
+		for (Entry entry : evidenceEntries) {
+			sb.append("[기록 ").append(entry.getRecordDate()).append(" / ").append(entry.getEntryType())
+					.append(" / id=").append(entry.getId()).append("]\n");
+			if (entry.getBody() != null && !entry.getBody().isBlank()) {
+				sb.append(entry.getBody()).append('\n');
+			}
+			List<EntryTag> confirmedTags = confirmedTagsByEntry.getOrDefault(entry.getId(), List.of());
+			if (!confirmedTags.isEmpty()) {
+				sb.append("  확정 태그: ")
+						.append(confirmedTags.stream().map(tag -> tag.getTag().getName()).collect(Collectors.joining(", ")))
+						.append('\n');
+			}
+			String aiSummary = aiSummaryByEntry.get(entry.getId());
+			if (aiSummary != null) {
+				sb.append("  개별 기록 AI 요약: ").append(aiSummary).append('\n');
+			}
+			List<EntrySelfReflection> selfReflections = selfReflectionsByEntry.getOrDefault(entry.getId(), List.of());
+			if (!selfReflections.isEmpty()) {
+				sb.append("  사용자가 직접 작성한 자기정리: ")
+						.append(selfReflections.stream().map(EntrySelfReflection::getContent).collect(Collectors.joining(" / ")))
+						.append('\n');
+			}
 		}
 		return sb.toString();
 	}
