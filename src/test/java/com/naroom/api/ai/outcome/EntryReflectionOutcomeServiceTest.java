@@ -12,16 +12,25 @@ import com.naroom.api.ai.domain.repository.AiGenerationRunRepository;
 import com.naroom.api.ai.domain.repository.AiPromptVersionRepository;
 import com.naroom.api.ai.domain.repository.AiReflectionRepository;
 import com.naroom.api.ai.dto.AiJobResponse;
+import com.naroom.api.ai.result.EmotionCandidateResult;
 import com.naroom.api.ai.result.EntryReflectionResult;
 import com.naroom.api.record.domain.entity.Entry;
+import com.naroom.api.record.domain.entity.EntryTag;
 import com.naroom.api.record.domain.entity.EntryType;
+import com.naroom.api.record.domain.entity.Tag;
+import com.naroom.api.record.domain.entity.TagCategory;
+import com.naroom.api.record.domain.entity.TagInitiator;
+import com.naroom.api.record.domain.entity.TagState;
 import com.naroom.api.record.domain.repository.EntryRepository;
+import com.naroom.api.record.domain.repository.EntryTagRepository;
+import com.naroom.api.record.domain.repository.TagRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -29,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @Transactional
@@ -55,6 +65,70 @@ class EntryReflectionOutcomeServiceTest {
 
 	@Autowired
 	private AiPromptVersionRepository aiPromptVersionRepository;
+
+	@Autowired
+	private TagRepository tagRepository;
+
+	@Autowired
+	private EntryTagRepository entryTagRepository;
+
+	@Test
+	void persist_normalOutputWithMappedCandidates_createsSuggestedEntryTags() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		Tag emotionTag = tagRepository.save(Tag.createSystemTag(TagCategory.EMOTION, "답답함-" + System.nanoTime(), "답답함-" + System.nanoTime()));
+		Tag situationTag = tagRepository.save(Tag.createSystemTag(TagCategory.SITUATION, "직장-" + System.nanoTime(), "직장-" + System.nanoTime()));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+		EntryReflectionResult parsedResult = new EntryReflectionResult(
+				"요약",
+				List.of(new EmotionCandidateResult(emotionTag.getName(), new BigDecimal("0.8"), emotionTag)),
+				List.of(situationTag),
+				List.of(),
+				"질문",
+				List.of(entry.getId()),
+				AiSafetyGrade.NORMAL);
+		EntryReflectionGenerationContext context = new EntryReflectionGenerationContext(
+				claimed.id(), claimed.startedAt(), entry.getId(), 1, "gpt-5.6-luna",
+				"v-" + System.nanoTime() + "-common", "v-feature", "v-schema",
+				AiSafetyGrade.NORMAL, AiSafetyGrade.NORMAL,
+				new GenerationResult("{}", 120, 40), parsedResult, 850);
+
+		outcomeService.persist(context);
+
+		List<EntryTag> entryTags = entryTagRepository.findByEntry_Id(entry.getId());
+		assertEquals(2, entryTags.size());
+		assertTrue(entryTags.stream().allMatch(tag -> tag.getState() == TagState.SUGGESTED));
+		assertTrue(entryTags.stream().allMatch(tag -> tag.getInitiatedBy() == TagInitiator.AI_INFERRED));
+		assertTrue(entryTags.stream().anyMatch(tag -> tag.getTag().getId().equals(emotionTag.getId())
+				&& new BigDecimal("0.8").compareTo(tag.getConfidence()) == 0));
+		assertTrue(entryTags.stream().anyMatch(tag -> tag.getTag().getId().equals(situationTag.getId())));
+	}
+
+	@Test
+	void persist_normalOutputCalledTwice_doesNotDuplicateSuggestedEntryTags() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		Tag emotionTag = tagRepository.save(Tag.createSystemTag(TagCategory.EMOTION, "답답함-" + System.nanoTime(), "답답함-" + System.nanoTime()));
+		EntryReflectionResult parsedResult = new EntryReflectionResult(
+				"요약", List.of(new EmotionCandidateResult(emotionTag.getName(), new BigDecimal("0.5"), emotionTag)),
+				List.of(), List.of(), "질문", List.of(entry.getId()), AiSafetyGrade.NORMAL);
+
+		for (int i = 0; i < 2; i++) {
+			aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + i + "-" + System.nanoTime());
+			AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+			EntryReflectionGenerationContext context = new EntryReflectionGenerationContext(
+					claimed.id(), claimed.startedAt(), entry.getId(), i + 1, "gpt-5.6-luna",
+					"v-" + System.nanoTime() + "-common", "v-feature", "v-schema",
+					AiSafetyGrade.NORMAL, AiSafetyGrade.NORMAL,
+					new GenerationResult("{}", 120, 40), parsedResult, 850);
+			outcomeService.persist(context);
+		}
+
+		assertEquals(1, entryTagRepository.findByEntry_Id(entry.getId()).size());
+	}
 
 	@Test
 	void persist_normalOutput_completesReflectionAndJob() {
