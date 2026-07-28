@@ -75,6 +75,16 @@ public enum RecordErrorCode implements ErrorCode {
 			"삭제되었거나 존재하지 않는 자기회고입니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	CALENDAR_MONTH_INVALID(
+			HttpStatus.BAD_REQUEST,
+			"RECORD_CALENDAR_MONTH_INVALID",
+			"urn:naroom:problem:record-calendar-month-invalid",
+			"요청 내용을 확인해 주세요",
+			"month는 1에서 12 사이여야 합니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

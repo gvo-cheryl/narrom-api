@@ -19,4 +19,10 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
 
 	List<Entry> findByMember_IdAndRecordDateOrderByCreatedAtDesc(UUID memberId, LocalDate recordDate);
 
+	List<Entry> findByMember_IdAndRecordDateBetweenOrderByRecordDateDescCreatedAtDesc(
+			UUID memberId, LocalDate start, LocalDate end);
+
+	List<Entry> findByMember_IdAndEntryTypeAndRecordDateBetweenOrderByRecordDateDescCreatedAtDesc(
+			UUID memberId, EntryType entryType, LocalDate start, LocalDate end);
+
 }

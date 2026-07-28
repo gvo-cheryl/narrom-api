@@ -105,6 +105,7 @@ paths:
           - QUOTE_REFLECTION
           - EXPERIMENT_MISSION
           - EXPERIMENT_REVIEW
+          - THREE_DAY_REFLECTION
           - WEEKLY_REFLECTION
           - SELF_SUMMARY
       - name: recordDate
@@ -601,6 +602,73 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseEntryAiReflectionResponse"
+  /api/v1/lifetime/timeline:
+    get:
+      tags:
+      - lifetime-controller
+      operationId: getTimeline
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: entryType
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - FREE
+          - CHECK_IN
+          - GRATITUDE
+          - EMOTION
+          - PROMPT
+          - QUOTE_REFLECTION
+          - EXPERIMENT_MISSION
+          - EXPERIMENT_REVIEW
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - SELF_SUMMARY
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEntryTimelineResponse"
+  /api/v1/lifetime/calendar:
+    get:
+      tags:
+      - lifetime-controller
+      operationId: getCalendar
+      parameters:
+      - name: year
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: month
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListCalendarDayResponse"
   /api/v1/health:
     get:
       tags:
@@ -907,6 +975,7 @@ components:
           - QUOTE_REFLECTION
           - EXPERIMENT_MISSION
           - EXPERIMENT_REVIEW
+          - THREE_DAY_REFLECTION
           - WEEKLY_REFLECTION
           - SELF_SUMMARY
         title:
@@ -953,6 +1022,7 @@ components:
           - QUOTE_REFLECTION
           - EXPERIMENT_MISSION
           - EXPERIMENT_REVIEW
+          - THREE_DAY_REFLECTION
           - WEEKLY_REFLECTION
           - SELF_SUMMARY
         status:
@@ -1395,6 +1465,83 @@ components:
         completedAt:
           type: string
           format: date-time
+    ApiResponseListEntryTimelineResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryTimelineResponse"
+    EntryTimelineResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        entryType:
+          type: string
+          enum:
+          - FREE
+          - CHECK_IN
+          - GRATITUDE
+          - EMOTION
+          - PROMPT
+          - QUOTE_REFLECTION
+          - EXPERIMENT_MISSION
+          - EXPERIMENT_REVIEW
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - SELF_SUMMARY
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+        title:
+          type: string
+        body:
+          type: string
+        recordDate:
+          type: string
+          format: date
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryTagResponse"
+        aiStatus:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - COMPLETED
+          - BLOCKED
+          - SAFETY_SUPPORT
+          - FAILED
+        hasSelfReflection:
+          type: boolean
+        publishedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    ApiResponseListCalendarDayResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarDayResponse"
+    CalendarDayResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        hasEntry:
+          type: boolean
+        hasCheckIn:
+          type: boolean
     ApiResponseHealthResponse:
       type: object
       properties:

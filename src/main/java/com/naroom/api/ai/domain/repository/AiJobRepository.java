@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,6 +21,9 @@ public interface AiJobRepository extends JpaRepository<AiJob, UUID> {
 
 	// 재생성으로 같은 기록에 작업이 여러 개 생겨도(4-I/4-J 이후) 항상 가장 최근 것을 상태 조회에 쓴다.
 	Optional<AiJob> findFirstByEntry_IdOrderByCreatedAtDesc(UUID entryId);
+
+	// 타임라인 배치 조회용: 기록별 최신 작업만 골라야 하므로 오름차순으로 가져와 호출부에서 마지막 값으로 덮어쓴다.
+	List<AiJob> findByEntry_IdInOrderByCreatedAtAsc(Collection<UUID> entryIds);
 
 	// 완료 처리 직전 단일 행을 잠가 lease(startedAt) 재검증에 쓴다. SKIP LOCKED 특수 타임아웃 값에 의존하지 않는
 	// 일반적인 PESSIMISTIC_WRITE라서, 같은 작업을 동시에 완료 처리하려는 요청끼리는 안전하게 직렬화된다.
