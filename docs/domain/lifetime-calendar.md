@@ -58,8 +58,18 @@ LifeTime은 타임라인·캘린더·감정/에너지 흐름·태그 탐색·기
 - Calendar/Timeline은 새 도메인 패키지 없이 `com.naroom.api.lifetime`에 두되, 엔드포인트는 `/api/v1/lifetime/*`로 통일(coverage-checklist가 제안했던 `/record/calendar` 등은 잠정안이라 그대로 쓰지 않음 — LifeTime이라는 상위 도메인 이름과 일치시킴).
 - 배치 조회 성능을 위해 `EntryTagRepository`/`AiJobRepository`/`EntrySelfReflectionRepository`에 `_IdIn` 계열 메서드 추가(엔트리 목록당 N+1 방지).
 
+## 3단계: 기간별 회고 파이프라인 (진행 중, 이슈 #30)
+
+**최소 기록 수 결정(2026-07-28):** PRD §13이 "주간 회고를 제공하기 위한 최소 기록 수는 몇 개인가?"를 열린 질문으로 남겨뒀던 것에 대한 답 — 주간 회고 3건, 3일 회고 1건. 3일 회고는 근거가 1건뿐이어도 진행하되, 응답 품질이 제한적일 수 있다는 것은 AI 지침 차원에서 스스로 밝히게 한다(3-B에서 반영).
+
+**3일 회고 기간 경계(2026-07-28):** 달력 고정 블록이 아니라 요청 시점 기준 롤링 윈도우(오늘 포함 최근 3일) — 매일 요청 가능. 주간 회고는 가장 최근에 완전히 끝난 ISO 주(월~일)로 계산해 "주차당 1개"를 자연스럽게 만족시킨다.
+
+- [x] 3-A. 기간 계산(`PeriodCalculator`) + 자격 확인·근거 기록 선별(`PeriodReflectionEligibilityService`, `LifetimeErrorCode`). §12.4의 정교한 선별 기준(변화량 큰 기록, 편향 방지 무작위 표본 등)은 이번 1차 구현에서는 적용하지 않고 "기간 내 발행된 기록 전부"로 단순화 — 다음 반복 과제로 남김. 회고 봉투 자체(`WEEKLY_REFLECTION`/`THREE_DAY_REFLECTION`)와 `SELF_SUMMARY`는 근거에서 제외
+- [ ] 3-B. 기간별 프롬프트 조립 + 출력 스키마·파서
+- [ ] 3-C. 파이프라인 연결(생성 요청, 처리기, 결과 저장) + 근거 기록 연결
+- [ ] 3-D. 조회 API
+
 ## 아직 구현되지 않은 것
 
-- 기간별 회고 생성·조회 API 및 AI 파이프라인 연동(§24.5 5-F)
 - 나의 정리 CRUD API
 - 감정·에너지 흐름, 태그 탐색 집계 API
