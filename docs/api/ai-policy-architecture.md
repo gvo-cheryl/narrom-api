@@ -1111,7 +1111,7 @@ OpenAI가 처리할 본문을 별도의 암호문 상태로 보내면 모델이 
 **세분화(2026-07-28, 이슈 #26):** 아래 순서로 나눠 구현한다. 5-A가 나머지 항목의 기반이라 먼저 진행한다.
 
 - [x] 5-A. AI 처리 중·실패·안전 화면(2026-07-28, 이슈 #26): `GET /api/v1/record/entries/{entryId}/ai-reflection`. `AiJob`(진행 상태 근거)과 `AiReflection`(완료 후에만 존재하는 결과 내용)을 조합해 응답. `status`가 없으면 아직 AI 작업이 생성되지 않은 것(커밋 직후의 아주 짧은 시점이거나 `aiProcessingAllowed=false`). 내부 실패 원인(`errorCode`, 예외 클래스명 등)은 공개 응답에 노출하지 않음(21.3절: "다시 시도" 안내로 충분)
-- [ ] 5-B. 감정·태그 후보 확인: `GET/POST/confirm/reject .../tags` API는 이미 있음(record 도메인). **빠진 부분**: AI가 만든 감정·태그 후보(`EntryReflectionResult.emotionCandidates`/`suggestedTags`)를 실제 `EntryTag`(SUGGESTED, `AI_INFERRED`)로 저장하는 코드가 없음 — `EntryTag.suggestByAi(...)` 팩토리는 2단계에서 이미 있음. `EntryReflectionOutcomeService`/파이프라인에 연결 필요
+- [x] 5-B. 감정·태그 후보 확인(2026-07-28, 이슈 #26): `EntryReflectionOutcomeService.applyOutcome()`의 NORMAL 분기(`completeJob` 직후)에서 `EntryReflectionResult.emotionCandidates`(매핑된 것만) / `suggestedTags`를 실제 `EntryTag`(SUGGESTED, `AI_INFERRED`)로 저장. 매칭되지 않은 감정 후보는 표준 태그가 아니므로 저장하지 않음. 같은 `(entry, tag)` 조합이 이미 있으면 건너뛰어 재시도/중복 실행 시에도 멱등. 기존 `GET/POST/confirm/reject .../tags` API(record 도메인)가 이 데이터를 그대로 다룸
 - [ ] 5-C. AI 사용 여부: `Entry.aiProcessingAllowed`/`disallowAiProcessing()`은 있으나 호출하는 API가 없음(다시 허용하는 메서드도 없음 - 필요 시 추가)
 - [ ] 5-D. 만족도와 장기 반영 선택: `AiFeedback` 엔티티는 2단계에서 이미 있음(`rate`, `confirmLongTermApplication`). 서비스·API 없음
 - [ ] 5-E. AI 응답 신고: `AiFeedbackReport` 엔티티는 2단계에서 이미 있음(`create`). 서비스·API 없음
