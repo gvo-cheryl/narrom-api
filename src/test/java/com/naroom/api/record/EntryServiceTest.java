@@ -179,6 +179,32 @@ class EntryServiceTest {
 	}
 
 	@Test
+	void updateAiProcessingAllowed_disallow_thenAllow_togglesFlag() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+
+		EntryResponse disallowed = entryService.updateAiProcessingAllowed(member.getId(), entry.getId(), false);
+		EntryResponse allowed = entryService.updateAiProcessingAllowed(member.getId(), entry.getId(), true);
+
+		assertEquals(false, disallowed.aiProcessingAllowed());
+		assertEquals(true, allowed.aiProcessingAllowed());
+	}
+
+	@Test
+	void updateAiProcessingAllowed_notOwnedByMember_throwsEntryNotFound() {
+		Member owner = memberRepository.save(Member.create("소유자"));
+		Member stranger = memberRepository.save(Member.create("타인"));
+		Entry entry = entryRepository.save(
+				Entry.create(owner, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+
+		BusinessException exception = assertThrows(
+				BusinessException.class,
+				() -> entryService.updateAiProcessingAllowed(stranger.getId(), entry.getId(), false));
+		assertEquals(RecordErrorCode.ENTRY_NOT_FOUND, exception.errorCode());
+	}
+
+	@Test
 	void deleteEntry_removesEntry() {
 		Member member = memberRepository.save(Member.create("지연"));
 		Entry entry = entryRepository.save(

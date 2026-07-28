@@ -4,6 +4,7 @@ import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.global.response.ApiResponse;
 import com.naroom.api.record.domain.entity.EntryType;
 import com.naroom.api.record.dto.EmotionTagTopicResponse;
+import com.naroom.api.record.dto.EntryAiProcessingUpdateRequest;
 import com.naroom.api.record.dto.EntryAiReflectionResponse;
 import com.naroom.api.record.dto.EntryCreateRequest;
 import com.naroom.api.record.dto.EntryResponse;
@@ -147,6 +148,12 @@ public class RecordController {
 			@PathVariable UUID entryId, @PathVariable UUID reflectionId, @Valid @RequestBody EntrySelfReflectionRequest request) {
 		return ApiResponse.of(
 				entrySelfReflectionService.updateReflection(currentMemberId(), entryId, reflectionId, request.content()));
+	}
+
+	@PatchMapping("/entries/{entryId}/ai-processing")
+	public ApiResponse<EntryResponse> updateAiProcessing(
+			@PathVariable UUID entryId, @Valid @RequestBody EntryAiProcessingUpdateRequest request) {
+		return ApiResponse.of(entryService.updateAiProcessingAllowed(currentMemberId(), entryId, request.allowed()));
 	}
 
 	@GetMapping("/entries/{entryId}/ai-reflection")

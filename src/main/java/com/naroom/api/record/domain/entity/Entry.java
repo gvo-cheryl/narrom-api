@@ -132,6 +132,10 @@ public class Entry {
 		this.publishedAt = Instant.now();
 	}
 
+	public void allowAiProcessing() {
+		this.aiProcessingAllowed = true;
+	}
+
 	public void disallowAiProcessing() {
 		this.aiProcessingAllowed = false;
 	}

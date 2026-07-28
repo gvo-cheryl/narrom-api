@@ -145,6 +145,19 @@ public class EntryService {
 		return EntryResponse.from(entryRepository.saveAndFlush(entry));
 	}
 
+	// allow로 되돌려도 이미 지난 기록에 대해 AI 파이프라인을 재실행하지 않는다(5-C, 2026-07-28 결정)
+	// - AiJob 생성은 createEntry 시점에만 트리거되고, 이 토글은 장기 회고 입력 포함 여부(§3.3)에만 영향을 준다.
+	@Transactional
+	public EntryResponse updateAiProcessingAllowed(UUID memberId, UUID entryId, boolean allowed) {
+		Entry entry = getOwnedEntryOrThrow(memberId, entryId);
+		if (allowed) {
+			entry.allowAiProcessing();
+		} else {
+			entry.disallowAiProcessing();
+		}
+		return EntryResponse.from(entryRepository.saveAndFlush(entry));
+	}
+
 	@Transactional
 	public void deleteEntry(UUID memberId, UUID entryId) {
 		Entry entry = getOwnedEntryOrThrow(memberId, entryId);

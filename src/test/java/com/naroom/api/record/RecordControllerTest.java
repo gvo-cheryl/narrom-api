@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -185,6 +187,52 @@ class RecordControllerTest {
 								"""))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.code").value("RECORD_ENTRY_VERSION_CONFLICT"));
+	}
+
+	@Test
+	void updateAiProcessing_validRequest_returnsUpdatedEntry() throws Exception {
+		UUID entryId = UUID.randomUUID();
+		EntryResponse disallowed = new EntryResponse(
+				entryId, EntryType.FREE, EntryStatus.DRAFT, null, "본문", LocalDate.now(),
+				null, null, false, null, null, null, 0L);
+		when(entryService.updateAiProcessingAllowed(any(), any(), eq(false)))
+				.thenReturn(disallowed);
+
+		mockMvc.perform(patch("/api/v1/record/entries/" + entryId + "/ai-processing")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{ "allowed": false }
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.aiProcessingAllowed").value(false));
+	}
+
+	@Test
+	void updateAiProcessing_missingAllowed_returnsValidationFailed() throws Exception {
+		mockMvc.perform(patch("/api/v1/record/entries/" + UUID.randomUUID() + "/ai-processing")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{}
+								"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	@Test
+	void updateAiProcessing_entryNotFound_returnsProblemDetail() throws Exception {
+		when(entryService.updateAiProcessingAllowed(any(), any(), anyBoolean()))
+				.thenThrow(new BusinessException(RecordErrorCode.ENTRY_NOT_FOUND));
+
+		mockMvc.perform(patch("/api/v1/record/entries/" + UUID.randomUUID() + "/ai-processing")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{ "allowed": true }
+								"""))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("RECORD_ENTRY_NOT_FOUND"));
 	}
 
 	@Test
