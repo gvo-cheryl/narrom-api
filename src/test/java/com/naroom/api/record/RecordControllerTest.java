@@ -9,11 +9,13 @@ import com.naroom.api.global.error.response.ProblemDetailFactory;
 import com.naroom.api.global.security.ApiAccessDeniedHandler;
 import com.naroom.api.global.security.ApiAuthenticationEntryPoint;
 import com.naroom.api.global.security.SecurityProblemWriter;
+import com.naroom.api.ai.domain.entity.AiJobStatus;
 import com.naroom.api.record.domain.entity.EntryStatus;
 import com.naroom.api.record.domain.entity.EntryType;
 import com.naroom.api.record.domain.entity.TagCategory;
 import com.naroom.api.record.domain.entity.TagScope;
 import com.naroom.api.record.domain.error.RecordErrorCode;
+import com.naroom.api.record.dto.EntryAiReflectionResponse;
 import com.naroom.api.record.dto.EntryResponse;
 import com.naroom.api.record.dto.TagResponse;
 import org.junit.jupiter.api.Test;
@@ -61,6 +63,9 @@ class RecordControllerTest {
 
 	@MockitoBean
 	private EntrySelfReflectionService entrySelfReflectionService;
+
+	@MockitoBean
+	private EntryAiReflectionService entryAiReflectionService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -180,6 +185,28 @@ class RecordControllerTest {
 								"""))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.code").value("RECORD_ENTRY_VERSION_CONFLICT"));
+	}
+
+	@Test
+	void getAiReflectionStatus_completed_returnsReflectionContent() throws Exception {
+		UUID entryId = UUID.randomUUID();
+		when(entryAiReflectionService.getStatus(any(), any())).thenReturn(new EntryAiReflectionResponse(
+				AiJobStatus.COMPLETED, "요약", "질문", java.time.Instant.now()));
+
+		mockMvc.perform(get("/api/v1/record/entries/" + entryId + "/ai-reflection").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.status").value("COMPLETED"))
+				.andExpect(jsonPath("$.data.reflectionText").value("요약"));
+	}
+
+	@Test
+	void getAiReflectionStatus_entryNotFound_returnsProblemDetail() throws Exception {
+		when(entryAiReflectionService.getStatus(any(), any()))
+				.thenThrow(new BusinessException(RecordErrorCode.ENTRY_NOT_FOUND));
+
+		mockMvc.perform(get("/api/v1/record/entries/" + UUID.randomUUID() + "/ai-reflection").with(authentication(memberAuthentication())))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("RECORD_ENTRY_NOT_FOUND"));
 	}
 
 	@Test

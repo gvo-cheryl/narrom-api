@@ -482,6 +482,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListEmotionTagTopicResponse"
+  /api/v1/record/entries/{entryId}/ai-reflection:
+    get:
+      tags:
+      - record-controller
+      operationId: getAiReflectionStatus
+      parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseEntryAiReflectionResponse"
   /api/v1/health:
     get:
       tags:
@@ -1154,6 +1173,30 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EntrySelfReflectionResponse"
+    ApiResponseEntryAiReflectionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/EntryAiReflectionResponse"
+    EntryAiReflectionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - COMPLETED
+          - BLOCKED
+          - SAFETY_SUPPORT
+          - FAILED
+        reflectionText:
+          type: string
+        reflectionQuestion:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
     ApiResponseHealthResponse:
       type: object
       properties:

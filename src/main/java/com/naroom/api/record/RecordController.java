@@ -4,6 +4,7 @@ import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.global.response.ApiResponse;
 import com.naroom.api.record.domain.entity.EntryType;
 import com.naroom.api.record.dto.EmotionTagTopicResponse;
+import com.naroom.api.record.dto.EntryAiReflectionResponse;
 import com.naroom.api.record.dto.EntryCreateRequest;
 import com.naroom.api.record.dto.EntryResponse;
 import com.naroom.api.record.dto.EntrySelfReflectionRequest;
@@ -40,16 +41,19 @@ public class RecordController {
 	private final EntryService entryService;
 	private final EntryTagService entryTagService;
 	private final EntrySelfReflectionService entrySelfReflectionService;
+	private final EntryAiReflectionService entryAiReflectionService;
 
 	public RecordController(
 			TagService tagService,
 			EntryService entryService,
 			EntryTagService entryTagService,
-			EntrySelfReflectionService entrySelfReflectionService) {
+			EntrySelfReflectionService entrySelfReflectionService,
+			EntryAiReflectionService entryAiReflectionService) {
 		this.tagService = tagService;
 		this.entryService = entryService;
 		this.entryTagService = entryTagService;
 		this.entrySelfReflectionService = entrySelfReflectionService;
+		this.entryAiReflectionService = entryAiReflectionService;
 	}
 
 	@GetMapping("/tags/system")
@@ -143,6 +147,11 @@ public class RecordController {
 			@PathVariable UUID entryId, @PathVariable UUID reflectionId, @Valid @RequestBody EntrySelfReflectionRequest request) {
 		return ApiResponse.of(
 				entrySelfReflectionService.updateReflection(currentMemberId(), entryId, reflectionId, request.content()));
+	}
+
+	@GetMapping("/entries/{entryId}/ai-reflection")
+	public ApiResponse<EntryAiReflectionResponse> getAiReflectionStatus(@PathVariable UUID entryId) {
+		return ApiResponse.of(entryAiReflectionService.getStatus(currentMemberId(), entryId));
 	}
 
 	// JwtAuthenticationFilter가 SecurityContextHolder에 직접 채워 넣는 방식이라 여기서도 직접 꺼낸다

@@ -18,6 +18,9 @@ public interface AiJobRepository extends JpaRepository<AiJob, UUID> {
 
 	Optional<AiJob> findByMember_IdAndIdempotencyKey(UUID memberId, String idempotencyKey);
 
+	// 재생성으로 같은 기록에 작업이 여러 개 생겨도(4-I/4-J 이후) 항상 가장 최근 것을 상태 조회에 쓴다.
+	Optional<AiJob> findFirstByEntry_IdOrderByCreatedAtDesc(UUID entryId);
+
 	// 완료 처리 직전 단일 행을 잠가 lease(startedAt) 재검증에 쓴다. SKIP LOCKED 특수 타임아웃 값에 의존하지 않는
 	// 일반적인 PESSIMISTIC_WRITE라서, 같은 작업을 동시에 완료 처리하려는 요청끼리는 안전하게 직렬화된다.
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
