@@ -51,11 +51,15 @@ LifeTime은 타임라인·캘린더·감정/에너지 흐름·태그 탐색·기
 
 `entry_self_reflections`(개별 기록에 대한 사용자 후기, `EntrySelfReflection`)와는 다른 개념입니다 — 그건 기록 1건에 종속된 짧은 의견이고, `personal_summaries`는 기간·범위를 갖는 독립된 자기정리입니다.
 
+## 2단계: 캘린더·타임라인 조회 (2026-07-28)
+
+- `GET /api/v1/lifetime/timeline`(from/to/entryType 선택) — 태그(`CONFIRMED`/`SYSTEM` 상태만, `SUGGESTED`는 제외)·AI 상태(`AiJob` 최신 것)·자기정리 존재 여부까지 담은 전용 응답(`EntryTimelineResponse`). 기존 `GET /record/entries`(`EntryResponse`)는 create/update/publish 등에서도 쓰는 가벼운 응답이라 그대로 두고 건드리지 않음 — 이 집계를 얹으면 단순 CUD 응답까지 매번 태그·AI작업·자기회고를 조회하게 되기 때문(coverage-checklist §공백 8 결정).
+- `GET /api/v1/lifetime/calendar?year=&month=` — 날짜별 기록/체크인 존재 여부만 반환(존재 여부만, 감정 등 대표값 집계는 5단계로 남김). 기록하지 않은 날도 그대로 포함해 "기록 없음"과 "0점"을 구분한다.
+- Calendar/Timeline은 새 도메인 패키지 없이 `com.naroom.api.lifetime`에 두되, 엔드포인트는 `/api/v1/lifetime/*`로 통일(coverage-checklist가 제안했던 `/record/calendar` 등은 잠정안이라 그대로 쓰지 않음 — LifeTime이라는 상위 도메인 이름과 일치시킴).
+- 배치 조회 성능을 위해 `EntryTagRepository`/`AiJobRepository`/`EntrySelfReflectionRepository`에 `_IdIn` 계열 메서드 추가(엔트리 목록당 N+1 방지).
+
 ## 아직 구현되지 않은 것
 
-- Calendar 조회 API(월별 존재 여부, 날짜별 상세)
-- 타임라인 통합 조회 API(태그·감정·AI 상태·자기정리 집계 — 현재 `GET /record/entries`는 원문만 반환)
-- 날짜 범위로 `Entry`/`CheckIn`을 조회하는 리포지토리 메서드
 - 기간별 회고 생성·조회 API 및 AI 파이프라인 연동(§24.5 5-F)
 - 나의 정리 CRUD API
 - 감정·에너지 흐름, 태그 탐색 집계 API
