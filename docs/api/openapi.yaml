@@ -6,6 +6,35 @@ info:
 servers:
 - url: /
 paths:
+  /api/v1/lifetime/personal-summaries/current:
+    get:
+      tags:
+      - lifetime-controller
+      operationId: getCurrentPersonalSummary
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePersonalSummaryResponse"
+    put:
+      tags:
+      - lifetime-controller
+      operationId: updateCurrentPersonalSummary
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonalSummaryUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePersonalSummaryResponse"
   /api/v1/checkin:
     get:
       tags:
@@ -662,6 +691,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListEntryTimelineResponse"
+  /api/v1/lifetime/personal-summaries:
+    get:
+      tags:
+      - lifetime-controller
+      operationId: getPersonalSummaryHistory
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListPersonalSummaryResponse"
   /api/v1/lifetime/period-reflections/{periodReflectionId}:
     get:
       tags:
@@ -818,6 +859,47 @@ paths:
                 $ref: "#/components/schemas/ApiResponseSessionCheckResponse"
 components:
   schemas:
+    PersonalSummaryUpdateRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          maxLength: 1000
+          minLength: 0
+      required:
+      - content
+    ApiResponsePersonalSummaryResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PersonalSummaryResponse"
+    PersonalSummaryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          enum:
+          - CURRENT_SELF
+          - WEEKLY
+          - MONTHLY
+          - QUARTERLY
+          - EXPERIMENT
+        content:
+          type: string
+        archived:
+          type: boolean
+        archivedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     CheckInUpsertRequest:
       type: object
       properties:
@@ -1647,6 +1729,13 @@ components:
         createdAt:
           type: string
           format: date-time
+    ApiResponseListPersonalSummaryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PersonalSummaryResponse"
     ApiResponseListCalendarDayResponse:
       type: object
       properties:

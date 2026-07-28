@@ -6,6 +6,8 @@ import com.naroom.api.lifetime.dto.CalendarDayResponse;
 import com.naroom.api.lifetime.dto.EntryTimelineResponse;
 import com.naroom.api.lifetime.dto.PeriodReflectionCreateRequest;
 import com.naroom.api.lifetime.dto.PeriodReflectionResponse;
+import com.naroom.api.lifetime.dto.PersonalSummaryResponse;
+import com.naroom.api.lifetime.dto.PersonalSummaryUpdateRequest;
 import com.naroom.api.record.domain.entity.EntryType;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -13,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,14 +32,17 @@ public class LifetimeController {
 	private final EntryTimelineService entryTimelineService;
 	private final CalendarService calendarService;
 	private final PeriodReflectionService periodReflectionService;
+	private final PersonalSummaryService personalSummaryService;
 
 	public LifetimeController(
 			EntryTimelineService entryTimelineService,
 			CalendarService calendarService,
-			PeriodReflectionService periodReflectionService) {
+			PeriodReflectionService periodReflectionService,
+			PersonalSummaryService personalSummaryService) {
 		this.entryTimelineService = entryTimelineService;
 		this.calendarService = calendarService;
 		this.periodReflectionService = periodReflectionService;
+		this.personalSummaryService = personalSummaryService;
 	}
 
 	@GetMapping("/timeline")
@@ -63,6 +69,21 @@ public class LifetimeController {
 	public ApiResponse<PeriodReflectionResponse> getPeriodReflection(@PathVariable UUID periodReflectionId) {
 		return ApiResponse.of(
 				PeriodReflectionResponse.from(periodReflectionService.getOwnedOrThrow(currentMemberId(), periodReflectionId)));
+	}
+
+	@GetMapping("/personal-summaries/current")
+	public ApiResponse<PersonalSummaryResponse> getCurrentPersonalSummary() {
+		return ApiResponse.of(personalSummaryService.getCurrent(currentMemberId()).orElse(null));
+	}
+
+	@PutMapping("/personal-summaries/current")
+	public ApiResponse<PersonalSummaryResponse> updateCurrentPersonalSummary(@Valid @RequestBody PersonalSummaryUpdateRequest request) {
+		return ApiResponse.of(personalSummaryService.updateCurrent(currentMemberId(), request.content()));
+	}
+
+	@GetMapping("/personal-summaries")
+	public ApiResponse<List<PersonalSummaryResponse>> getPersonalSummaryHistory() {
+		return ApiResponse.of(personalSummaryService.getHistory(currentMemberId()));
 	}
 
 	// JwtAuthenticationFilter가 SecurityContextHolder에 직접 채워 넣는 방식이라 여기서도 직접 꺼낸다

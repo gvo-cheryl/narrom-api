@@ -11,4 +11,6 @@ public interface PersonalSummaryRepository extends JpaRepository<PersonalSummary
 
 	List<PersonalSummary> findByMember_IdAndScopeAndArchivedAtIsNullOrderByCreatedAtDesc(UUID memberId, SummaryScope scope);
 
+	List<PersonalSummary> findByMember_IdAndScopeOrderByCreatedAtDesc(UUID memberId, SummaryScope scope);
+
 }

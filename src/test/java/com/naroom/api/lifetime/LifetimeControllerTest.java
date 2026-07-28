@@ -14,6 +14,7 @@ import com.naroom.api.global.security.SecurityProblemWriter;
 import com.naroom.api.lifetime.dto.CalendarDayResponse;
 import com.naroom.api.lifetime.domain.entity.PeriodReflection;
 import com.naroom.api.lifetime.domain.error.LifetimeErrorCode;
+import com.naroom.api.lifetime.dto.PersonalSummaryResponse;
 import com.naroom.api.record.domain.entity.Entry;
 import com.naroom.api.record.domain.entity.EntryType;
 import com.naroom.api.record.domain.error.RecordErrorCode;
@@ -24,8 +25,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -34,6 +37,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -58,6 +62,9 @@ class LifetimeControllerTest {
 
 	@MockitoBean
 	private PeriodReflectionService periodReflectionService;
+
+	@MockitoBean
+	private PersonalSummaryService personalSummaryService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -174,6 +181,69 @@ class LifetimeControllerTest {
 						.with(authentication(memberAuthentication())))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.code").value("LIFETIME_PERIOD_REFLECTION_NOT_FOUND"));
+	}
+
+	@Test
+	void getCurrentPersonalSummary_noneYet_returnsNullData() throws Exception {
+		when(personalSummaryService.getCurrent(any())).thenReturn(Optional.empty());
+
+		mockMvc.perform(get("/api/v1/lifetime/personal-summaries/current").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data").doesNotExist());
+	}
+
+	@Test
+	void getCurrentPersonalSummary_existing_returnsSummary() throws Exception {
+		when(personalSummaryService.getCurrent(any())).thenReturn(Optional.of(sampleSummary("요즘의 나", false)));
+
+		mockMvc.perform(get("/api/v1/lifetime/personal-summaries/current").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.content").value("요즘의 나"));
+	}
+
+	@Test
+	void updateCurrentPersonalSummary_validRequest_returnsUpdatedSummary() throws Exception {
+		when(personalSummaryService.updateCurrent(any(), any())).thenReturn(sampleSummary("새로 쓴 정리", false));
+
+		mockMvc.perform(put("/api/v1/lifetime/personal-summaries/current")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{ "content": "새로 쓴 정리" }
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.content").value("새로 쓴 정리"));
+	}
+
+	@Test
+	void updateCurrentPersonalSummary_contentExceedsLimit_returnsValidationFailed() throws Exception {
+		String tooLong = "가".repeat(1001);
+
+		mockMvc.perform(put("/api/v1/lifetime/personal-summaries/current")
+						.with(authentication(memberAuthentication()))
+						.contentType("application/json")
+						.content("""
+								{ "content": "%s" }
+								""".formatted(tooLong)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	@Test
+	void getPersonalSummaryHistory_authenticated_returnsList() throws Exception {
+		when(personalSummaryService.getHistory(any()))
+				.thenReturn(List.of(sampleSummary("이전 정리", true), sampleSummary("지금 정리", false)));
+
+		mockMvc.perform(get("/api/v1/lifetime/personal-summaries").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.length()").value(2));
+	}
+
+	private PersonalSummaryResponse sampleSummary(String content, boolean archived) {
+		Instant now = Instant.now();
+		return new PersonalSummaryResponse(
+				UUID.randomUUID(), com.naroom.api.lifetime.domain.entity.SummaryScope.CURRENT_SELF,
+				content, archived, archived ? now : null, now, now);
 	}
 
 	private PeriodReflection samplePendingReflection(AiFeatureType featureType) {
