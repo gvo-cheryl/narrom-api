@@ -1115,7 +1115,7 @@ OpenAI가 처리할 본문을 별도의 암호문 상태로 보내면 모델이 
 - [x] 5-C. AI 사용 여부(2026-07-28, 이슈 #27): `PATCH /api/v1/record/entries/{entryId}/ai-processing`(body `{"allowed": boolean}`). `Entry.allowAiProcessing()` 추가(기존 `disallowAiProcessing()`과 대칭). allow로 되돌려도 이미 지난 기록에 대해 AiJob을 재생성하지 않음 — AI 작업 생성은 여전히 기록 저장 시점에만 트리거되고, 이 토글은 장기 회고 입력 포함 여부(§3.3)에만 영향을 준다(재실행이 필요해지면 별도 요청으로 확장)
 - [x] 5-D. 만족도와 장기 반영 선택(2026-07-28, 이슈 #27): §15.4대로 1차 평가와 장기 반영 확인을 별도 API로 분리. `PUT /api/v1/ai/generation-runs/{generationRunId}/feedback`(helpfulness + 부정 평가일 때만 reasonCode/customReason) — `(member, generation_run)` UNIQUE라 재제출 시 새로 만들지 않고 기존 행을 고침(긍정으로 바뀌면 2차 사유는 함께 지움). `PATCH .../feedback/long-term`(applyLongTerm) — 평가가 없으면 `AI_FEEDBACK_NOT_FOUND`. 클라이언트가 대상 `generationRunId`를 알 수 있도록 `EntryAiReflectionResponse`에 필드 추가(완료 전에는 null)
 - [x] 5-E. AI 응답 신고(2026-07-28, 이슈 #27): `POST /api/v1/ai/generation-runs/{generationRunId}/reports`(reasonCode + 선택 comment). `ai_feedback_reports`는 모든 컬럼이 `updatable=false`라 신고는 고치는 대상이 아니라는 뜻이고, 그래서 같은 대상을 다시 신고해도 새로 만들지 않고 이미 있는 신고를 그대로 반환함(멱등)
-- [ ] 5-F. 주간 회고와 근거 기록 연결: issue #21(LifeTime & Calendar) 선행 필요, 착수 불가(§24.4 4-E 메모 참고)
+- [x] 5-F. 주간 회고와 근거 기록 연결(2026-07-28, issue #21 3단계): `period_reflections`/`period_reflection_entries`(1단계 데이터 구조)와 파이프라인(3단계)으로 구현 완료. 상세는 `docs/domain/lifetime-calendar.md` 참고
 
 ## 24.6 6단계: 품질·비용 검증
 

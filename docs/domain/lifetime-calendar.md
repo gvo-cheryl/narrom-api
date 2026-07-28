@@ -58,7 +58,7 @@ LifeTime은 타임라인·캘린더·감정/에너지 흐름·태그 탐색·기
 - Calendar/Timeline은 새 도메인 패키지 없이 `com.naroom.api.lifetime`에 두되, 엔드포인트는 `/api/v1/lifetime/*`로 통일(coverage-checklist가 제안했던 `/record/calendar` 등은 잠정안이라 그대로 쓰지 않음 — LifeTime이라는 상위 도메인 이름과 일치시킴).
 - 배치 조회 성능을 위해 `EntryTagRepository`/`AiJobRepository`/`EntrySelfReflectionRepository`에 `_IdIn` 계열 메서드 추가(엔트리 목록당 N+1 방지).
 
-## 3단계: 기간별 회고 파이프라인 (진행 중, 이슈 #30)
+## 3단계: 기간별 회고 파이프라인 (완료, 이슈 #30)
 
 **최소 기록 수 결정(2026-07-28):** PRD §13이 "주간 회고를 제공하기 위한 최소 기록 수는 몇 개인가?"를 열린 질문으로 남겨뒀던 것에 대한 답 — 주간 회고 3건, 3일 회고 1건. 3일 회고는 근거가 1건뿐이어도 진행하되, 응답 품질이 제한적일 수 있다는 것은 AI 지침 차원에서 스스로 밝히게 한다(3-B에서 반영).
 
@@ -67,7 +67,7 @@ LifeTime은 타임라인·캘린더·감정/에너지 흐름·태그 탐색·기
 - [x] 3-A. 기간 계산(`PeriodCalculator`) + 자격 확인·근거 기록 선별(`PeriodReflectionEligibilityService`, `LifetimeErrorCode`). §12.4의 정교한 선별 기준(변화량 큰 기록, 편향 방지 무작위 표본 등)은 이번 1차 구현에서는 적용하지 않고 "기간 내 발행된 기록 전부"로 단순화 — 다음 반복 과제로 남김. 회고 봉투 자체(`WEEKLY_REFLECTION`/`THREE_DAY_REFLECTION`)와 `SELF_SUMMARY`는 근거에서 제외
 - [x] 3-B. 기간별 프롬프트 조립 + 출력 스키마·파서. 3일/주간 회고는 같은 형식이라 `PeriodReflectionSchema`(출력 스키마)와 파서를 공유하고, 지침 텍스트만 기간 표현이 다르다. `PromptAssembler.assembleForPeriodReflection()`이 §12.3 우선순위 중 체크인 감정·에너지, 확정 태그, 자기정리, 개별 기록 AI 요약을 조합(6번 "도움이 된 행동 평가"와 7번의 정교한 원문 선별은 미적용 — 근거 기록 전체 원문을 그대로 포함). `PeriodReflectionResponseParser`는 evidenceEntryIds를 실제로 넘긴 근거 집합과만 대조해 개별 기록 회고보다 한 단계 더 엄격하게 검증
 - [x] 3-C. 파이프라인 연결(2026-07-28). `PeriodReflectionService.generate()`가 3-A(자격 확인)를 거쳐 봉투 Entry·`PeriodReflection`(PENDING)·`PeriodReflectionEntry`(근거 연결)를 만들고 기존 `AiJobService.createForEntry()`를 그대로 재사용해 AiJob을 생성 — 같은 기간 재요청은 새로 만들지 않고 기존 회고를 반환(멱등, "주차당 1개" 유지). `PeriodReflectionJobProcessor`가 `EntryReflectionJobProcessor`와 동일한 구조로 입력/출력 Moderation·생성 호출·파싱·재시도 분류를 수행하고, `PeriodReflectionOutcomeService`가 완료/차단/위기 상태를 전이(단, PeriodReflection은 요청 시점에 이미 존재해 AiReflection처럼 새로 만들지 않고 조회만 함). `AiJobClaimScheduler`는 feature_type에 따라 두 처리기 중 하나로 분기. 두 OutcomeService가 공유하던 프롬프트 버전 get-or-create 로직은 `AiPromptVersionResolver`로 추출
-- [ ] 3-D. 조회 API
+- [x] 3-D. 조회 API(2026-07-28). `POST /api/v1/lifetime/period-reflections`(body `{"featureType": "WEEKLY_REFLECTION"|"THREE_DAY_REFLECTION"}`)로 생성 요청 — 같은 기간이면 기존 결과를 그대로 반환(멱등), 그 외 `featureType`은 `LIFETIME_PERIOD_REFLECTION_FEATURE_TYPE_INVALID`로 거부. `GET /api/v1/lifetime/period-reflections/{id}`는 소유권 검증 후 조회. `PeriodReflectionResponse`는 `insights`(jsonb) 문자열을 `PeriodReflectionInsights`(반복된 감정과 상황/어려웠던 순간/감사한 일/시도한 대응/도움이 된 조건)로 파싱해 구조화된 필드로 응답 — `safetyCode`/`errorCode` 등 내부 판정 원인은 `EntryAiReflectionResponse`와 동일한 원칙으로 노출하지 않음
 
 ## 아직 구현되지 않은 것
 
