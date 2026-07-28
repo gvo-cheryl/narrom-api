@@ -73,6 +73,12 @@ LifeTime은 타임라인·캘린더·감정/에너지 흐름·태그 탐색·기
 
 `CURRENT_SELF` 범위만 다룬다. `GET /api/v1/lifetime/personal-summaries/current`(없으면 `data: null`) / `PUT .../current`(새로 작성 — 이전 것은 archive하고 새 Entry+PersonalSummary를 만듦, 기존 글을 고치지 않음) / `GET /api/v1/lifetime/personal-summaries`(이력). `WEEKLY`/`MONTHLY`/`QUARTERLY`/`EXPERIMENT` 범위는 스키마상 이미 확장 가능하지만(1단계 설계) 이번 화면 범위 밖. 글자 수 제한은 §4 "생각 덧붙이기·사용자 자기정리" 행(1,000자)을 그대로 적용.
 
-## 아직 구현되지 않은 것
+## 5단계: 감정·에너지 흐름 / 태그 탐색 (완료, 2026-07-29)
 
-- 감정·에너지 흐름, 태그 탐색 집계 API
+- `GET /api/v1/lifetime/analytics/emotion-energy?range=7|14|30` — 체크인이 있는 날짜만 반환(순위·점수화 금지 원칙: 평균·추세 점수 등 가공 지표는 만들지 않고 원본 수치만 그대로 전달, 기록 없는 날은 0으로 채우지 않음)
+- `GET /api/v1/lifetime/analytics/tags?category=` — 확정(`CONFIRMED`/`SYSTEM`) 태그만 집계, `SUGGESTED`는 제외(`EntryTimelineService`와 같은 원칙). `count`는 순위가 아니라 단순 등장 횟수
+- `GET /api/v1/lifetime/analytics/tags/{tagId}/entries` — 해당 태그가 붙은 기록을 타임라인과 같은 응답(`EntryTimelineResponse`)으로 반환(`EntryTimelineService.getByTag()` 신설, 내부 집계 로직은 `getTimeline()`과 공유하도록 리팩터링). "동시 등장" 분석(coverage-checklist가 언급한 키워드 상세 기능 일부)은 이번 1차 구현에서는 하지 않음 — 다음 반복 과제로 남김
+
+## LifeTime & Calendar 도메인 완료 (2026-07-29, 이슈 #21)
+
+1~5단계 전체 완료. 남은 것은 제품 문서에 언급된 미래 확장(월간·분기·연간 회고 화면, 외부 캘린더 연동, §12.4 정교한 근거 선별, 태그 "동시 등장" 분석 등)이며, 전부 Beta 1 범위 밖으로 명시적으로 결정된 것들이다.
