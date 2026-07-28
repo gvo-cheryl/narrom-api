@@ -239,7 +239,7 @@ class RecordControllerTest {
 	void getAiReflectionStatus_completed_returnsReflectionContent() throws Exception {
 		UUID entryId = UUID.randomUUID();
 		when(entryAiReflectionService.getStatus(any(), any())).thenReturn(new EntryAiReflectionResponse(
-				AiJobStatus.COMPLETED, "요약", "질문", java.time.Instant.now()));
+				AiJobStatus.COMPLETED, UUID.randomUUID(), "요약", "질문", java.time.Instant.now()));
 
 		mockMvc.perform(get("/api/v1/record/entries/" + entryId + "/ai-reflection").with(authentication(memberAuthentication())))
 				.andExpect(status().isOk())

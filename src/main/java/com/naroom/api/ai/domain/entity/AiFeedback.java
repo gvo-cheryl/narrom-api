@@ -78,6 +78,19 @@ public class AiFeedback {
 		this.customReason = customReason;
 	}
 
+	// 평가는 (member, generation_run) 1건뿐이라(UNIQUE 제약) 재제출은 새로 만들지 않고 이 기존 행을 고친다.
+	// 긍정 평가로 바뀌면 2차 사유는 더 이상 의미가 없으므로 함께 지운다.
+	public void updateRating(AiFeedbackHelpfulness helpfulness, String reasonCode, String customReason) {
+		this.helpfulness = helpfulness;
+		if (helpfulness == AiFeedbackHelpfulness.HELPFUL) {
+			this.reasonCode = null;
+			this.customReason = null;
+		} else {
+			this.reasonCode = reasonCode;
+			this.customReason = customReason;
+		}
+	}
+
 	public void confirmLongTermApplication(boolean applyLongTerm) {
 		this.applyLongTerm = applyLongTerm;
 	}

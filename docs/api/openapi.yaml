@@ -42,6 +42,31 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseCheckInResponse"
+  /api/v1/ai/generation-runs/{generationRunId}/feedback:
+    put:
+      tags:
+      - ai-controller
+      operationId: submitFeedback
+      parameters:
+      - name: generationRunId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiFeedbackSubmitRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAiFeedbackResponse"
   /api/v1/record/tags:
     post:
       tags:
@@ -471,6 +496,31 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseEntryResponse"
+  /api/v1/ai/generation-runs/{generationRunId}/feedback/long-term:
+    patch:
+      tags:
+      - ai-controller
+      operationId: confirmLongTermApplication
+      parameters:
+      - name: generationRunId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiFeedbackLongTermRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAiFeedbackResponse"
   /api/v1/record/tags/system:
     get:
       tags:
@@ -744,6 +794,55 @@ components:
           - CUSTOM
         name:
           type: string
+    AiFeedbackSubmitRequest:
+      type: object
+      properties:
+        helpfulness:
+          type: string
+          enum:
+          - HELPFUL
+          - SOMEWHAT_UNHELPFUL
+          - UNHELPFUL
+        reasonCode:
+          type: string
+          maxLength: 50
+          minLength: 0
+        customReason:
+          type: string
+      required:
+      - helpfulness
+    AiFeedbackResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        generationRunId:
+          type: string
+          format: uuid
+        helpfulness:
+          type: string
+          enum:
+          - HELPFUL
+          - SOMEWHAT_UNHELPFUL
+          - UNHELPFUL
+        reasonCode:
+          type: string
+        customReason:
+          type: string
+        applyLongTerm:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApiResponseAiFeedbackResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AiFeedbackResponse"
     UserTagCreateRequest:
       type: object
       properties:
@@ -1156,6 +1255,13 @@ components:
           type: boolean
       required:
       - allowed
+    AiFeedbackLongTermRequest:
+      type: object
+      properties:
+        applyLongTerm:
+          type: boolean
+      required:
+      - applyLongTerm
     ApiResponseListTagResponse:
       type: object
       properties:
@@ -1222,6 +1328,9 @@ components:
           - BLOCKED
           - SAFETY_SUPPORT
           - FAILED
+        generationRunId:
+          type: string
+          format: uuid
         reflectionText:
           type: string
         reflectionQuestion:
