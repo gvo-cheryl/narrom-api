@@ -1,17 +1,13 @@
 package com.naroom.api.ai.outcome;
 
 import com.naroom.api.ai.AiJobService;
-import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.ai.domain.entity.AiGenerationRun;
 import com.naroom.api.ai.domain.entity.AiJob;
-import com.naroom.api.ai.domain.entity.AiPromptScope;
 import com.naroom.api.ai.domain.entity.AiPromptVersion;
 import com.naroom.api.ai.domain.entity.AiReflection;
-import com.naroom.api.ai.domain.entity.AiSafetyGrade;
 import com.naroom.api.ai.domain.error.AiErrorCode;
 import com.naroom.api.ai.domain.repository.AiGenerationRunRepository;
 import com.naroom.api.ai.domain.repository.AiJobRepository;
-import com.naroom.api.ai.domain.repository.AiPromptVersionRepository;
 import com.naroom.api.ai.domain.repository.AiReflectionRepository;
 import com.naroom.api.ai.result.EmotionCandidateResult;
 import com.naroom.api.global.error.exception.BusinessException;
@@ -36,7 +32,7 @@ public class EntryReflectionOutcomeService {
 
 	private final EntryRepository entryRepository;
 	private final AiJobRepository aiJobRepository;
-	private final AiPromptVersionRepository aiPromptVersionRepository;
+	private final AiPromptVersionResolver aiPromptVersionResolver;
 	private final AiGenerationRunRepository aiGenerationRunRepository;
 	private final AiReflectionRepository aiReflectionRepository;
 	private final AiJobService aiJobService;
@@ -45,14 +41,14 @@ public class EntryReflectionOutcomeService {
 	public EntryReflectionOutcomeService(
 			EntryRepository entryRepository,
 			AiJobRepository aiJobRepository,
-			AiPromptVersionRepository aiPromptVersionRepository,
+			AiPromptVersionResolver aiPromptVersionResolver,
 			AiGenerationRunRepository aiGenerationRunRepository,
 			AiReflectionRepository aiReflectionRepository,
 			AiJobService aiJobService,
 			EntryTagRepository entryTagRepository) {
 		this.entryRepository = entryRepository;
 		this.aiJobRepository = aiJobRepository;
-		this.aiPromptVersionRepository = aiPromptVersionRepository;
+		this.aiPromptVersionResolver = aiPromptVersionResolver;
 		this.aiGenerationRunRepository = aiGenerationRunRepository;
 		this.aiReflectionRepository = aiReflectionRepository;
 		this.aiJobService = aiJobService;
@@ -66,8 +62,8 @@ public class EntryReflectionOutcomeService {
 		AiJob aiJob = aiJobRepository.findById(context.aiJobId())
 				.orElseThrow(() -> new BusinessException(AiErrorCode.JOB_NOT_FOUND));
 
-		AiPromptVersion commonVersion = getOrCreateCommonPromptVersion(context.commonInstructionsVersion());
-		AiPromptVersion featureVersion = getOrCreateFeaturePromptVersion(
+		AiPromptVersion commonVersion = aiPromptVersionResolver.getOrCreateCommon(context.commonInstructionsVersion());
+		AiPromptVersion featureVersion = aiPromptVersionResolver.getOrCreateFeature(
 				aiJob.getFeatureType(), context.featureInstructionsVersion(), context.outputSchemaVersion());
 
 		AiGenerationRun run = aiGenerationRunRepository.save(
@@ -131,18 +127,6 @@ public class EntryReflectionOutcomeService {
 			return;
 		}
 		entryTagRepository.save(EntryTag.suggestByAi(entry, tag, confidence, null, null, null));
-	}
-
-	private AiPromptVersion getOrCreateCommonPromptVersion(String versionLabel) {
-		return aiPromptVersionRepository.findByScopeAndVersionLabel(AiPromptScope.COMMON, versionLabel)
-				.orElseGet(() -> aiPromptVersionRepository.save(AiPromptVersion.forCommon(versionLabel)));
-	}
-
-	private AiPromptVersion getOrCreateFeaturePromptVersion(
-			AiFeatureType featureType, String versionLabel, String outputSchemaVersion) {
-		return aiPromptVersionRepository.findByFeatureTypeAndVersionLabel(featureType, versionLabel)
-				.orElseGet(() -> aiPromptVersionRepository.save(
-						AiPromptVersion.forFeature(featureType, versionLabel, outputSchemaVersion)));
 	}
 
 }
