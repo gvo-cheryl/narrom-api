@@ -35,6 +35,16 @@ public enum LifetimeErrorCode implements ErrorCode {
 			"featureType은 THREE_DAY_REFLECTION 또는 WEEKLY_REFLECTION만 가능합니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	ANALYTICS_RANGE_INVALID(
+			HttpStatus.BAD_REQUEST,
+			"LIFETIME_ANALYTICS_RANGE_INVALID",
+			"urn:naroom:problem:lifetime-analytics-range-invalid",
+			"요청 내용을 확인해 주세요",
+			"range는 7, 14, 30 중 하나여야 합니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

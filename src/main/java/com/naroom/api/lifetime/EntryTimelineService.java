@@ -51,7 +51,21 @@ public class EntryTimelineService {
 	}
 
 	public List<EntryTimelineResponse> getTimeline(UUID memberId, LocalDate from, LocalDate to, EntryType entryType) {
-		List<Entry> entries = resolveEntries(memberId, from, to, entryType);
+		return buildResponses(resolveEntries(memberId, from, to, entryType));
+	}
+
+	// 5단계 태그 탐색: 특정 태그가 붙은 기록 목록도 타임라인과 같은 카드 형태(EntryTimelineResponse)로 보여준다.
+	public List<EntryTimelineResponse> getByTag(UUID memberId, UUID tagId) {
+		List<UUID> entryIds = entryTagRepository.findByEntry_Member_IdAndTag_IdAndStateIn(memberId, tagId, TIMELINE_TAG_STATES).stream()
+				.map(entryTag -> entryTag.getEntry().getId())
+				.toList();
+		if (entryIds.isEmpty()) {
+			return List.of();
+		}
+		return buildResponses(entryRepository.findByIdInOrderByRecordDateDescCreatedAtDesc(entryIds));
+	}
+
+	private List<EntryTimelineResponse> buildResponses(List<Entry> entries) {
 		if (entries.isEmpty()) {
 			return List.of();
 		}

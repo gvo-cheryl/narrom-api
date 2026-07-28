@@ -3,12 +3,15 @@ package com.naroom.api.lifetime;
 import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.global.response.ApiResponse;
 import com.naroom.api.lifetime.dto.CalendarDayResponse;
+import com.naroom.api.lifetime.dto.EmotionEnergyPointResponse;
 import com.naroom.api.lifetime.dto.EntryTimelineResponse;
 import com.naroom.api.lifetime.dto.PeriodReflectionCreateRequest;
 import com.naroom.api.lifetime.dto.PeriodReflectionResponse;
 import com.naroom.api.lifetime.dto.PersonalSummaryResponse;
 import com.naroom.api.lifetime.dto.PersonalSummaryUpdateRequest;
+import com.naroom.api.lifetime.dto.TagDistributionResponse;
 import com.naroom.api.record.domain.entity.EntryType;
+import com.naroom.api.record.domain.entity.TagCategory;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,16 +36,22 @@ public class LifetimeController {
 	private final CalendarService calendarService;
 	private final PeriodReflectionService periodReflectionService;
 	private final PersonalSummaryService personalSummaryService;
+	private final EmotionEnergyService emotionEnergyService;
+	private final TagExplorationService tagExplorationService;
 
 	public LifetimeController(
 			EntryTimelineService entryTimelineService,
 			CalendarService calendarService,
 			PeriodReflectionService periodReflectionService,
-			PersonalSummaryService personalSummaryService) {
+			PersonalSummaryService personalSummaryService,
+			EmotionEnergyService emotionEnergyService,
+			TagExplorationService tagExplorationService) {
 		this.entryTimelineService = entryTimelineService;
 		this.calendarService = calendarService;
 		this.periodReflectionService = periodReflectionService;
 		this.personalSummaryService = personalSummaryService;
+		this.emotionEnergyService = emotionEnergyService;
+		this.tagExplorationService = tagExplorationService;
 	}
 
 	@GetMapping("/timeline")
@@ -84,6 +93,22 @@ public class LifetimeController {
 	@GetMapping("/personal-summaries")
 	public ApiResponse<List<PersonalSummaryResponse>> getPersonalSummaryHistory() {
 		return ApiResponse.of(personalSummaryService.getHistory(currentMemberId()));
+	}
+
+	@GetMapping("/analytics/emotion-energy")
+	public ApiResponse<List<EmotionEnergyPointResponse>> getEmotionEnergyTrend(@RequestParam int range) {
+		return ApiResponse.of(emotionEnergyService.getTrend(currentMemberId(), range));
+	}
+
+	@GetMapping("/analytics/tags")
+	public ApiResponse<List<TagDistributionResponse>> getTagDistribution(
+			@RequestParam(required = false) TagCategory category) {
+		return ApiResponse.of(tagExplorationService.getDistribution(currentMemberId(), category));
+	}
+
+	@GetMapping("/analytics/tags/{tagId}/entries")
+	public ApiResponse<List<EntryTimelineResponse>> getEntriesByTag(@PathVariable UUID tagId) {
+		return ApiResponse.of(entryTimelineService.getByTag(currentMemberId(), tagId));
 	}
 
 	// JwtAuthenticationFilter가 SecurityContextHolder에 직접 채워 넣는 방식이라 여기서도 직접 꺼낸다

@@ -747,6 +747,70 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListCalendarDayResponse"
+  /api/v1/lifetime/analytics/tags:
+    get:
+      tags:
+      - lifetime-controller
+      operationId: getTagDistribution
+      parameters:
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - EMOTION
+          - SITUATION
+          - NEED
+          - VALUE
+          - ACTION
+          - RECOVERY
+          - CUSTOM
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListTagDistributionResponse"
+  /api/v1/lifetime/analytics/tags/{tagId}/entries:
+    get:
+      tags:
+      - lifetime-controller
+      operationId: getEntriesByTag
+      parameters:
+      - name: tagId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEntryTimelineResponse"
+  /api/v1/lifetime/analytics/emotion-energy:
+    get:
+      tags:
+      - lifetime-controller
+      operationId: getEmotionEnergyTrend
+      parameters:
+      - name: range
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEmotionEnergyPointResponse"
   /api/v1/health:
     get:
       tags:
@@ -1753,6 +1817,53 @@ components:
           type: boolean
         hasCheckIn:
           type: boolean
+    ApiResponseListTagDistributionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagDistributionResponse"
+    TagDistributionResponse:
+      type: object
+      properties:
+        tagId:
+          type: string
+          format: uuid
+        tagName:
+          type: string
+        category:
+          type: string
+          enum:
+          - EMOTION
+          - SITUATION
+          - NEED
+          - VALUE
+          - ACTION
+          - RECOVERY
+          - CUSTOM
+        count:
+          type: integer
+          format: int64
+    ApiResponseListEmotionEnergyPointResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmotionEnergyPointResponse"
+    EmotionEnergyPointResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        emotionIntensity:
+          type: integer
+          format: int32
+        energyLevel:
+          type: integer
+          format: int32
     ApiResponseHealthResponse:
       type: object
       properties:

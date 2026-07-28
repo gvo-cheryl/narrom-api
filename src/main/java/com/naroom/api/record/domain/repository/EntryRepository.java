@@ -6,6 +6,7 @@ import com.naroom.api.record.domain.entity.EntryType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,5 +29,7 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
 
 	List<Entry> findByMember_IdAndStatusAndRecordDateBetweenOrderByRecordDateAscCreatedAtAsc(
 			UUID memberId, EntryStatus status, LocalDate start, LocalDate end);
+
+	List<Entry> findByIdInOrderByRecordDateDescCreatedAtDesc(Collection<UUID> ids);
 
 }

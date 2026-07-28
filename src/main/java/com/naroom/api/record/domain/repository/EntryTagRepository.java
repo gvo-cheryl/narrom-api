@@ -22,4 +22,8 @@ public interface EntryTagRepository extends JpaRepository<EntryTag, UUID> {
 
 	List<EntryTag> findByEntry_IdInAndStateIn(Collection<UUID> entryIds, Collection<TagState> states);
 
+	List<EntryTag> findByEntry_Member_IdAndStateIn(UUID memberId, Collection<TagState> states);
+
+	List<EntryTag> findByEntry_Member_IdAndTag_IdAndStateIn(UUID memberId, UUID tagId, Collection<TagState> states);
+
 }

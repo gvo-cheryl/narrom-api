@@ -14,9 +14,12 @@ import com.naroom.api.global.security.SecurityProblemWriter;
 import com.naroom.api.lifetime.dto.CalendarDayResponse;
 import com.naroom.api.lifetime.domain.entity.PeriodReflection;
 import com.naroom.api.lifetime.domain.error.LifetimeErrorCode;
+import com.naroom.api.lifetime.dto.EmotionEnergyPointResponse;
 import com.naroom.api.lifetime.dto.PersonalSummaryResponse;
+import com.naroom.api.lifetime.dto.TagDistributionResponse;
 import com.naroom.api.record.domain.entity.Entry;
 import com.naroom.api.record.domain.entity.EntryType;
+import com.naroom.api.record.domain.entity.TagCategory;
 import com.naroom.api.record.domain.error.RecordErrorCode;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +68,12 @@ class LifetimeControllerTest {
 
 	@MockitoBean
 	private PersonalSummaryService personalSummaryService;
+
+	@MockitoBean
+	private EmotionEnergyService emotionEnergyService;
+
+	@MockitoBean
+	private TagExplorationService tagExplorationService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -237,6 +246,46 @@ class LifetimeControllerTest {
 		mockMvc.perform(get("/api/v1/lifetime/personal-summaries").with(authentication(memberAuthentication())))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.length()").value(2));
+	}
+
+	@Test
+	void getEmotionEnergyTrend_authenticated_returnsPoints() throws Exception {
+		when(emotionEnergyService.getTrend(any(), anyInt()))
+				.thenReturn(List.of(new EmotionEnergyPointResponse(LocalDate.of(2026, 7, 20), (short) 3, (short) 4)));
+
+		mockMvc.perform(get("/api/v1/lifetime/analytics/emotion-energy?range=7").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].emotionIntensity").value(3));
+	}
+
+	@Test
+	void getEmotionEnergyTrend_invalidRange_returnsProblemDetail() throws Exception {
+		when(emotionEnergyService.getTrend(any(), anyInt()))
+				.thenThrow(new BusinessException(LifetimeErrorCode.ANALYTICS_RANGE_INVALID));
+
+		mockMvc.perform(get("/api/v1/lifetime/analytics/emotion-energy?range=10").with(authentication(memberAuthentication())))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("LIFETIME_ANALYTICS_RANGE_INVALID"));
+	}
+
+	@Test
+	void getTagDistribution_authenticated_returnsList() throws Exception {
+		when(tagExplorationService.getDistribution(any(), any()))
+				.thenReturn(List.of(new TagDistributionResponse(UUID.randomUUID(), "서운함", TagCategory.EMOTION, 3)));
+
+		mockMvc.perform(get("/api/v1/lifetime/analytics/tags").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].tagName").value("서운함"));
+	}
+
+	@Test
+	void getEntriesByTag_authenticated_returnsList() throws Exception {
+		when(entryTimelineService.getByTag(any(), any())).thenReturn(List.of());
+
+		mockMvc.perform(get("/api/v1/lifetime/analytics/tags/" + UUID.randomUUID() + "/entries")
+						.with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data").isArray());
 	}
 
 	private PersonalSummaryResponse sampleSummary(String content, boolean archived) {

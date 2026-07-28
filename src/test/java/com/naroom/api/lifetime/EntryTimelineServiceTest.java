@@ -121,4 +121,32 @@ class EntryTimelineServiceTest {
 		assertEquals(1, byType.size());
 	}
 
+	@Test
+	void getByTag_returnsOnlyEntriesWithConfirmedTag() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry taggedEntry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "태그 있는 기록", LocalDate.now(), null, null, null));
+		Entry otherEntry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "태그 없는 기록", LocalDate.now(), null, null, null));
+		Tag tag = tagRepository.save(
+				Tag.createSystemTag(TagCategory.SITUATION, "직장-" + System.nanoTime(), "직장-" + System.nanoTime()));
+		entryTagRepository.save(EntryTag.attachByUser(taggedEntry, tag));
+
+		List<EntryTimelineResponse> byTag = entryTimelineService.getByTag(member.getId(), tag.getId());
+
+		assertEquals(1, byTag.size());
+		assertEquals(taggedEntry.getId(), byTag.get(0).id());
+	}
+
+	@Test
+	void getByTag_noEntries_returnsEmptyList() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Tag tag = tagRepository.save(
+				Tag.createSystemTag(TagCategory.SITUATION, "학교-" + System.nanoTime(), "학교-" + System.nanoTime()));
+
+		List<EntryTimelineResponse> byTag = entryTimelineService.getByTag(member.getId(), tag.getId());
+
+		assertEquals(0, byTag.size());
+	}
+
 }
