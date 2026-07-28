@@ -4,9 +4,11 @@ import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.ai.AiJobService;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
+import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.lifetime.PeriodCalculator.Period;
 import com.naroom.api.lifetime.domain.entity.PeriodReflection;
 import com.naroom.api.lifetime.domain.entity.PeriodReflectionEntry;
+import com.naroom.api.lifetime.domain.error.LifetimeErrorCode;
 import com.naroom.api.lifetime.domain.repository.PeriodReflectionEntryRepository;
 import com.naroom.api.lifetime.domain.repository.PeriodReflectionRepository;
 import com.naroom.api.record.domain.entity.Entry;
@@ -50,6 +52,9 @@ public class PeriodReflectionService {
 
 	@Transactional
 	public PeriodReflection generate(UUID memberId, AiFeatureType featureType) {
+		if (featureType != AiFeatureType.WEEKLY_REFLECTION && featureType != AiFeatureType.THREE_DAY_REFLECTION) {
+			throw new BusinessException(LifetimeErrorCode.PERIOD_REFLECTION_FEATURE_TYPE_INVALID);
+		}
 		Member member = memberRepository.getReferenceById(memberId);
 		Period period = PeriodCalculator.compute(featureType, ZoneId.of(member.getTimezone()));
 
@@ -78,6 +83,11 @@ public class PeriodReflectionService {
 				"period-reflection-" + featureType + "-" + period.start());
 
 		return periodReflection;
+	}
+
+	public PeriodReflection getOwnedOrThrow(UUID memberId, UUID periodReflectionId) {
+		return periodReflectionRepository.findByIdAndMember_Id(periodReflectionId, memberId)
+				.orElseThrow(() -> new BusinessException(LifetimeErrorCode.PERIOD_REFLECTION_NOT_FOUND));
 	}
 
 	private EntryType entryTypeFor(AiFeatureType featureType) {

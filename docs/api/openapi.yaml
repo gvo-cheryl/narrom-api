@@ -293,6 +293,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseEntryResponse"
+  /api/v1/lifetime/period-reflections:
+    post:
+      tags:
+      - lifetime-controller
+      operationId: createPeriodReflection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PeriodReflectionCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePeriodReflectionResponse"
   /api/v1/content/quotes/{quoteId}/save:
     post:
       tags:
@@ -644,6 +662,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListEntryTimelineResponse"
+  /api/v1/lifetime/period-reflections/{periodReflectionId}:
+    get:
+      tags:
+      - lifetime-controller
+      operationId: getPeriodReflection
+      parameters:
+      - name: periodReflectionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePeriodReflectionResponse"
   /api/v1/lifetime/calendar:
     get:
       tags:
@@ -1131,6 +1168,91 @@ components:
           type: string
           format: date-time
         updatedAt:
+          type: string
+          format: date-time
+    PeriodReflectionCreateRequest:
+      type: object
+      properties:
+        featureType:
+          type: string
+          enum:
+          - ENTRY_REFLECTION
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - CONVERSATION_REPLY
+          - CONVERSATION_SUMMARY
+      required:
+      - featureType
+    ApiResponsePeriodReflectionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PeriodReflectionResponse"
+    PeriodReflectionInsights:
+      type: object
+      properties:
+        repeatedEmotionsAndSituations:
+          type: array
+          items:
+            type: string
+        difficultMoments:
+          type: array
+          items:
+            type: string
+        gratefulMoments:
+          type: array
+          items:
+            type: string
+        triedResponses:
+          type: array
+          items:
+            type: string
+        helpfulConditions:
+          type: array
+          items:
+            type: string
+    PeriodReflectionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        featureType:
+          type: string
+          enum:
+          - ENTRY_REFLECTION
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - CONVERSATION_REPLY
+          - CONVERSATION_SUMMARY
+        periodStart:
+          type: string
+          format: date
+        periodEnd:
+          type: string
+          format: date
+        versionNo:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - COMPLETED
+          - BLOCKED
+          - SAFETY_SUPPORT
+          - FAILED
+        summaryText:
+          type: string
+        insights:
+          $ref: "#/components/schemas/PeriodReflectionInsights"
+        questionText:
+          type: string
+        requestedAt:
+          type: string
+          format: date-time
+        completedAt:
           type: string
           format: date-time
     RefreshRequest:

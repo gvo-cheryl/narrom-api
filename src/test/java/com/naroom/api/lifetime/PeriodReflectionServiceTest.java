@@ -86,6 +86,40 @@ class PeriodReflectionServiceTest {
 		assertEquals(LifetimeErrorCode.PERIOD_REFLECTION_INSUFFICIENT_RECORDS, exception.errorCode());
 	}
 
+	@Test
+	void generate_notAPeriodReflectionFeatureType_throwsFeatureTypeInvalid() {
+		Member member = memberRepository.save(Member.create("지연"));
+
+		BusinessException exception = assertThrows(
+				BusinessException.class,
+				() -> periodReflectionService.generate(member.getId(), AiFeatureType.ENTRY_REFLECTION));
+		assertEquals(LifetimeErrorCode.PERIOD_REFLECTION_FEATURE_TYPE_INVALID, exception.errorCode());
+	}
+
+	@Test
+	void getOwnedOrThrow_ownedByMember_returnsReflection() {
+		Member member = memberRepository.save(Member.create("지연"));
+		publishedEntry(member, LocalDate.now());
+		PeriodReflection reflection = periodReflectionService.generate(member.getId(), AiFeatureType.THREE_DAY_REFLECTION);
+
+		PeriodReflection reloaded = periodReflectionService.getOwnedOrThrow(member.getId(), reflection.getId());
+
+		assertEquals(reflection.getId(), reloaded.getId());
+	}
+
+	@Test
+	void getOwnedOrThrow_notOwnedByMember_throwsNotFound() {
+		Member owner = memberRepository.save(Member.create("소유자"));
+		Member stranger = memberRepository.save(Member.create("타인"));
+		publishedEntry(owner, LocalDate.now());
+		PeriodReflection reflection = periodReflectionService.generate(owner.getId(), AiFeatureType.THREE_DAY_REFLECTION);
+
+		BusinessException exception = assertThrows(
+				BusinessException.class,
+				() -> periodReflectionService.getOwnedOrThrow(stranger.getId(), reflection.getId()));
+		assertEquals(LifetimeErrorCode.PERIOD_REFLECTION_NOT_FOUND, exception.errorCode());
+	}
+
 	private void publishedEntry(Member member, LocalDate recordDate) {
 		Entry entry = Entry.create(member, EntryType.FREE, null, "본문", recordDate, null, null, null);
 		entry.publish();

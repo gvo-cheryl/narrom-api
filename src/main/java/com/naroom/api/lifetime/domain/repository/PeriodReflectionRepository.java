@@ -16,4 +16,6 @@ public interface PeriodReflectionRepository extends JpaRepository<PeriodReflecti
 
 	Optional<PeriodReflection> findByEntry_Id(UUID entryId);
 
+	Optional<PeriodReflection> findByIdAndMember_Id(UUID id, UUID memberId);
+
 }

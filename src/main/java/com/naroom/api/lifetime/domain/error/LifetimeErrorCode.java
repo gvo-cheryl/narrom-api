@@ -25,6 +25,16 @@ public enum LifetimeErrorCode implements ErrorCode {
 			"존재하지 않거나 다른 회원의 기간별 회고입니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	PERIOD_REFLECTION_FEATURE_TYPE_INVALID(
+			HttpStatus.BAD_REQUEST,
+			"LIFETIME_PERIOD_REFLECTION_FEATURE_TYPE_INVALID",
+			"urn:naroom:problem:lifetime-period-reflection-feature-type-invalid",
+			"요청 내용을 확인해 주세요",
+			"featureType은 THREE_DAY_REFLECTION 또는 WEEKLY_REFLECTION만 가능합니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;
