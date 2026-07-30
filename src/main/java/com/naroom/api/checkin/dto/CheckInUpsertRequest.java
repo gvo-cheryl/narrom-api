@@ -12,8 +12,8 @@ import java.util.UUID;
 @CheckInTextLength
 public record CheckInUpsertRequest(
 		@NotNull LocalDate checkInDate,
-		@Min(1) @Max(5) Short emotionIntensity,
-		@Min(1) @Max(5) Short energyLevel,
+		@Min(0) @Max(100) Short emotionIntensity,
+		@Min(0) @Max(100) Short energyLevel,
 		@Size(max = 500) String memorableEvent,
 		@Size(max = 300) String gratitudeNote,
 		@Size(max = 200) String currentNeed,

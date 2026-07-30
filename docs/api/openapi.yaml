@@ -973,13 +973,13 @@ components:
         emotionIntensity:
           type: integer
           format: int32
-          maximum: 5
-          minimum: 1
+          maximum: 100
+          minimum: 0
         energyLevel:
           type: integer
           format: int32
-          maximum: 5
-          minimum: 1
+          maximum: 100
+          minimum: 0
         memorableEvent:
           type: string
           maxLength: 500
