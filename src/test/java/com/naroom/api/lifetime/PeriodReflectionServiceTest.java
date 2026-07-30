@@ -11,6 +11,7 @@ import com.naroom.api.lifetime.domain.entity.PeriodReflection;
 import com.naroom.api.lifetime.domain.entity.PeriodReflectionEntry;
 import com.naroom.api.lifetime.domain.error.LifetimeErrorCode;
 import com.naroom.api.lifetime.domain.repository.PeriodReflectionEntryRepository;
+import com.naroom.api.lifetime.dto.PeriodReflectionResponse;
 import com.naroom.api.record.domain.entity.Entry;
 import com.naroom.api.record.domain.entity.EntryType;
 import com.naroom.api.record.domain.repository.EntryRepository;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -77,6 +79,37 @@ class PeriodReflectionServiceTest {
 	}
 
 	@Test
+	void generate_previousFailed_regeneratesNewVersionAndSchedulesNewJob() {
+		Member member = memberRepository.save(Member.create("지연"));
+		publishedEntry(member, LocalDate.now());
+
+		PeriodReflection first = periodReflectionService.generate(member.getId(), AiFeatureType.THREE_DAY_REFLECTION);
+		periodReflectionService.markFailed(first.getEntry().getId(), "TEST_FAILURE");
+
+		PeriodReflection second = periodReflectionService.generate(member.getId(), AiFeatureType.THREE_DAY_REFLECTION);
+
+		assertEquals(AiJobStatus.FAILED, first.getStatus());
+		assertEquals(2, second.getVersionNo());
+		assertEquals(first.getId(), second.getPreviousReflection().getId());
+		assertEquals(2, aiJobService.claimNextBatch(10).size());
+	}
+
+	@Test
+	void listRecent_previousVersionsSuperseded_returnsOnlyLatestVersionPerPeriod() {
+		Member member = memberRepository.save(Member.create("지연"));
+		publishedEntry(member, LocalDate.now());
+
+		PeriodReflection first = periodReflectionService.generate(member.getId(), AiFeatureType.THREE_DAY_REFLECTION);
+		periodReflectionService.markFailed(first.getEntry().getId(), "TEST_FAILURE");
+		PeriodReflection second = periodReflectionService.generate(member.getId(), AiFeatureType.THREE_DAY_REFLECTION);
+
+		List<PeriodReflection> recent = periodReflectionService.listRecent(member.getId(), null);
+
+		assertEquals(1, recent.size());
+		assertEquals(second.getId(), recent.get(0).getId());
+	}
+
+	@Test
 	void generate_insufficientRecords_throwsBusinessException() {
 		Member member = memberRepository.save(Member.create("지연"));
 
@@ -118,6 +151,26 @@ class PeriodReflectionServiceTest {
 				BusinessException.class,
 				() -> periodReflectionService.getOwnedOrThrow(stranger.getId(), reflection.getId()));
 		assertEquals(LifetimeErrorCode.PERIOD_REFLECTION_NOT_FOUND, exception.errorCode());
+	}
+
+	// getOwnedOrThrow()로 얻은 PeriodReflection의 entry는 join fetch 없이 그대로 지연 로딩 연관관계다.
+	// PeriodReflectionResponse.from()이 컨트롤러(트랜잭션 밖)에서 entryId를 노출할 때 이 프록시를
+	// 안전하게 다룰 수 있는지(LazyInitializationException 없이) 실제 운영 조건으로 확인한다.
+	@Test
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	void getOwnedOrThrow_thenBuildResponseWithoutAmbientTransaction_exposesEntryIdSafely() {
+		Member member = memberRepository.save(Member.create("지연"));
+		publishedEntry(member, LocalDate.now());
+		PeriodReflection reflection = periodReflectionService.generate(member.getId(), AiFeatureType.THREE_DAY_REFLECTION);
+
+		PeriodReflection reloaded = periodReflectionService.getOwnedOrThrow(member.getId(), reflection.getId());
+		PeriodReflectionResponse response = PeriodReflectionResponse.from(reloaded);
+
+		assertEquals(reflection.getEntry().getId(), response.entryId());
+
+		// 이 테스트는 @Transactional(NOT_SUPPORTED)라 롤백되지 않는다 - generate()가 만든 AiJob을 여기서
+		// 직접 비워서 다른 테스트의 claimNextBatch() 결과 수를 오염시키지 않게 한다.
+		aiJobService.claimNextBatch(10);
 	}
 
 	private void publishedEntry(Member member, LocalDate recordDate) {

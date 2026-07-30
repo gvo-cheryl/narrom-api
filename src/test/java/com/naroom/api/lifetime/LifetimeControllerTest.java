@@ -193,6 +193,17 @@ class LifetimeControllerTest {
 	}
 
 	@Test
+	void getPeriodReflections_authenticated_returnsList() throws Exception {
+		when(periodReflectionService.listRecent(any(), any()))
+				.thenReturn(List.of(samplePendingReflection(AiFeatureType.WEEKLY_REFLECTION)));
+
+		mockMvc.perform(get("/api/v1/lifetime/period-reflections").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data").isArray())
+				.andExpect(jsonPath("$.data[0].featureType").value("WEEKLY_REFLECTION"));
+	}
+
+	@Test
 	void getCurrentPersonalSummary_noneYet_returnsNullData() throws Exception {
 		when(personalSummaryService.getCurrent(any())).thenReturn(Optional.empty());
 
@@ -270,7 +281,7 @@ class LifetimeControllerTest {
 
 	@Test
 	void getTagDistribution_authenticated_returnsList() throws Exception {
-		when(tagExplorationService.getDistribution(any(), any()))
+		when(tagExplorationService.getDistribution(any(), any(), any()))
 				.thenReturn(List.of(new TagDistributionResponse(UUID.randomUUID(), "서운함", TagCategory.EMOTION, 3)));
 
 		mockMvc.perform(get("/api/v1/lifetime/analytics/tags").with(authentication(memberAuthentication())))

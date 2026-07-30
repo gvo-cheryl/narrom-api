@@ -2,6 +2,8 @@ package com.naroom.api.lifetime;
 
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
+import com.naroom.api.global.error.exception.BusinessException;
+import com.naroom.api.lifetime.domain.error.LifetimeErrorCode;
 import com.naroom.api.lifetime.dto.TagDistributionResponse;
 import com.naroom.api.record.EntryTagService;
 import com.naroom.api.record.domain.entity.Entry;
@@ -23,6 +25,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
@@ -83,6 +86,49 @@ class TagExplorationServiceTest {
 
 		assertEquals(1, distribution.size());
 		assertTrue(distribution.stream().allMatch(d -> d.category() == TagCategory.EMOTION));
+	}
+
+	@Test
+	void getDistribution_withRange_excludesTagsOutsideRange() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry recentEntry =
+				entryRepository.save(Entry.create(member, EntryType.FREE, null, "최근", LocalDate.now(), null, null, null));
+		Entry oldEntry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "오래됨", LocalDate.now().minusDays(20), null, null, null));
+		Tag emotionTag = tagRepository.save(Tag.createUserTag(member, TagCategory.EMOTION, "안도감", "안도감" + System.nanoTime()));
+		EntryTagResponse attachedRecent = entryTagService.attachUserTag(member.getId(), recentEntry.getId(), emotionTag.getId());
+		entryTagService.confirmTag(member.getId(), recentEntry.getId(), attachedRecent.id());
+		EntryTagResponse attachedOld = entryTagService.attachUserTag(member.getId(), oldEntry.getId(), emotionTag.getId());
+		entryTagService.confirmTag(member.getId(), oldEntry.getId(), attachedOld.id());
+
+		List<TagDistributionResponse> distribution = tagExplorationService.getDistribution(member.getId(), null, 7);
+
+		assertEquals(1, distribution.size());
+		assertEquals(1, distribution.get(0).count());
+	}
+
+	@Test
+	void getDistribution_withNullRange_matchesAllTimeOverload() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+		Tag emotionTag = tagRepository.save(Tag.createUserTag(member, TagCategory.EMOTION, "고마움", "고마움" + System.nanoTime()));
+		EntryTagResponse attached = entryTagService.attachUserTag(member.getId(), entry.getId(), emotionTag.getId());
+		entryTagService.confirmTag(member.getId(), entry.getId(), attached.id());
+
+		List<TagDistributionResponse> withoutRange = tagExplorationService.getDistribution(member.getId(), null);
+		List<TagDistributionResponse> withNullRange = tagExplorationService.getDistribution(member.getId(), null, null);
+
+		assertEquals(withoutRange, withNullRange);
+	}
+
+	@Test
+	void getDistribution_invalidRange_throwsBusinessException() {
+		Member member = memberRepository.save(Member.create("지연"));
+
+		BusinessException exception = assertThrows(
+				BusinessException.class,
+				() -> tagExplorationService.getDistribution(member.getId(), null, 10));
+		assertEquals(LifetimeErrorCode.ANALYTICS_RANGE_INVALID, exception.errorCode());
 	}
 
 }

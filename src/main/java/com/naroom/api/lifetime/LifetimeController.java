@@ -1,5 +1,6 @@
 package com.naroom.api.lifetime;
 
+import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.global.response.ApiResponse;
 import com.naroom.api.lifetime.dto.CalendarDayResponse;
@@ -80,6 +81,14 @@ public class LifetimeController {
 				PeriodReflectionResponse.from(periodReflectionService.getOwnedOrThrow(currentMemberId(), periodReflectionId)));
 	}
 
+	@GetMapping("/period-reflections")
+	public ApiResponse<List<PeriodReflectionResponse>> getPeriodReflections(
+			@RequestParam(required = false) AiFeatureType featureType) {
+		return ApiResponse.of(periodReflectionService.listRecent(currentMemberId(), featureType).stream()
+				.map(PeriodReflectionResponse::from)
+				.toList());
+	}
+
 	@GetMapping("/personal-summaries/current")
 	public ApiResponse<PersonalSummaryResponse> getCurrentPersonalSummary() {
 		return ApiResponse.of(personalSummaryService.getCurrent(currentMemberId()).orElse(null));
@@ -102,8 +111,9 @@ public class LifetimeController {
 
 	@GetMapping("/analytics/tags")
 	public ApiResponse<List<TagDistributionResponse>> getTagDistribution(
-			@RequestParam(required = false) TagCategory category) {
-		return ApiResponse.of(tagExplorationService.getDistribution(currentMemberId(), category));
+			@RequestParam(required = false) TagCategory category,
+			@RequestParam(required = false) Integer range) {
+		return ApiResponse.of(tagExplorationService.getDistribution(currentMemberId(), category, range));
 	}
 
 	@GetMapping("/analytics/tags/{tagId}/entries")

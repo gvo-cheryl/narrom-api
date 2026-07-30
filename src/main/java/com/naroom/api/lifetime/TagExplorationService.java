@@ -1,5 +1,7 @@
 package com.naroom.api.lifetime;
 
+import com.naroom.api.global.error.exception.BusinessException;
+import com.naroom.api.lifetime.domain.error.LifetimeErrorCode;
 import com.naroom.api.lifetime.dto.TagDistributionResponse;
 import com.naroom.api.record.domain.entity.EntryTag;
 import com.naroom.api.record.domain.entity.Tag;
@@ -9,6 +11,7 @@ import com.naroom.api.record.domain.repository.EntryTagRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 public class TagExplorationService {
 
 	private static final Set<TagState> CONFIRMED_TAG_STATES = EnumSet.of(TagState.CONFIRMED, TagState.SYSTEM);
+	private static final Set<Integer> ALLOWED_RANGE_DAYS = Set.of(7, 14, 30);
 
 	private final EntryTagRepository entryTagRepository;
 
@@ -33,8 +37,27 @@ public class TagExplorationService {
 	}
 
 	public List<TagDistributionResponse> getDistribution(UUID memberId, TagCategory category) {
-		List<EntryTag> entryTags = entryTagRepository.findByEntry_Member_IdAndStateIn(memberId, CONFIRMED_TAG_STATES);
+		return summarize(entryTagRepository.findByEntry_Member_IdAndStateIn(memberId, CONFIRMED_TAG_STATES), category);
+	}
 
+	// LifeTime 홈/키워드 탐색(L03/L04/L10)이 선택한 기간(7/14/30일)만으로 분포를 좁혀 볼 때 쓴다.
+	// rangeDays가 없으면(null) 기존과 동일하게 전체 기간을 집계한다 - 이미 range 없이 호출하는 곳과 호환된다.
+	public List<TagDistributionResponse> getDistribution(UUID memberId, TagCategory category, Integer rangeDays) {
+		if (rangeDays == null) {
+			return getDistribution(memberId, category);
+		}
+		if (!ALLOWED_RANGE_DAYS.contains(rangeDays)) {
+			throw new BusinessException(LifetimeErrorCode.ANALYTICS_RANGE_INVALID);
+		}
+		LocalDate end = LocalDate.now();
+		LocalDate start = end.minusDays(rangeDays - 1L);
+		return summarize(
+				entryTagRepository.findByEntry_Member_IdAndStateInAndEntry_RecordDateBetween(
+						memberId, CONFIRMED_TAG_STATES, start, end),
+				category);
+	}
+
+	private List<TagDistributionResponse> summarize(List<EntryTag> entryTags, TagCategory category) {
 		return entryTags.stream()
 				.map(EntryTag::getTag)
 				.filter(tag -> category == null || tag.getCategory() == category)

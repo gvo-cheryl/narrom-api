@@ -16,12 +16,9 @@ import com.naroom.api.ai.prompt.AssembledPrompt;
 import com.naroom.api.ai.prompt.PromptAssembler;
 import com.naroom.api.ai.result.PeriodReflectionResponseParser;
 import com.naroom.api.ai.result.PeriodReflectionResult;
-import com.naroom.api.global.error.exception.BusinessException;
+import com.naroom.api.lifetime.PeriodReflectionService;
+import com.naroom.api.lifetime.PeriodReflectionService.ProcessingContext;
 import com.naroom.api.lifetime.domain.entity.PeriodReflection;
-import com.naroom.api.lifetime.domain.entity.PeriodReflectionEntry;
-import com.naroom.api.lifetime.domain.error.LifetimeErrorCode;
-import com.naroom.api.lifetime.domain.repository.PeriodReflectionEntryRepository;
-import com.naroom.api.lifetime.domain.repository.PeriodReflectionRepository;
 import com.naroom.api.record.domain.entity.Entry;
 import com.openai.errors.InternalServerException;
 import com.openai.errors.OpenAIIoException;
@@ -44,8 +41,7 @@ public class PeriodReflectionJobProcessor {
 
 	private static final Logger log = LoggerFactory.getLogger(PeriodReflectionJobProcessor.class);
 
-	private final PeriodReflectionRepository periodReflectionRepository;
-	private final PeriodReflectionEntryRepository periodReflectionEntryRepository;
+	private final PeriodReflectionService periodReflectionService;
 	private final PromptAssembler promptAssembler;
 	private final AiModerationClient moderationClient;
 	private final AiResponseGenerationClient generationClient;
@@ -55,8 +51,7 @@ public class PeriodReflectionJobProcessor {
 	private final OpenAiProperties openAiProperties;
 
 	public PeriodReflectionJobProcessor(
-			PeriodReflectionRepository periodReflectionRepository,
-			PeriodReflectionEntryRepository periodReflectionEntryRepository,
+			PeriodReflectionService periodReflectionService,
 			PromptAssembler promptAssembler,
 			AiModerationClient moderationClient,
 			AiResponseGenerationClient generationClient,
@@ -64,8 +59,7 @@ public class PeriodReflectionJobProcessor {
 			PeriodReflectionOutcomeService outcomeService,
 			AiJobService aiJobService,
 			OpenAiProperties openAiProperties) {
-		this.periodReflectionRepository = periodReflectionRepository;
-		this.periodReflectionEntryRepository = periodReflectionEntryRepository;
+		this.periodReflectionService = periodReflectionService;
 		this.promptAssembler = promptAssembler;
 		this.moderationClient = moderationClient;
 		this.generationClient = generationClient;
@@ -77,6 +71,8 @@ public class PeriodReflectionJobProcessor {
 
 	public void process(AiJobResponse job) {
 		if (job.featureType() != AiFeatureType.WEEKLY_REFLECTION && job.featureType() != AiFeatureType.THREE_DAY_REFLECTION) {
+			// dispatch()가 featureType으로 이미 걸러 보내므로 실제로는 도달하지 않는 방어 분기다 - 이 경우
+			// PeriodReflection 자체가 없을 수 있어 markFailed를 호출하지 않는다.
 			aiJobService.failJobPermanently(job.id(), job.startedAt(), "UNSUPPORTED_FEATURE_TYPE");
 			return;
 		}
@@ -87,12 +83,35 @@ public class PeriodReflectionJobProcessor {
 		}
 	}
 
+	// 21.2절: EntryReflectionJobProcessor와 동일한 재시도 분류 기준을 그대로 따른다. 영구 실패이거나(비재시도성)
+	// 재시도 가능한 종류라도 이번이 마지막 허용 시도였다면(attempt_count가 max_attempts에 도달) ai_jobs뿐
+	// 아니라 period_reflections.status도 FAILED로 맞춰야 한다 - 그렇지 않으면 ai_jobs는 조용히 재시도 불가
+	// 상태(attempt_count>=max_attempts)로 멈추는데 period_reflections는 영원히 PENDING으로 남아,
+	// generate()가 이를 정상 진행 중인 회고로 오인해 재시도를 만들지 않는다.
+	private void handleFailure(AiJobResponse job, Exception e) {
+		String errorCode = e.getClass().getSimpleName();
+		boolean retryable = e instanceof OpenAIIoException
+				|| e instanceof RateLimitException
+				|| e instanceof InternalServerException
+				|| e instanceof OpenAIRetryableException
+				|| e instanceof IllegalArgumentException;
+		boolean attemptsExhausted = job.attemptCount() + 1 >= job.maxAttempts();
+
+		log.warn("Period reflection job processing failed. jobId={} errorCode={} retryable={} attemptsExhausted={}",
+				job.id(), errorCode, retryable, attemptsExhausted);
+
+		if (retryable && !attemptsExhausted) {
+			aiJobService.failJob(job.id(), job.startedAt(), errorCode, computeBackoff(job.attemptCount()));
+		} else {
+			aiJobService.failJobPermanently(job.id(), job.startedAt(), errorCode);
+			periodReflectionService.markFailed(job.entryId(), errorCode);
+		}
+	}
+
 	private void processPeriodReflection(AiJobResponse job) {
-		PeriodReflection periodReflection = periodReflectionRepository.findByEntry_Id(job.entryId())
-				.orElseThrow(() -> new BusinessException(LifetimeErrorCode.PERIOD_REFLECTION_NOT_FOUND));
-		List<Entry> evidenceEntries = periodReflectionEntryRepository.findByPeriodReflection_Id(periodReflection.getId()).stream()
-				.map(PeriodReflectionEntry::getEntry)
-				.toList();
+		ProcessingContext processingContext = periodReflectionService.loadForProcessing(job.entryId());
+		PeriodReflection periodReflection = processingContext.periodReflection();
+		List<Entry> evidenceEntries = processingContext.evidenceEntries();
 		Set<UUID> allowedEvidenceEntryIds = evidenceEntries.stream().map(Entry::getId).collect(Collectors.toSet());
 
 		AssembledPrompt prompt = promptAssembler.assembleForPeriodReflection(
@@ -146,31 +165,15 @@ public class PeriodReflectionJobProcessor {
 		outcomeService.persist(context);
 	}
 
-	// §5.3 토큰 상한: 3일 회고 600, 주간 회고 900.
+	// §5.3 토큰 상한(2026-07-30 상향): 원래 3일 회고 600·주간 회고 900이었으나, 리스트 필드 6개+요약+질문+
+	// evidenceEntryIds를 담기엔 부족해 응답이 중간에 잘려(incomplete) 매번 JSON 파싱에 실패했다. 우선 2배까지만
+	// 올려두고, 실제 사용량을 보며 다시 조정한다.
 	private long maxOutputTokens(AiFeatureType featureType) {
 		return switch (featureType) {
-			case THREE_DAY_REFLECTION -> 600L;
-			case WEEKLY_REFLECTION -> 900L;
+			case THREE_DAY_REFLECTION -> 1200L;
+			case WEEKLY_REFLECTION -> 1800L;
 			default -> throw new IllegalArgumentException(featureType + "은 기간별 회고 대상이 아닙니다");
 		};
-	}
-
-	// 21.2절: EntryReflectionJobProcessor와 동일한 재시도 분류 기준을 그대로 따른다.
-	private void handleFailure(AiJobResponse job, Exception e) {
-		String errorCode = e.getClass().getSimpleName();
-		boolean retryable = e instanceof OpenAIIoException
-				|| e instanceof RateLimitException
-				|| e instanceof InternalServerException
-				|| e instanceof OpenAIRetryableException
-				|| e instanceof IllegalArgumentException;
-
-		log.warn("Period reflection job processing failed. jobId={} errorCode={} retryable={}", job.id(), errorCode, retryable);
-
-		if (retryable) {
-			aiJobService.failJob(job.id(), job.startedAt(), errorCode, computeBackoff(job.attemptCount()));
-		} else {
-			aiJobService.failJobPermanently(job.id(), job.startedAt(), errorCode);
-		}
 	}
 
 	private Instant computeBackoff(int attemptCount) {

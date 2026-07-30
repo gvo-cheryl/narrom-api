@@ -1,6 +1,7 @@
 package com.naroom.api.ai.infra.openai;
 
 import com.naroom.api.ai.AiResponseGenerationClient;
+import com.naroom.api.ai.AiResponseIncompleteException;
 import com.naroom.api.ai.GenerationRequest;
 import com.naroom.api.ai.GenerationResult;
 import com.openai.client.OpenAIClient;
@@ -52,6 +53,10 @@ public class OpenAiResponseGenerationClient implements AiResponseGenerationClien
 				.build();
 
 		Response response = openAiClient.responses().create(params);
+		if (response.incompleteDetails().isPresent()) {
+			String reason = response.incompleteDetails().get().reason().map(Object::toString).orElse("UNKNOWN");
+			throw new AiResponseIncompleteException(reason);
+		}
 		String outputJson = extractOutputText(response);
 		long inputTokens = response.usage().map(usage -> usage.inputTokens()).orElse(0L);
 		long outputTokens = response.usage().map(usage -> usage.outputTokens()).orElse(0L);

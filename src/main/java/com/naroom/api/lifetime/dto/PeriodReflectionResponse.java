@@ -14,6 +14,7 @@ import java.util.UUID;
 // 참고). insights는 완료된 경우에만 값이 있다.
 public record PeriodReflectionResponse(
 		UUID id,
+		UUID entryId,
 		AiFeatureType featureType,
 		LocalDate periodStart,
 		LocalDate periodEnd,
@@ -27,9 +28,12 @@ public record PeriodReflectionResponse(
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+	// entryId: 회고 봉투 Entry의 id다 - 질문(questionText)에 대한 내 생각을 기존 entry_self_reflections
+	// 메커니즘(record/entries/{entryId}/reflections)에 그대로 붙일 수 있도록 노출한다.
 	public static PeriodReflectionResponse from(PeriodReflection reflection) {
 		return new PeriodReflectionResponse(
 				reflection.getId(),
+				reflection.getEntry().getId(),
 				reflection.getFeatureType(),
 				reflection.getPeriodStart(),
 				reflection.getPeriodEnd(),
