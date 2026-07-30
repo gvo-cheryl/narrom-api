@@ -107,9 +107,9 @@ class AiDomainEntityPersistenceTest {
 				Entry.create(member, EntryType.FREE, "제목", "오늘의 기록", LocalDate.now(), null, null, null));
 
 		AiPromptVersion commonPrompt =
-				aiPromptVersionRepository.save(AiPromptVersion.forCommon("common-v1"));
-		AiPromptVersion featurePrompt = aiPromptVersionRepository.save(
-				AiPromptVersion.forFeature(AiFeatureType.ENTRY_REFLECTION, "entry-reflection-v1", "schema-v1"));
+				aiPromptVersionRepository.save(AiPromptVersion.forCommon("common-v1-" + System.nanoTime()));
+		AiPromptVersion featurePrompt = aiPromptVersionRepository.save(AiPromptVersion.forFeature(
+				AiFeatureType.ENTRY_REFLECTION, "entry-reflection-v1-" + System.nanoTime(), "schema-v1"));
 
 		AiJob entryJob = aiJobRepository.save(
 				AiJob.forEntry(member, AiFeatureType.ENTRY_REFLECTION, entry, "idem-" + System.nanoTime()));

@@ -10,7 +10,7 @@ import java.util.Map;
 // 지침 텍스트를 바꾸면 반드시 버전 라벨도 같이 올린다 - AiGenerationRun에 버전이 기록되어 이전 결과와 비교 평가에 쓰인다.
 public final class AiInstructionCatalog {
 
-	public static final String COMMON_INSTRUCTIONS_VERSION = "common-v1";
+	public static final String COMMON_INSTRUCTIONS_VERSION = "common-v2";
 
 	// 2.1/2.2/2.3절, 8장(위기 상황), 22.2절(개인정보 반복 노출 최소화)을 지침 문장으로 옮긴 것.
 	public static final String COMMON_INSTRUCTIONS = """
@@ -22,7 +22,9 @@ public final class AiInstructionCatalog {
 			- 사용자가 스스로 생각할 질문을 한 번에 하나만 제공한다.
 			- 힘들었던 점뿐 아니라 사용자가 실제로 시도한 대응과 도움이 된 행동도 함께 찾는다.
 			- 모든 결과는 사용자가 동의·수정·보류·제외할 수 있는 형태로 제시한다.
-			- 자연스러운 한국어 존댓말을 쓴다.
+			- 말투는 '-습니다/-니다'로 끝나는 격식체가 아니라, '-이에요/-해요/-네요/-것 같아요'처럼 다정하고
+			  부드러운 구어체 존댓말을 쓴다. 문장이 딱딱하게 끊기지 않고 친구가 옆에서 조곤조곤 말해주는
+			  느낌에 가깝게 쓴다.
 
 			절대 하지 말아야 할 것:
 			- 현재 감정을 고정된 성격으로 규정하거나, 한두 개 기록만으로 장기 패턴을 단정하지 않는다.
@@ -31,6 +33,7 @@ public final class AiInstructionCatalog {
 			- 사용자가 기록하지 않은 사실이나 타인의 의도를 만들어내지 않는다.
 			- 모든 감정을 억지로 긍정적으로 전환하지 않는다.
 			- 상투적 위로나 근거 없는 칭찬을 반복하지 않는다.
+			- '-습니다/-니다'로 끝나는 딱딱한 문어체나 보고서 같은 말투를 쓰지 않는다.
 			- 사용자가 원하지 않은 해결책·과제·챌린지를 강요하지 않는다.
 			- AI의 해석이 사용자 자기해석보다 정확한 것처럼 표현하지 않는다.
 			- AI만이 사용자를 이해한다는 식으로 의존을 유도하지 않는다.
@@ -50,7 +53,10 @@ public final class AiInstructionCatalog {
 			지금 정리할 것은 사용자가 방금 작성한 개별 기록 1건이다.
 
 			다음을 한 번의 응답으로 함께 제공한다(감정 추출만을 위해 별도로 다시 요청하지 않는다):
-			- 기록의 핵심을 짧게 정리한 요약(summary)
+			- 기록을 다정하게 다듬어 돌려주는 정리(summary) - 사용자가 쓴 문장을 그대로 나열하거나 기계적으로
+			  요약하지 않는다. 문맥을 자연스럽게 다듬어 표현하고, 기록이 짧거나 담긴 내용이 적더라도 그 안에서
+			  눈에 띄는 점이나 조심스러운 시선 하나를 한두 문장 정도 부드럽게 더한다. 단, 확정된 조언·해결책·
+			  판단처럼 말하지 않고 어디까지나 가능성으로만 제시하며, 사용자가 쓰지 않은 내용을 지어내지 않는다.
 			- 기록에서 느껴지는 감정 후보(emotionCandidates) - 각 후보는 code·label·confidence(0~1)를 포함
 			- 이미 존재하는 표준 태그 중 관련 있는 것의 후보(suggestedTagIds) - 새 태그를 만들어내지 않는다
 			- 사용자가 스스로 생각해볼 후속 질문 1개(reflectionQuestion)
@@ -99,7 +105,7 @@ public final class AiInstructionCatalog {
 
 	public static String featureInstructionsVersion(AiFeatureType featureType) {
 		return switch (featureType) {
-			case ENTRY_REFLECTION -> "entry-reflection-v1";
+			case ENTRY_REFLECTION -> "entry-reflection-v2";
 			case WEEKLY_REFLECTION -> "weekly-reflection-v1";
 			case THREE_DAY_REFLECTION -> "three-day-reflection-v1";
 			default -> throw unsupported(featureType);

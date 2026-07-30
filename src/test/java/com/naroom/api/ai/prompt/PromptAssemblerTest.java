@@ -141,7 +141,7 @@ class PromptAssemblerTest {
 		AssembledPrompt prompt = promptAssembler.assembleForEntryReflection(entry.getId());
 
 		assertEquals(AiInstructionCatalog.COMMON_INSTRUCTIONS_VERSION, prompt.commonInstructionsVersion());
-		assertEquals("entry-reflection-v1", prompt.featureInstructionsVersion());
+		assertEquals("entry-reflection-v2", prompt.featureInstructionsVersion());
 		assertEquals("entry-reflection-schema-v1", prompt.outputSchemaVersion());
 		assertTrue(prompt.contextContent().contains("오늘은 힘든 하루였다"));
 		assertTrue(prompt.contextContent().contains("제목"));
