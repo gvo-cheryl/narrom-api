@@ -56,6 +56,23 @@ public class UserProgramMissionReplacement {
 	protected UserProgramMissionReplacement() {
 	}
 
+	private UserProgramMissionReplacement(
+			UserProgramMission userProgramMission, ExperimentMission fromMission, ExperimentMission toMission,
+			MissionReplacementReasonCode reasonCode, String reasonNote) {
+		this.userProgramMission = userProgramMission;
+		this.fromMission = fromMission;
+		this.toMission = toMission;
+		this.reasonCode = reasonCode;
+		this.reasonNote = reasonNote;
+	}
+
+	// §13 미션 교체 트랜잭션 3단계.
+	public static UserProgramMissionReplacement of(
+			UserProgramMission userProgramMission, ExperimentMission fromMission, ExperimentMission toMission,
+			MissionReplacementReasonCode reasonCode, String reasonNote) {
+		return new UserProgramMissionReplacement(userProgramMission, fromMission, toMission, reasonCode, reasonNote);
+	}
+
 	public UUID getId() {
 		return id;
 	}

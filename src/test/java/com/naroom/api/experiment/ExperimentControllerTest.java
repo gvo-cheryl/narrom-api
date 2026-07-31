@@ -3,10 +3,14 @@ package com.naroom.api.experiment;
 import com.naroom.api.account.domain.repository.AuthSessionRepository;
 import com.naroom.api.auth.security.JwtTokenProvider;
 import com.naroom.api.auth.security.MemberAuthentication;
+import com.naroom.api.experiment.domain.entity.ExperimentAttemptStatus;
 import com.naroom.api.experiment.domain.entity.ExperimentMissionType;
 import com.naroom.api.experiment.domain.entity.ExperimentSourceType;
 import com.naroom.api.experiment.domain.entity.UserExperimentProgramStatus;
 import com.naroom.api.experiment.dto.EstimatedMinutesRange;
+import com.naroom.api.experiment.dto.ExperimentActiveProgramResponse;
+import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
+import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramMissionResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramStartResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramSummaryResponse;
@@ -65,6 +69,9 @@ class ExperimentControllerTest {
 
 	@MockitoBean
 	private ExperimentEnrollmentService experimentEnrollmentService;
+
+	@MockitoBean
+	private ExperimentProgressService experimentProgressService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -170,6 +177,72 @@ class ExperimentControllerTest {
 						.with(authentication(memberAuthentication())))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.status").value("IN_PROGRESS"));
+	}
+
+	@Test
+	void getActiveProgram_authenticated_returnsTodayMission() throws Exception {
+		UUID userExperimentProgramId = UUID.randomUUID();
+		when(experimentProgressService.getActive(any())).thenReturn(java.util.Optional.of(new ExperimentActiveProgramResponse(
+				userExperimentProgramId, UserExperimentProgramStatus.IN_PROGRESS, "지금의 마음 알아보기", (short) 3, (short) 1, 0, 0,
+				new ExperimentUserProgramMissionResponse(
+						(short) 1, UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기",
+						ExperimentMissionType.OBSERVATION, (short) 3, UUID.randomUUID()))));
+
+		mockMvc.perform(get("/api/v1/experiments/user-programs/active").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.userExperimentProgramId").value(userExperimentProgramId.toString()));
+	}
+
+	@Test
+	void getActiveProgram_noActiveCourse_returnsNullData() throws Exception {
+		when(experimentProgressService.getActive(any())).thenReturn(java.util.Optional.empty());
+
+		mockMvc.perform(get("/api/v1/experiments/user-programs/active").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data").doesNotExist());
+	}
+
+	@Test
+	void recordMission_authenticated_returnsRecordResult() throws Exception {
+		UUID userExperimentProgramId = UUID.randomUUID();
+		UUID userProgramMissionId = UUID.randomUUID();
+		when(experimentProgressService.recordMission(any(), eq(userExperimentProgramId), eq(userProgramMissionId), any()))
+				.thenReturn(new ExperimentMissionRecordResponse(
+						ExperimentAttemptStatus.DONE, true, UserExperimentProgramStatus.IN_PROGRESS, (short) 2, false, 1, 0));
+
+		mockMvc.perform(post(
+						"/api/v1/experiments/user-programs/{userExperimentProgramId}/missions/{userProgramMissionId}/record",
+						userExperimentProgramId, userProgramMissionId)
+						.with(authentication(memberAuthentication()))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{ "attemptStatus": "DONE", "recordDate": "2026-07-31" }
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.missionConsumed").value(true))
+				.andExpect(jsonPath("$.data.currentDay").value(2));
+	}
+
+	@Test
+	void replaceMission_authenticated_returnsReplaceResult() throws Exception {
+		UUID userExperimentProgramId = UUID.randomUUID();
+		UUID userProgramMissionId = UUID.randomUUID();
+		UUID replacementMissionId = UUID.randomUUID();
+		when(experimentProgressService.replaceMission(any(), eq(userExperimentProgramId), eq(userProgramMissionId), any()))
+				.thenReturn(new ExperimentMissionReplaceResponse(
+						userProgramMissionId, (short) 2, UUID.randomUUID(), replacementMissionId, 1));
+
+		mockMvc.perform(post(
+						"/api/v1/experiments/user-programs/{userExperimentProgramId}/missions/{userProgramMissionId}/replace",
+						userExperimentProgramId, userProgramMissionId)
+						.with(authentication(memberAuthentication()))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{ "replacementMissionId": "%s", "reasonCode": "WANT_LIGHTER" }
+								""".formatted(replacementMissionId)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.replacementCount").value(1))
+				.andExpect(jsonPath("$.data.missionId").value(replacementMissionId.toString()));
 	}
 
 	private MemberAuthentication memberAuthentication() {

@@ -86,6 +86,41 @@ public class ExperimentMissionRecord {
 	protected ExperimentMissionRecord() {
 	}
 
+	private ExperimentMissionRecord(
+			UserExperimentProgram userExperimentProgram, UserProgramMission userProgramMission, LocalDate recordDate,
+			ExperimentAttemptStatus attemptStatus, String responseText, String responseData, String emotionData,
+			Short energyLevel, String reflection, Entry entry) {
+		this.userExperimentProgram = userExperimentProgram;
+		this.userProgramMission = userProgramMission;
+		this.recordDate = recordDate;
+		this.attemptStatus = attemptStatus;
+		this.responseText = responseText;
+		this.responseData = responseData;
+		this.emotionData = emotionData;
+		this.energyLevel = energyLevel;
+		this.reflection = reflection;
+		this.entry = entry;
+	}
+
+	// §13 미션 기록 트랜잭션 4단계: RESTED가 아닌 시도 상태의 기록이다.
+	public static ExperimentMissionRecord attempt(
+			UserExperimentProgram userExperimentProgram, UserProgramMission userProgramMission, LocalDate recordDate,
+			ExperimentAttemptStatus attemptStatus, String responseText, String responseData, String emotionData,
+			Short energyLevel, String reflection, Entry entry) {
+		return new ExperimentMissionRecord(
+				userExperimentProgram, userProgramMission, recordDate, attemptStatus, responseText, responseData,
+				emotionData, energyLevel, reflection, entry);
+	}
+
+	// §11.2 오늘은 쉬기 - 시도 응답·감정·에너지·LifeTime 연결 없이 휴식 사실만 남긴다.
+	public static ExperimentMissionRecord rest(
+			UserExperimentProgram userExperimentProgram, UserProgramMission userProgramMission, LocalDate recordDate,
+			String reflection) {
+		return new ExperimentMissionRecord(
+				userExperimentProgram, userProgramMission, recordDate, ExperimentAttemptStatus.RESTED,
+				null, null, null, null, reflection, null);
+	}
+
 	public UUID getId() {
 		return id;
 	}

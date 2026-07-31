@@ -105,6 +105,56 @@ public enum ExperimentErrorCode implements ErrorCode {
 			"코스 상세를 다시 불러온 뒤 다시 시도해 주세요.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	USER_PROGRAM_NOT_IN_PROGRESS(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_USER_PROGRAM_NOT_IN_PROGRESS",
+			"urn:naroom:problem:experiment-user-program-not-in-progress",
+			"지금은 기록할 수 없는 코스입니다",
+			"진행 중인 코스에서만 오늘의 작은 실험을 기록할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	MISSION_NOT_CURRENT(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_MISSION_NOT_CURRENT",
+			"urn:naroom:problem:experiment-mission-not-current",
+			"오늘의 미션이 아닙니다",
+			"현재 진행 중인 일차의 미션만 기록할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	MISSION_ALREADY_RECORDED(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_MISSION_ALREADY_RECORDED",
+			"urn:naroom:problem:experiment-mission-already-recorded",
+			"이미 기록을 마친 미션입니다",
+			"이미 기록되었거나 지난 일차의 미션은 다시 기록하거나 교체할 수 없습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	ALREADY_RESTED_TODAY(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_ALREADY_RESTED_TODAY",
+			"urn:naroom:problem:experiment-already-rested-today",
+			"오늘은 이미 쉬기로 기록했습니다",
+			"같은 날짜에는 오늘은 쉬기를 한 번만 기록할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	MISSION_INACTIVE(
+			HttpStatus.BAD_REQUEST,
+			"EXPERIMENT_MISSION_INACTIVE",
+			"urn:naroom:problem:experiment-mission-inactive",
+			"지금은 고를 수 없는 미션입니다",
+			"더 이상 사용하지 않는 미션으로는 교체할 수 없습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

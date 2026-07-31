@@ -164,6 +164,24 @@ public class UserExperimentProgram {
 		this.endedEarlyAt = now;
 	}
 
+	// §13 미션 기록 트랜잭션 6단계: 미션을 소비한 기록이 저장된 뒤 다음 일차로 넘어간다. 다음 슬롯을
+	// CURRENT로 올리는 것은 서비스 계층이 UserProgramMission에 대해 별도로 한다.
+	public void advanceDay(LocalDate today) {
+		this.currentDay = (short) (this.currentDay + 1);
+		this.lastActivityDate = today;
+	}
+
+	// §11.2 오늘은 쉬기 - RESTED는 current_day를 그대로 두고 마지막 활동일만 갱신한다.
+	public void touchActivity(LocalDate today) {
+		this.lastActivityDate = today;
+	}
+
+	// §13 미션 기록 트랜잭션 7단계: 마지막 슬롯까지 기록되면 코스 돌아보기 전 단계로 넘어간다.
+	public void markAwaitingReview(Instant now) {
+		this.status = UserExperimentProgramStatus.AWAITING_REVIEW;
+		this.reviewReadyAt = now;
+	}
+
 	public UUID getId() {
 		return id;
 	}

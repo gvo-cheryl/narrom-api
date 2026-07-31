@@ -156,6 +156,28 @@ public class UserProgramMission {
 		this.firstAvailableAt = now;
 	}
 
+	// §13 미션 기록 트랜잭션 5단계: RESTED가 아닌 시도 상태를 기록하면 슬롯을 소비한다.
+	public void recordAttempt(Instant now) {
+		this.slotStatus = UserProgramMissionSlotStatus.RECORDED;
+		this.recordedAt = now;
+	}
+
+	// §13 미션 교체 트랜잭션 4~5단계. originalMission은 최초 시작 시 배정된 미션을 계속 가리켜야
+	// 하므로 여기서 건드리지 않는다 - "원래 무엇이었는지"는 교체를 여러 번 해도 바뀌지 않는다.
+	public void replaceMission(ExperimentMission newMission) {
+		this.mission = newMission;
+		this.missionVersion = newMission.getContentVersion();
+		this.titleSnapshot = newMission.getTitle();
+		this.descriptionSnapshot = newMission.getDescription();
+		this.instructionSnapshot = newMission.getInstruction();
+		this.missionType = newMission.getMissionType();
+		this.responseType = newMission.getResponseType();
+		this.estimatedMinutes = newMission.getEstimatedMinutes();
+		this.reflectionQuestionsSnapshot = newMission.getReflectionQuestions();
+		this.responseSchemaSnapshot = newMission.getResponseSchema();
+		this.replacementCount = this.replacementCount + 1;
+	}
+
 	public UUID getId() {
 		return id;
 	}

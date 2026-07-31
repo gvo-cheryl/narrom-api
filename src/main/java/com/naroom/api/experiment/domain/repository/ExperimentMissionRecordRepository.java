@@ -22,6 +22,11 @@ public interface ExperimentMissionRecordRepository extends JpaRepository<Experim
 	Optional<ExperimentMissionRecord> findByUserExperimentProgram_IdAndRecordDateAndAttemptStatus(
 			UUID userExperimentProgramId, LocalDate recordDate, ExperimentAttemptStatus attemptStatus);
 
+	// 진행 현황 응답의 lookedAtMissionCount/restedDateCount 계산에 쓴다.
+	long countByUserExperimentProgram_IdAndAttemptStatusNot(UUID userExperimentProgramId, ExperimentAttemptStatus attemptStatus);
+
+	long countByUserExperimentProgram_IdAndAttemptStatus(UUID userExperimentProgramId, ExperimentAttemptStatus attemptStatus);
+
 	// §7.4 제한적 랜덤 코스 규칙: 이전에 NOT_A_FIT으로 기록한 미션은 재추천을 제한한다.
 	// attemptStatus는 바인드 파라미터로 넘긴다 - JPQL에 enum 리터럴을 직접 쓰면 Hibernate가 Java
 	// 단순 클래스명(ExperimentAttemptStatus)으로 네이티브 캐스트를 만들어, 실제 Postgres 타입명

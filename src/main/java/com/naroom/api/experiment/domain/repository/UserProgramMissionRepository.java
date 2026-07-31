@@ -17,4 +17,6 @@ public interface UserProgramMissionRepository extends JpaRepository<UserProgramM
 
 	Optional<UserProgramMission> findByUserExperimentProgram_IdAndDayNumber(UUID userExperimentProgramId, short dayNumber);
 
+	Optional<UserProgramMission> findByIdAndUserExperimentProgram_Id(UUID id, UUID userExperimentProgramId);
+
 }
