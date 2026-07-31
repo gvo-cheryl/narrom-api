@@ -1,0 +1,178 @@
+package com.naroom.api.experiment.domain.error;
+
+import com.naroom.api.global.error.code.ClientAction;
+import com.naroom.api.global.error.code.ErrorCode;
+import com.naroom.api.global.error.code.ErrorStage;
+import org.springframework.http.HttpStatus;
+
+public enum ExperimentErrorCode implements ErrorCode {
+
+	PROGRAM_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"EXPERIMENT_PROGRAM_NOT_FOUND",
+			"urn:naroom:problem:experiment-program-not-found",
+			"코스를 찾을 수 없습니다",
+			"존재하지 않거나 아직 공개되지 않은 코스입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	DURATION_INVALID(
+			HttpStatus.BAD_REQUEST,
+			"EXPERIMENT_DURATION_INVALID",
+			"urn:naroom:problem:experiment-duration-invalid",
+			"요청 내용을 확인해 주세요",
+			"days는 3 또는 7만 가능합니다(Beta 1 노출 범위).",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	ACTIVE_PROGRAM_EXISTS(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_ACTIVE_PROGRAM_EXISTS",
+			"urn:naroom:problem:experiment-active-program-exists",
+			"이미 진행 중인 코스가 있습니다",
+			"진행하던 코스를 이어가거나 마무리한 뒤에 새 코스를 시작할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	USER_PROGRAM_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"EXPERIMENT_USER_PROGRAM_NOT_FOUND",
+			"urn:naroom:problem:experiment-user-program-not-found",
+			"코스를 찾을 수 없습니다",
+			"존재하지 않거나 다른 회원의 코스입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	USER_PROGRAM_NOT_READY(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_USER_PROGRAM_NOT_READY",
+			"urn:naroom:problem:experiment-user-program-not-ready",
+			"시작할 수 없는 코스입니다",
+			"저장된 상태의 코스만 지금 시작할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	MISSION_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"EXPERIMENT_MISSION_NOT_FOUND",
+			"urn:naroom:problem:experiment-mission-not-found",
+			"미션을 찾을 수 없습니다",
+			"존재하지 않거나 더 이상 사용하지 않는 미션입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	INVALID_MISSION_COUNT(
+			HttpStatus.BAD_REQUEST,
+			"EXPERIMENT_INVALID_MISSION_COUNT",
+			"urn:naroom:problem:experiment-invalid-mission-count",
+			"요청 내용을 확인해 주세요",
+			"코스 기간(durationDays)만큼 서로 다른 미션이 필요합니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	INVALID_DAY_NUMBER(
+			HttpStatus.BAD_REQUEST,
+			"EXPERIMENT_INVALID_DAY_NUMBER",
+			"urn:naroom:problem:experiment-invalid-day-number",
+			"요청 내용을 확인해 주세요",
+			"dayNumber는 1부터 코스 기간까지 중복 없이 하나씩 있어야 합니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	DUPLICATE_MISSION_SELECTION(
+			HttpStatus.BAD_REQUEST,
+			"EXPERIMENT_DUPLICATE_MISSION_SELECTION",
+			"urn:naroom:problem:experiment-duplicate-mission-selection",
+			"요청 내용을 확인해 주세요",
+			"같은 코스 안에서는 같은 미션을 두 번 이상 고를 수 없습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	CONTENT_VERSION_MISMATCH(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_CONTENT_VERSION_MISMATCH",
+			"urn:naroom:problem:experiment-content-version-mismatch",
+			"코스 내용이 업데이트되었습니다",
+			"코스 상세를 다시 불러온 뒤 다시 시도해 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false);
+
+	private final HttpStatus httpStatus;
+	private final String code;
+	private final String type;
+	private final String title;
+	private final String detail;
+	private final ErrorStage stage;
+	private final ClientAction action;
+	private final boolean retryable;
+
+	ExperimentErrorCode(
+			HttpStatus httpStatus,
+			String code,
+			String type,
+			String title,
+			String detail,
+			ErrorStage stage,
+			ClientAction action,
+			boolean retryable) {
+		this.httpStatus = httpStatus;
+		this.code = code;
+		this.type = type;
+		this.title = title;
+		this.detail = detail;
+		this.stage = stage;
+		this.action = action;
+		this.retryable = retryable;
+	}
+
+	@Override
+	public HttpStatus httpStatus() {
+		return httpStatus;
+	}
+
+	@Override
+	public String code() {
+		return code;
+	}
+
+	@Override
+	public String type() {
+		return type;
+	}
+
+	@Override
+	public String title() {
+		return title;
+	}
+
+	@Override
+	public String detail() {
+		return detail;
+	}
+
+	@Override
+	public ErrorStage stage() {
+		return stage;
+	}
+
+	@Override
+	public ClientAction action() {
+		return action;
+	}
+
+	@Override
+	public boolean retryable() {
+		return retryable;
+	}
+
+}
