@@ -235,7 +235,7 @@ class ExperimentControllerTest {
 		UUID userExperimentProgramId = UUID.randomUUID();
 		when(experimentProgressService.getMissions(any(), eq(userExperimentProgramId))).thenReturn(new ExperimentProgramMissionsResponse(
 				List.of(new ExperimentProgramDayResponse(
-						(short) 1, UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기", ExperimentMissionType.OBSERVATION,
+						(short) 1, UUID.randomUUID(), UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기", ExperimentMissionType.OBSERVATION,
 						(short) 3, UserProgramMissionSlotStatus.RECORDED, false,
 						new ExperimentDayRecordResponse(ExperimentAttemptStatus.DONE, LocalDate.now(), "오늘의 기록", null))),
 				List.of()));

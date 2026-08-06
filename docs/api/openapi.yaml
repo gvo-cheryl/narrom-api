@@ -2834,6 +2834,9 @@ components:
         dayNumber:
           type: integer
           format: int32
+        userProgramMissionId:
+          type: string
+          format: uuid
         missionId:
           type: string
           format: uuid
