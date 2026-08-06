@@ -12,6 +12,7 @@ import com.naroom.api.experiment.dto.ExperimentMissionReplaceRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
 import com.naroom.api.experiment.dto.ExperimentPastProgramResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramDetailResponse;
+import com.naroom.api.experiment.dto.ExperimentProgramMissionsResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramSaveResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramStartRequest;
 import com.naroom.api.experiment.dto.ExperimentProgramStartResponse;
@@ -136,6 +137,11 @@ public class ExperimentController {
 	@GetMapping("/user-programs/active")
 	public ApiResponse<ExperimentActiveProgramResponse> getActiveProgram() {
 		return ApiResponse.of(experimentProgressService.getActive(currentMemberId()).orElse(null));
+	}
+
+	@GetMapping("/user-programs/{userExperimentProgramId}/missions")
+	public ApiResponse<ExperimentProgramMissionsResponse> getProgramMissions(@PathVariable UUID userExperimentProgramId) {
+		return ApiResponse.of(experimentProgressService.getMissions(currentMemberId(), userExperimentProgramId));
 	}
 
 	@PostMapping("/user-programs/{userExperimentProgramId}/missions/{userProgramMissionId}/record")

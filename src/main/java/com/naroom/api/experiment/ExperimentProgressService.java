@@ -22,6 +22,9 @@ import com.naroom.api.experiment.dto.ExperimentMissionRecordRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
+import com.naroom.api.experiment.dto.ExperimentProgramDayResponse;
+import com.naroom.api.experiment.dto.ExperimentProgramMissionsResponse;
+import com.naroom.api.experiment.dto.ExperimentRestedDateResponse;
 import com.naroom.api.experiment.dto.ExperimentUserProgramMissionResponse;
 import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.record.domain.entity.Entry;
@@ -38,10 +41,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 // §5.3 진행 중 흐름: 오늘의 작은 실험 조회, §13 미션 기록·교체 트랜잭션을 담당한다. 코스 시작(8-C)과
 // 코스 종료·돌아보기(8-E)는 각각 ExperimentEnrollmentService/이후 단계에서 다룬다.
@@ -106,6 +113,34 @@ public class ExperimentProgressService {
 							restedDateCount(program.getId()),
 							currentSlot == null ? null : ExperimentUserProgramMissionResponse.from(currentSlot));
 				});
+	}
+
+	// E10(전체 진행 보기)·E11(남은 미션 바꾸기)·entry 상세 코스 연결에서 쓰는 일차별 미션·기록 목록.
+	// RESTED는 슬롯을 소비하지 않으므로(§13/DEC-03) 일차 카드의 record에는 넣지 않고 별도 목록으로
+	// 내려준다 - 같은 슬롯이 여러 번 쉬어간 뒤 소비될 수 있어 슬롯당 기록이 1건이 아닐 수 있다.
+	public ExperimentProgramMissionsResponse getMissions(UUID memberId, UUID userExperimentProgramId) {
+		UserExperimentProgram program = getOwnedProgramOrThrow(memberId, userExperimentProgramId);
+
+		List<ExperimentMissionRecord> records =
+				experimentMissionRecordRepository.findByUserExperimentProgram_IdOrderByRecordDateDesc(program.getId());
+
+		Map<UUID, ExperimentMissionRecord> consumingRecordBySlotId = records.stream()
+				.filter(record -> record.getAttemptStatus() != ExperimentAttemptStatus.RESTED)
+				.collect(Collectors.toMap(
+						record -> record.getUserProgramMission().getId(), Function.identity(), (first, second) -> first));
+
+		List<ExperimentProgramDayResponse> days = userProgramMissionRepository
+				.findByUserExperimentProgram_IdOrderByDayNumberAsc(program.getId()).stream()
+				.map(slot -> ExperimentProgramDayResponse.of(slot, consumingRecordBySlotId.get(slot.getId())))
+				.toList();
+
+		List<ExperimentRestedDateResponse> restedDates = records.stream()
+				.filter(record -> record.getAttemptStatus() == ExperimentAttemptStatus.RESTED)
+				.sorted(Comparator.comparing(ExperimentMissionRecord::getRecordDate))
+				.map(ExperimentRestedDateResponse::from)
+				.toList();
+
+		return new ExperimentProgramMissionsResponse(days, restedDates);
 	}
 
 	@Transactional

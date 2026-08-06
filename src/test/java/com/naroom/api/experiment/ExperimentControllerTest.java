@@ -11,16 +11,20 @@ import com.naroom.api.experiment.domain.entity.ExperimentRecommendationSourceTyp
 import com.naroom.api.experiment.domain.entity.ExperimentRecommendationStatus;
 import com.naroom.api.experiment.domain.entity.ExperimentSourceType;
 import com.naroom.api.experiment.domain.entity.UserExperimentProgramStatus;
+import com.naroom.api.experiment.domain.entity.UserProgramMissionSlotStatus;
 import com.naroom.api.experiment.dto.EstimatedMinutesRange;
 import com.naroom.api.experiment.dto.ExperimentActiveProgramResponse;
 import com.naroom.api.experiment.dto.ExperimentAiJobSummary;
 import com.naroom.api.experiment.dto.ExperimentCourseReviewResponse;
+import com.naroom.api.experiment.dto.ExperimentDayRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentEndEarlyResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionCatalogResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
 import com.naroom.api.experiment.dto.ExperimentPastProgramResponse;
+import com.naroom.api.experiment.dto.ExperimentProgramDayResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramMissionResponse;
+import com.naroom.api.experiment.dto.ExperimentProgramMissionsResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramStartResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramSummaryResponse;
 import com.naroom.api.experiment.dto.ExperimentRandomProgramResponse;
@@ -42,6 +46,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -223,6 +228,23 @@ class ExperimentControllerTest {
 		mockMvc.perform(get("/api/v1/experiments/user-programs/active").with(authentication(memberAuthentication())))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.userExperimentProgramId").value(userExperimentProgramId.toString()));
+	}
+
+	@Test
+	void getProgramMissions_authenticated_returnsDaysAndRestedDates() throws Exception {
+		UUID userExperimentProgramId = UUID.randomUUID();
+		when(experimentProgressService.getMissions(any(), eq(userExperimentProgramId))).thenReturn(new ExperimentProgramMissionsResponse(
+				List.of(new ExperimentProgramDayResponse(
+						(short) 1, UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기", ExperimentMissionType.OBSERVATION,
+						(short) 3, UserProgramMissionSlotStatus.RECORDED, false,
+						new ExperimentDayRecordResponse(ExperimentAttemptStatus.DONE, LocalDate.now(), "오늘의 기록", null))),
+				List.of()));
+
+		mockMvc.perform(get("/api/v1/experiments/user-programs/{id}/missions", userExperimentProgramId)
+						.with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.days[0].slotStatus").value("RECORDED"))
+				.andExpect(jsonPath("$.data.days[0].record.attemptStatus").value("DONE"));
 	}
 
 	@Test

@@ -1105,6 +1105,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseHealthResponse"
+  /api/v1/experiments/user-programs/{userExperimentProgramId}/missions:
+    get:
+      tags:
+      - experiment-controller
+      operationId: getProgramMissions
+      parameters:
+      - name: userExperimentProgramId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentProgramMissionsResponse"
   /api/v1/experiments/user-programs/past:
     get:
       tags:
@@ -2784,6 +2803,86 @@ components:
       type: object
       properties:
         status:
+          type: string
+    ApiResponseExperimentProgramMissionsResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentProgramMissionsResponse"
+    ExperimentDayRecordResponse:
+      type: object
+      properties:
+        attemptStatus:
+          type: string
+          enum:
+          - DONE
+          - PARTIALLY_DONE
+          - RESTED
+          - TRIED_DIFFERENTLY
+          - NOT_A_FIT
+          - RECORD_ONLY
+        recordDate:
+          type: string
+          format: date
+        responseText:
+          type: string
+        reflection:
+          type: string
+    ExperimentProgramDayResponse:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        missionId:
+          type: string
+          format: uuid
+        missionCode:
+          type: string
+        title:
+          type: string
+        missionType:
+          type: string
+          enum:
+          - OBSERVATION
+          - QUESTION
+          - ACTION
+          - RECORD
+          - REVIEW
+        estimatedMinutes:
+          type: integer
+          format: int32
+        slotStatus:
+          type: string
+          enum:
+          - PENDING
+          - CURRENT
+          - RECORDED
+        replaced:
+          type: boolean
+        record:
+          $ref: "#/components/schemas/ExperimentDayRecordResponse"
+    ExperimentProgramMissionsResponse:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentProgramDayResponse"
+        restedDates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentRestedDateResponse"
+    ExperimentRestedDateResponse:
+      type: object
+      properties:
+        recordDate:
+          type: string
+          format: date
+        dayNumber:
+          type: integer
+          format: int32
+        missionTitle:
           type: string
     ApiResponseListExperimentPastProgramResponse:
       type: object

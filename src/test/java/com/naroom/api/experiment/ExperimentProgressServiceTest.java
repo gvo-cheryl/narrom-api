@@ -18,6 +18,7 @@ import com.naroom.api.experiment.dto.ExperimentMissionRecordRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
+import com.naroom.api.experiment.dto.ExperimentProgramMissionsResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramStartRequest;
 import com.naroom.api.experiment.dto.ExperimentProgramStartResponse;
 import com.naroom.api.global.error.exception.BusinessException;
@@ -273,6 +274,65 @@ class ExperimentProgressServiceTest {
 				new ExperimentMissionReplaceRequest(day1MissionId, null, null)));
 
 		assertEquals(ExperimentErrorCode.DUPLICATE_MISSION_SELECTION, exception.errorCode());
+	}
+
+	@Test
+	void getMissions_afterOneAttempt_marksDay1RecordedWithConsumingRecord() {
+		Member member = memberRepository.save(Member.create("지연"));
+		ExperimentProgramStartResponse started = startThreeDayCourse(member.getId());
+
+		recordDay(member.getId(), started.userExperimentProgramId(), 1, ExperimentAttemptStatus.DONE);
+
+		ExperimentProgramMissionsResponse missions =
+				experimentProgressService.getMissions(member.getId(), started.userExperimentProgramId());
+
+		assertEquals(3, missions.days().size());
+		assertEquals(UserProgramMissionSlotStatus.RECORDED, missions.days().get(0).slotStatus());
+		assertEquals(ExperimentAttemptStatus.DONE, missions.days().get(0).record().attemptStatus());
+		assertEquals(UserProgramMissionSlotStatus.CURRENT, missions.days().get(1).slotStatus());
+		assertEquals(null, missions.days().get(1).record());
+		assertTrue(missions.restedDates().isEmpty());
+	}
+
+	@Test
+	void getMissions_afterRest_returnsRestedDateSeparatelyWithoutConsumingSlot() {
+		Member member = memberRepository.save(Member.create("지연"));
+		ExperimentProgramStartResponse started = startThreeDayCourse(member.getId());
+		UserProgramMission daySlot1 = userProgramMissionRepository
+				.findByUserExperimentProgram_IdAndDayNumber(started.userExperimentProgramId(), (short) 1)
+				.orElseThrow();
+
+		experimentProgressService.recordMission(
+				member.getId(), started.userExperimentProgramId(), daySlot1.getId(),
+				recordRequest(ExperimentAttemptStatus.RESTED, LocalDate.now(), false));
+
+		ExperimentProgramMissionsResponse missions =
+				experimentProgressService.getMissions(member.getId(), started.userExperimentProgramId());
+
+		assertEquals(1, missions.restedDates().size());
+		assertEquals((short) 1, missions.restedDates().get(0).dayNumber());
+		assertEquals(UserProgramMissionSlotStatus.CURRENT, missions.days().get(0).slotStatus());
+		assertEquals(null, missions.days().get(0).record());
+	}
+
+	@Test
+	void getMissions_afterReplace_marksThatDayReplaced() {
+		Member member = memberRepository.save(Member.create("지연"));
+		ExperimentProgramStartResponse started = startThreeDayCourse(member.getId());
+		UserProgramMission daySlot2 = userProgramMissionRepository
+				.findByUserExperimentProgram_IdAndDayNumber(started.userExperimentProgramId(), (short) 2)
+				.orElseThrow();
+		ExperimentMission replacement = experimentMissionRepository.findByCode("CALM_MOMENT").orElseThrow();
+
+		experimentProgressService.replaceMission(
+				member.getId(), started.userExperimentProgramId(), daySlot2.getId(),
+				new ExperimentMissionReplaceRequest(replacement.getId(), null, null));
+
+		ExperimentProgramMissionsResponse missions =
+				experimentProgressService.getMissions(member.getId(), started.userExperimentProgramId());
+
+		assertTrue(missions.days().get(1).replaced());
+		assertFalse(missions.days().get(0).replaced());
 	}
 
 	private void recordDay(UUID memberId, UUID userExperimentProgramId, int dayNumber, ExperimentAttemptStatus attemptStatus) {
