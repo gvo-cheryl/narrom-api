@@ -76,6 +76,7 @@ public class ExperimentReviewService {
 
 		Entry reviewEntry = entryRepository.save(Entry.create(
 				member, EntryType.EXPERIMENT_REVIEW, program.getTitleSnapshot(), request.discovery(), today, null, null, null));
+		reviewEntry.linkExperimentProgram(program.getId());
 		reviewEntry.publish();
 
 		Instant now = Instant.now();

@@ -5,6 +5,7 @@ import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.experiment.domain.entity.ExperimentAttemptStatus;
 import com.naroom.api.experiment.domain.entity.ExperimentProgram;
+import com.naroom.api.experiment.domain.entity.UserExperimentProgram;
 import com.naroom.api.experiment.domain.entity.UserExperimentProgramStatus;
 import com.naroom.api.experiment.domain.error.ExperimentErrorCode;
 import com.naroom.api.experiment.domain.repository.ExperimentProgramRepository;
@@ -71,9 +72,9 @@ class ExperimentReviewServiceTest {
 		assertEquals(UserExperimentProgramStatus.COMPLETED, response.status());
 		assertTrue(response.lifeTimeEntryCreated());
 		assertNull(response.aiJob());
-		assertEquals(
-				UserExperimentProgramStatus.COMPLETED,
-				userExperimentProgramRepository.findById(userExperimentProgramId).orElseThrow().getStatus());
+		UserExperimentProgram completed = userExperimentProgramRepository.findById(userExperimentProgramId).orElseThrow();
+		assertEquals(UserExperimentProgramStatus.COMPLETED, completed.getStatus());
+		assertEquals(userExperimentProgramId, completed.getReviewEntry().getRelatedExperimentProgramId());
 	}
 
 	@Test

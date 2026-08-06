@@ -216,10 +216,11 @@ class ExperimentProgressServiceTest {
 
 		assertEquals(1, entryRepository.findAll().stream()
 				.filter(e -> e.getMember().getId().equals(member.getId())).count());
+		com.naroom.api.record.domain.entity.Entry createdEntry = entryRepository.findAll().stream()
+				.filter(e -> e.getMember().getId().equals(member.getId())).findFirst().orElseThrow();
 		assertEquals(1, entryTagRepository.findByEntry_IdAndSource(
-				entryRepository.findAll().stream().filter(e -> e.getMember().getId().equals(member.getId()))
-						.findFirst().orElseThrow().getId(),
-				com.naroom.api.record.domain.entity.TagSource.EXPERIMENT).size());
+				createdEntry.getId(), com.naroom.api.record.domain.entity.TagSource.EXPERIMENT).size());
+		assertEquals(started.userExperimentProgramId(), createdEntry.getRelatedExperimentProgramId());
 	}
 
 	@Test

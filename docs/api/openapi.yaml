@@ -1665,6 +1665,9 @@ components:
         quoteId:
           type: string
           format: uuid
+        relatedExperimentProgramId:
+          type: string
+          format: uuid
         aiProcessingAllowed:
           type: boolean
         publishedAt:

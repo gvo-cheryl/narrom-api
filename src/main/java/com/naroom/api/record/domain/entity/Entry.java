@@ -71,6 +71,13 @@ public class Entry {
 	@Column(name = "ai_processing_allowed", nullable = false)
 	private boolean aiProcessingAllowed;
 
+	// 이 기록이 어느 작은 실험 코스에서 만들어졌는지(EXPERIMENT_MISSION/EXPERIMENT_REVIEW일 때만 채워짐).
+	// record 도메인이 experiment 도메인 타입을 몰라도 되도록(experiment가 이미 Entry를 참조하므로
+	// 반대 방향까지 엔티티 참조로 두면 순환 의존이 생긴다) 연관관계가 아닌 평면 UUID로만 둔다 -
+	// PeriodReflection.userExperimentProgramId와 같은 패턴이다.
+	@Column(name = "related_experiment_program_id")
+	private UUID relatedExperimentProgramId;
+
 	@Column(name = "published_at")
 	private Instant publishedAt;
 
@@ -140,6 +147,11 @@ public class Entry {
 		this.aiProcessingAllowed = false;
 	}
 
+	// experiment 도메인이 EXPERIMENT_MISSION/EXPERIMENT_REVIEW Entry를 만든 직후에만 호출한다.
+	public void linkExperimentProgram(UUID userExperimentProgramId) {
+		this.relatedExperimentProgramId = userExperimentProgramId;
+	}
+
 	public UUID getId() {
 		return id;
 	}
@@ -182,6 +194,10 @@ public class Entry {
 
 	public boolean isAiProcessingAllowed() {
 		return aiProcessingAllowed;
+	}
+
+	public UUID getRelatedExperimentProgramId() {
+		return relatedExperimentProgramId;
 	}
 
 	public Instant getPublishedAt() {

@@ -218,6 +218,7 @@ public class ExperimentProgressService {
 		Entry entry = entryRepository.save(Entry.create(
 				member, EntryType.EXPERIMENT_MISSION, slot.getTitleSnapshot(), request.responseText(),
 				request.recordDate(), null, null, null));
+		entry.linkExperimentProgram(slot.getUserExperimentProgram().getId());
 		entry.publish();
 		for (UUID tagId : request.emotionTagIds()) {
 			Tag tag = tagRepository.findById(tagId)

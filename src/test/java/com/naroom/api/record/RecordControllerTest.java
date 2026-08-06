@@ -194,7 +194,7 @@ class RecordControllerTest {
 		UUID entryId = UUID.randomUUID();
 		EntryResponse disallowed = new EntryResponse(
 				entryId, EntryType.FREE, EntryStatus.DRAFT, null, "본문", LocalDate.now(),
-				null, null, false, null, null, null, 0L);
+				null, null, null, false, null, null, null, 0L);
 		when(entryService.updateAiProcessingAllowed(any(), any(), eq(false)))
 				.thenReturn(disallowed);
 
@@ -266,7 +266,7 @@ class RecordControllerTest {
 	private EntryResponse sampleEntry(UUID entryId) {
 		return new EntryResponse(
 				entryId, EntryType.FREE, EntryStatus.DRAFT, null, "본문", LocalDate.now(),
-				null, null, true, null, null, null, 0L);
+				null, null, null, true, null, null, null, 0L);
 	}
 
 	private MemberAuthentication memberAuthentication() {
