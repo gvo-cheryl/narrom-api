@@ -2061,6 +2061,8 @@ components:
           type: string
         title:
           type: string
+        instruction:
+          type: string
         missionType:
           type: string
           enum:
@@ -2072,6 +2074,10 @@ components:
         estimatedMinutes:
           type: integer
           format: int32
+        reflectionQuestions:
+          type: array
+          items:
+            type: string
         userProgramMissionId:
           type: string
           format: uuid

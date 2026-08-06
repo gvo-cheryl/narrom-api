@@ -144,8 +144,8 @@ class ExperimentControllerTest {
 		when(experimentEnrollmentService.startFromTemplate(any(), eq(programId), any())).thenReturn(new ExperimentProgramStartResponse(
 				userExperimentProgramId, UserExperimentProgramStatus.IN_PROGRESS, "지금의 마음 알아보기", (short) 3, (short) 1, 0, 0,
 				new ExperimentUserProgramMissionResponse(
-						(short) 1, UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기",
-						ExperimentMissionType.OBSERVATION, (short) 3, UUID.randomUUID())));
+						(short) 1, UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기", "지금의 감정을 한두 단어로 적어보세요.",
+						ExperimentMissionType.OBSERVATION, (short) 3, java.util.List.of("그 감정은 언제부터 느껴졌나요?"), UUID.randomUUID())));
 
 		mockMvc.perform(post("/api/v1/experiments/programs/{programId}/start", programId)
 						.with(authentication(memberAuthentication()))
@@ -186,8 +186,8 @@ class ExperimentControllerTest {
 				.thenReturn(new ExperimentProgramStartResponse(
 						userExperimentProgramId, UserExperimentProgramStatus.IN_PROGRESS, "지금의 마음 알아보기", (short) 3, (short) 1, 0, 0,
 						new ExperimentUserProgramMissionResponse(
-								(short) 1, UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기",
-								ExperimentMissionType.OBSERVATION, (short) 3, UUID.randomUUID())));
+								(short) 1, UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기", "지금의 감정을 한두 단어로 적어보세요.",
+								ExperimentMissionType.OBSERVATION, (short) 3, java.util.List.of("그 감정은 언제부터 느껴졌나요?"), UUID.randomUUID())));
 
 		mockMvc.perform(post("/api/v1/experiments/user-programs/{id}/activate", userExperimentProgramId)
 						.with(authentication(memberAuthentication())))
@@ -201,8 +201,8 @@ class ExperimentControllerTest {
 		when(experimentProgressService.getActive(any())).thenReturn(java.util.Optional.of(new ExperimentActiveProgramResponse(
 				userExperimentProgramId, UserExperimentProgramStatus.IN_PROGRESS, "지금의 마음 알아보기", (short) 3, (short) 1, 0, 0,
 				new ExperimentUserProgramMissionResponse(
-						(short) 1, UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기",
-						ExperimentMissionType.OBSERVATION, (short) 3, UUID.randomUUID()))));
+						(short) 1, UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기", "지금의 감정을 한두 단어로 적어보세요.",
+						ExperimentMissionType.OBSERVATION, (short) 3, java.util.List.of("그 감정은 언제부터 느껴졌나요?"), UUID.randomUUID()))));
 
 		mockMvc.perform(get("/api/v1/experiments/user-programs/active").with(authentication(memberAuthentication())))
 				.andExpect(status().isOk())
