@@ -5,6 +5,7 @@ import com.naroom.api.experiment.dto.ExperimentActiveProgramResponse;
 import com.naroom.api.experiment.dto.ExperimentCourseReviewRequest;
 import com.naroom.api.experiment.dto.ExperimentCourseReviewResponse;
 import com.naroom.api.experiment.dto.ExperimentEndEarlyResponse;
+import com.naroom.api.experiment.dto.ExperimentMissionCatalogResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceRequest;
@@ -46,6 +47,7 @@ public class ExperimentController {
 	private final ExperimentProgressService experimentProgressService;
 	private final ExperimentReviewService experimentReviewService;
 	private final ExperimentRecommendationService experimentRecommendationService;
+	private final ExperimentMissionCatalogService experimentMissionCatalogService;
 
 	public ExperimentController(
 			ExperimentTopicService experimentTopicService,
@@ -54,7 +56,8 @@ public class ExperimentController {
 			ExperimentEnrollmentService experimentEnrollmentService,
 			ExperimentProgressService experimentProgressService,
 			ExperimentReviewService experimentReviewService,
-			ExperimentRecommendationService experimentRecommendationService) {
+			ExperimentRecommendationService experimentRecommendationService,
+			ExperimentMissionCatalogService experimentMissionCatalogService) {
 		this.experimentTopicService = experimentTopicService;
 		this.experimentProgramService = experimentProgramService;
 		this.experimentRandomProgramComposer = experimentRandomProgramComposer;
@@ -62,11 +65,18 @@ public class ExperimentController {
 		this.experimentProgressService = experimentProgressService;
 		this.experimentReviewService = experimentReviewService;
 		this.experimentRecommendationService = experimentRecommendationService;
+		this.experimentMissionCatalogService = experimentMissionCatalogService;
 	}
 
 	@GetMapping("/topics")
 	public ApiResponse<List<ExperimentTopicResponse>> getTopics() {
 		return ApiResponse.of(experimentTopicService.listActive());
+	}
+
+	@GetMapping("/missions")
+	public ApiResponse<List<ExperimentMissionCatalogResponse>> getMissions(
+			@RequestParam(required = false) String topicCode) {
+		return ApiResponse.of(experimentMissionCatalogService.list(currentMemberId(), topicCode));
 	}
 
 	@GetMapping("/programs")

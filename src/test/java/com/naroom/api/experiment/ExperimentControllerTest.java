@@ -16,6 +16,7 @@ import com.naroom.api.experiment.dto.ExperimentActiveProgramResponse;
 import com.naroom.api.experiment.dto.ExperimentAiJobSummary;
 import com.naroom.api.experiment.dto.ExperimentCourseReviewResponse;
 import com.naroom.api.experiment.dto.ExperimentEndEarlyResponse;
+import com.naroom.api.experiment.dto.ExperimentMissionCatalogResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
 import com.naroom.api.experiment.dto.ExperimentPastProgramResponse;
@@ -90,6 +91,9 @@ class ExperimentControllerTest {
 	private ExperimentRecommendationService experimentRecommendationService;
 
 	@MockitoBean
+	private ExperimentMissionCatalogService experimentMissionCatalogService;
+
+	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
 
 	@MockitoBean
@@ -110,6 +114,18 @@ class ExperimentControllerTest {
 		mockMvc.perform(get("/api/v1/experiments/topics").with(authentication(memberAuthentication())))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data[0].code").value("EMOTION"));
+	}
+
+	@Test
+	void getMissions_authenticated_returnsList() throws Exception {
+		when(experimentMissionCatalogService.list(any(), eq("EMOTION"))).thenReturn(List.of(new ExperimentMissionCatalogResponse(
+				UUID.randomUUID(), "EMOTION_WORD", "감정 알아차리기", "지금 느껴지는 감정에 가볍게 이름을 붙여봅니다.", "EMOTION",
+				ExperimentMissionType.OBSERVATION, (short) 3)));
+
+		mockMvc.perform(get("/api/v1/experiments/missions?topicCode=EMOTION").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].code").value("EMOTION_WORD"))
+				.andExpect(jsonPath("$.data[0].topicCode").value("EMOTION"));
 	}
 
 	@Test
