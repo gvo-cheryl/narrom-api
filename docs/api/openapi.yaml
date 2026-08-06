@@ -363,6 +363,259 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePeriodReflectionResponse"
+  /api/v1/experiments/user-programs/{userExperimentProgramId}/review:
+    post:
+      tags:
+      - experiment-controller
+      operationId: completeReview
+      parameters:
+      - name: userExperimentProgramId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentCourseReviewRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentCourseReviewResponse"
+  /api/v1/experiments/user-programs/{userExperimentProgramId}/missions/{userProgramMissionId}/replace:
+    post:
+      tags:
+      - experiment-controller
+      operationId: replaceMission
+      parameters:
+      - name: userExperimentProgramId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: userProgramMissionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentMissionReplaceRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentMissionReplaceResponse"
+  /api/v1/experiments/user-programs/{userExperimentProgramId}/missions/{userProgramMissionId}/record:
+    post:
+      tags:
+      - experiment-controller
+      operationId: recordMission
+      parameters:
+      - name: userExperimentProgramId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: userProgramMissionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentMissionRecordRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentMissionRecordResponse"
+  /api/v1/experiments/user-programs/{userExperimentProgramId}/end-early:
+    post:
+      tags:
+      - experiment-controller
+      operationId: endEarly
+      parameters:
+      - name: userExperimentProgramId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentEndEarlyResponse"
+  /api/v1/experiments/user-programs/{userExperimentProgramId}/activate:
+    post:
+      tags:
+      - experiment-controller
+      operationId: activateSavedProgram
+      parameters:
+      - name: userExperimentProgramId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: replaceActiveProgram
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentProgramStartResponse"
+  /api/v1/experiments/recommendations/{recommendationId}/view:
+    post:
+      tags:
+      - experiment-controller
+      operationId: viewRecommendation
+      parameters:
+      - name: recommendationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentRecommendationResponse"
+  /api/v1/experiments/recommendations/{recommendationId}/dismiss:
+    post:
+      tags:
+      - experiment-controller
+      operationId: dismissRecommendation
+      parameters:
+      - name: recommendationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentRecommendationResponse"
+  /api/v1/experiments/programs/{programId}/start:
+    post:
+      tags:
+      - experiment-controller
+      operationId: startProgram
+      parameters:
+      - name: programId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentProgramStartRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentProgramStartResponse"
+  /api/v1/experiments/programs/{programId}/save:
+    post:
+      tags:
+      - experiment-controller
+      operationId: saveProgram
+      parameters:
+      - name: programId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentProgramStartRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentProgramSaveResponse"
+  /api/v1/experiments/programs/user-composed:
+    post:
+      tags:
+      - experiment-controller
+      operationId: createUserComposedProgram
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentUserComposedProgramRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentUserComposedProgramResponse"
+  /api/v1/experiments/programs/random/start:
+    post:
+      tags:
+      - experiment-controller
+      operationId: startRandomProgram
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperimentRandomProgramStartRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentProgramStartResponse"
   /api/v1/content/quotes/{quoteId}/save:
     post:
       tags:
@@ -852,11 +1105,131 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseHealthResponse"
+  /api/v1/experiments/user-programs/past:
+    get:
+      tags:
+      - experiment-controller
+      operationId: getPastPrograms
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListExperimentPastProgramResponse"
+  /api/v1/experiments/user-programs/active:
+    get:
+      tags:
+      - experiment-controller
+      operationId: getActiveProgram
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentActiveProgramResponse"
+  /api/v1/experiments/topics:
+    get:
+      tags:
+      - experiment-controller
+      operationId: getTopics
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListExperimentTopicResponse"
+  /api/v1/experiments/recommendations:
+    get:
+      tags:
+      - experiment-controller
+      operationId: getRecommendations
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListExperimentRecommendationResponse"
+  /api/v1/experiments/programs:
+    get:
+      tags:
+      - experiment-controller
+      operationId: getPrograms
+      parameters:
+      - name: durationDays
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: topicCode
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: featured
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: beginner
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListExperimentProgramSummaryResponse"
+  /api/v1/experiments/programs/{programId}:
+    get:
+      tags:
+      - experiment-controller
+      operationId: getProgram
+      parameters:
+      - name: programId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentProgramDetailResponse"
+  /api/v1/experiments/programs/random:
+    get:
+      tags:
+      - experiment-controller
+      operationId: getRandomProgram
+      parameters:
+      - name: days
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentRandomProgramResponse"
   /api/v1/content/topics:
     get:
       tags:
       - content-controller
-      operationId: getTopics
+      operationId: getTopics_1
       responses:
         "200":
           description: OK
@@ -1433,6 +1806,481 @@ components:
         completedAt:
           type: string
           format: date-time
+    ExperimentCourseReviewRequest:
+      type: object
+      properties:
+        mostMemorableDay:
+          type: integer
+          format: int32
+        leastBurdensomeDay:
+          type: integer
+          format: int32
+        notFitDay:
+          type: integer
+          format: int32
+        helpfulConditions:
+          type: array
+          items:
+            type: string
+        difficultConditions:
+          type: array
+          items:
+            type: string
+        discovery:
+          type: string
+        continueAction:
+          type: string
+        userSummary:
+          type: string
+        requestAiReflection:
+          type: boolean
+    ApiResponseExperimentCourseReviewResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentCourseReviewResponse"
+    ExperimentAiJobSummary:
+      type: object
+      properties:
+        featureType:
+          type: string
+          enum:
+          - ENTRY_REFLECTION
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - CONVERSATION_REPLY
+          - CONVERSATION_SUMMARY
+        status:
+          type: string
+          enum:
+          - PENDING
+          - PROCESSING
+          - COMPLETED
+          - BLOCKED
+          - SAFETY_SUPPORT
+          - FAILED
+        note:
+          type: string
+    ExperimentCourseReviewResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - READY
+          - IN_PROGRESS
+          - PAUSED
+          - AWAITING_REVIEW
+          - COMPLETED
+          - ENDED_EARLY
+        lifeTimeEntryCreated:
+          type: boolean
+        aiJob:
+          $ref: "#/components/schemas/ExperimentAiJobSummary"
+    ExperimentMissionReplaceRequest:
+      type: object
+      properties:
+        replacementMissionId:
+          type: string
+          format: uuid
+        reasonCode:
+          type: string
+          enum:
+          - TOO_HEAVY
+          - NOT_RELEVANT
+          - NOT_A_FIT
+          - WANT_LIGHTER
+          - WANT_DIFFERENT_TYPE
+          - RANDOM
+          - OTHER
+        reasonNote:
+          type: string
+      required:
+      - replacementMissionId
+    ApiResponseExperimentMissionReplaceResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentMissionReplaceResponse"
+    ExperimentMissionReplaceResponse:
+      type: object
+      properties:
+        userProgramMissionId:
+          type: string
+          format: uuid
+        dayNumber:
+          type: integer
+          format: int32
+        originalMissionId:
+          type: string
+          format: uuid
+        missionId:
+          type: string
+          format: uuid
+        replacementCount:
+          type: integer
+          format: int32
+    ExperimentMissionRecordRequest:
+      type: object
+      properties:
+        attemptStatus:
+          type: string
+          enum:
+          - DONE
+          - PARTIALLY_DONE
+          - RESTED
+          - TRIED_DIFFERENTLY
+          - NOT_A_FIT
+          - RECORD_ONLY
+        recordDate:
+          type: string
+          format: date
+        responseText:
+          type: string
+        responseData: {}
+        emotionTagIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        energyLevel:
+          type: integer
+          format: int32
+        reflection:
+          type: string
+        createLifeTimeEntry:
+          type: boolean
+      required:
+      - attemptStatus
+      - recordDate
+    ApiResponseExperimentMissionRecordResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentMissionRecordResponse"
+    ExperimentMissionRecordResponse:
+      type: object
+      properties:
+        attemptStatus:
+          type: string
+          enum:
+          - DONE
+          - PARTIALLY_DONE
+          - RESTED
+          - TRIED_DIFFERENTLY
+          - NOT_A_FIT
+          - RECORD_ONLY
+        missionConsumed:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - READY
+          - IN_PROGRESS
+          - PAUSED
+          - AWAITING_REVIEW
+          - COMPLETED
+          - ENDED_EARLY
+        currentDay:
+          type: integer
+          format: int32
+        sameMissionRemains:
+          type: boolean
+        lookedAtMissionCount:
+          type: integer
+          format: int32
+        restedDateCount:
+          type: integer
+          format: int32
+    ApiResponseExperimentEndEarlyResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentEndEarlyResponse"
+    ExperimentEndEarlyResponse:
+      type: object
+      properties:
+        userExperimentProgramId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - READY
+          - IN_PROGRESS
+          - PAUSED
+          - AWAITING_REVIEW
+          - COMPLETED
+          - ENDED_EARLY
+    ApiResponseExperimentProgramStartResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentProgramStartResponse"
+    ExperimentProgramStartResponse:
+      type: object
+      properties:
+        userExperimentProgramId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - READY
+          - IN_PROGRESS
+          - PAUSED
+          - AWAITING_REVIEW
+          - COMPLETED
+          - ENDED_EARLY
+        title:
+          type: string
+        durationDays:
+          type: integer
+          format: int32
+        currentDay:
+          type: integer
+          format: int32
+        lookedAtMissionCount:
+          type: integer
+          format: int32
+        restedDateCount:
+          type: integer
+          format: int32
+        todayMission:
+          $ref: "#/components/schemas/ExperimentUserProgramMissionResponse"
+    ExperimentUserProgramMissionResponse:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        missionId:
+          type: string
+          format: uuid
+        missionCode:
+          type: string
+        title:
+          type: string
+        missionType:
+          type: string
+          enum:
+          - OBSERVATION
+          - QUESTION
+          - ACTION
+          - RECORD
+          - REVIEW
+        estimatedMinutes:
+          type: integer
+          format: int32
+        userProgramMissionId:
+          type: string
+          format: uuid
+    ApiResponseExperimentRecommendationResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentRecommendationResponse"
+    EstimatedMinutesRange:
+      type: object
+      properties:
+        min:
+          type: integer
+          format: int32
+        max:
+          type: integer
+          format: int32
+    ExperimentProgramSummaryResponse:
+      type: object
+      properties:
+        programId:
+          type: string
+          format: uuid
+        code:
+          type: string
+        title:
+          type: string
+        durationDays:
+          type: integer
+          format: int32
+        topicCode:
+          type: string
+        description:
+          type: string
+        estimatedMinutes:
+          $ref: "#/components/schemas/EstimatedMinutesRange"
+        missionCount:
+          type: integer
+          format: int32
+    ExperimentRecommendationResponse:
+      type: object
+      properties:
+        recommendationId:
+          type: string
+          format: uuid
+        program:
+          $ref: "#/components/schemas/ExperimentProgramSummaryResponse"
+        sourceType:
+          type: string
+          enum:
+          - BROWSE
+          - RECORD
+          - CHECK_IN
+          - WEEKLY_REFLECTION
+          - RULE
+          - RANDOM
+          - AI
+        reasonText:
+          type: string
+        status:
+          type: string
+          enum:
+          - SHOWN
+          - VIEWED
+          - ACCEPTED
+          - DISMISSED
+          - EXPIRED
+        createdAt:
+          type: string
+          format: date-time
+    ExperimentMissionOverride:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        missionId:
+          type: string
+          format: uuid
+      required:
+      - missionId
+    ExperimentProgramStartRequest:
+      type: object
+      properties:
+        expectedContentVersion:
+          type: integer
+          format: int32
+        missionOverrides:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentMissionOverride"
+        recommendationId:
+          type: string
+          format: uuid
+        replaceActiveProgram:
+          type: boolean
+    ApiResponseExperimentProgramSaveResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentProgramSaveResponse"
+    ExperimentProgramSaveResponse:
+      type: object
+      properties:
+        userExperimentProgramId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - READY
+          - IN_PROGRESS
+          - PAUSED
+          - AWAITING_REVIEW
+          - COMPLETED
+          - ENDED_EARLY
+        title:
+          type: string
+        durationDays:
+          type: integer
+          format: int32
+    ExperimentUserComposedMissionRequest:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        title:
+          type: string
+          minLength: 1
+        instruction:
+          type: string
+          minLength: 1
+        missionType:
+          type: string
+          enum:
+          - OBSERVATION
+          - QUESTION
+          - ACTION
+          - RECORD
+          - REVIEW
+        estimatedMinutes:
+          type: integer
+          format: int32
+      required:
+      - instruction
+      - missionType
+      - title
+    ExperimentUserComposedProgramRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        durationDays:
+          type: integer
+          format: int32
+        missions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentUserComposedMissionRequest"
+          minItems: 1
+      required:
+      - missions
+      - title
+    ApiResponseExperimentUserComposedProgramResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentUserComposedProgramResponse"
+    ExperimentUserComposedProgramResponse:
+      type: object
+      properties:
+        userExperimentProgramId:
+          type: string
+          format: uuid
+        programId:
+          type: string
+          format: uuid
+        configurationSource:
+          type: string
+          enum:
+          - TEMPLATE
+          - RANDOM
+          - AI_RECOMMENDED
+          - USER_COMPOSED
+        status:
+          type: string
+          enum:
+          - READY
+          - IN_PROGRESS
+          - PAUSED
+          - AWAITING_REVIEW
+          - COMPLETED
+          - ENDED_EARLY
+        durationDays:
+          type: integer
+          format: int32
+        missionCount:
+          type: integer
+          format: int32
+    ExperimentRandomProgramStartRequest:
+      type: object
+      properties:
+        durationDays:
+          type: integer
+          format: int32
+        replaceActiveProgram:
+          type: boolean
     RefreshRequest:
       type: object
       properties:
@@ -1913,6 +2761,211 @@ components:
       properties:
         status:
           type: string
+    ApiResponseListExperimentPastProgramResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentPastProgramResponse"
+    ExperimentPastProgramResponse:
+      type: object
+      properties:
+        userExperimentProgramId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - READY
+          - IN_PROGRESS
+          - PAUSED
+          - AWAITING_REVIEW
+          - COMPLETED
+          - ENDED_EARLY
+        title:
+          type: string
+        durationDays:
+          type: integer
+          format: int32
+        currentDay:
+          type: integer
+          format: int32
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        endedEarlyAt:
+          type: string
+          format: date-time
+    ApiResponseExperimentActiveProgramResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentActiveProgramResponse"
+    ExperimentActiveProgramResponse:
+      type: object
+      properties:
+        userExperimentProgramId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - READY
+          - IN_PROGRESS
+          - PAUSED
+          - AWAITING_REVIEW
+          - COMPLETED
+          - ENDED_EARLY
+        title:
+          type: string
+        durationDays:
+          type: integer
+          format: int32
+        currentDay:
+          type: integer
+          format: int32
+        lookedAtMissionCount:
+          type: integer
+          format: int32
+        restedDateCount:
+          type: integer
+          format: int32
+        todayMission:
+          $ref: "#/components/schemas/ExperimentUserProgramMissionResponse"
+    ApiResponseListExperimentTopicResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentTopicResponse"
+    ExperimentTopicResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        displayOrder:
+          type: integer
+          format: int32
+    ApiResponseListExperimentRecommendationResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentRecommendationResponse"
+    ApiResponseListExperimentProgramSummaryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentProgramSummaryResponse"
+    ApiResponseExperimentProgramDetailResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentProgramDetailResponse"
+    ExperimentProgramDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        contentVersion:
+          type: integer
+          format: int32
+        title:
+          type: string
+        description:
+          type: string
+        durationDays:
+          type: integer
+          format: int32
+        primaryTopicCode:
+          type: string
+        sourceType:
+          type: string
+          enum:
+          - TEMPLATE
+          - RANDOM
+          - AI_RECOMMENDED
+          - USER_COMPOSED
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          - ARCHIVED
+        isFeatured:
+          type: boolean
+        isBeginner:
+          type: boolean
+        estimatedMinutesMin:
+          type: integer
+          format: int32
+        estimatedMinutesMax:
+          type: integer
+          format: int32
+        displayOrder:
+          type: integer
+          format: int32
+        missions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentProgramMissionResponse"
+    ExperimentProgramMissionResponse:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        missionId:
+          type: string
+          format: uuid
+        missionCode:
+          type: string
+        title:
+          type: string
+        missionType:
+          type: string
+          enum:
+          - OBSERVATION
+          - QUESTION
+          - ACTION
+          - RECORD
+          - REVIEW
+        estimatedMinutes:
+          type: integer
+          format: int32
+    ApiResponseExperimentRandomProgramResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentRandomProgramResponse"
+    ExperimentRandomProgramResponse:
+      type: object
+      properties:
+        durationDays:
+          type: integer
+          format: int32
+        missions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentProgramMissionResponse"
     ApiResponseListQuoteTopicResponse:
       type: object
       properties:
