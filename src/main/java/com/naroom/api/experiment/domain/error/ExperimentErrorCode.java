@@ -175,6 +175,26 @@ public enum ExperimentErrorCode implements ErrorCode {
 			"이미 완료되었거나 중단된 코스는 다시 마무리할 수 없습니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	RECOMMENDATION_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"EXPERIMENT_RECOMMENDATION_NOT_FOUND",
+			"urn:naroom:problem:experiment-recommendation-not-found",
+			"추천을 찾을 수 없습니다",
+			"존재하지 않거나 다른 회원의 추천입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	RECOMMENDATION_NOT_ACTIONABLE(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_RECOMMENDATION_NOT_ACTIONABLE",
+			"urn:naroom:problem:experiment-recommendation-not-actionable",
+			"이미 처리된 추천입니다",
+			"이미 수락했거나 넘긴 추천은 다시 살펴보거나 넘길 수 없습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

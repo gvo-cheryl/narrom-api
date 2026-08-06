@@ -17,6 +17,7 @@ import com.naroom.api.experiment.dto.ExperimentProgramStartResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramSummaryResponse;
 import com.naroom.api.experiment.dto.ExperimentRandomProgramResponse;
 import com.naroom.api.experiment.dto.ExperimentRandomProgramStartRequest;
+import com.naroom.api.experiment.dto.ExperimentRecommendationResponse;
 import com.naroom.api.experiment.dto.ExperimentTopicResponse;
 import com.naroom.api.experiment.dto.ExperimentUserComposedProgramRequest;
 import com.naroom.api.experiment.dto.ExperimentUserComposedProgramResponse;
@@ -44,6 +45,7 @@ public class ExperimentController {
 	private final ExperimentEnrollmentService experimentEnrollmentService;
 	private final ExperimentProgressService experimentProgressService;
 	private final ExperimentReviewService experimentReviewService;
+	private final ExperimentRecommendationService experimentRecommendationService;
 
 	public ExperimentController(
 			ExperimentTopicService experimentTopicService,
@@ -51,13 +53,15 @@ public class ExperimentController {
 			ExperimentRandomProgramComposer experimentRandomProgramComposer,
 			ExperimentEnrollmentService experimentEnrollmentService,
 			ExperimentProgressService experimentProgressService,
-			ExperimentReviewService experimentReviewService) {
+			ExperimentReviewService experimentReviewService,
+			ExperimentRecommendationService experimentRecommendationService) {
 		this.experimentTopicService = experimentTopicService;
 		this.experimentProgramService = experimentProgramService;
 		this.experimentRandomProgramComposer = experimentRandomProgramComposer;
 		this.experimentEnrollmentService = experimentEnrollmentService;
 		this.experimentProgressService = experimentProgressService;
 		this.experimentReviewService = experimentReviewService;
+		this.experimentRecommendationService = experimentRecommendationService;
 	}
 
 	@GetMapping("/topics")
@@ -156,6 +160,21 @@ public class ExperimentController {
 	@GetMapping("/user-programs/past")
 	public ApiResponse<List<ExperimentPastProgramResponse>> getPastPrograms() {
 		return ApiResponse.of(experimentReviewService.listPast(currentMemberId()));
+	}
+
+	@GetMapping("/recommendations")
+	public ApiResponse<List<ExperimentRecommendationResponse>> getRecommendations() {
+		return ApiResponse.of(experimentRecommendationService.listActive(currentMemberId()));
+	}
+
+	@PostMapping("/recommendations/{recommendationId}/view")
+	public ApiResponse<ExperimentRecommendationResponse> viewRecommendation(@PathVariable UUID recommendationId) {
+		return ApiResponse.of(experimentRecommendationService.markViewed(currentMemberId(), recommendationId));
+	}
+
+	@PostMapping("/recommendations/{recommendationId}/dismiss")
+	public ApiResponse<ExperimentRecommendationResponse> dismissRecommendation(@PathVariable UUID recommendationId) {
+		return ApiResponse.of(experimentRecommendationService.dismiss(currentMemberId(), recommendationId));
 	}
 
 	// JwtAuthenticationFilter가 SecurityContextHolder에 직접 채워 넣는 방식이라 여기서도 직접 꺼낸다

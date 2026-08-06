@@ -19,4 +19,8 @@ public interface UserExperimentProgramRepository extends JpaRepository<UserExper
 
 	List<UserExperimentProgram> findByMember_IdOrderByCreatedAtDesc(UUID memberId);
 
+	// §14 추천 로직의 "처음 시작" 판별: 저장만 하고 시작하지 않은(READY) 코스는 제외하고 실제로 시작한
+	// 적이 있는지만 본다.
+	boolean existsByMember_IdAndStartedAtIsNotNull(UUID memberId);
+
 }

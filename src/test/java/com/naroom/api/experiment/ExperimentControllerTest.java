@@ -7,6 +7,8 @@ import com.naroom.api.auth.security.JwtTokenProvider;
 import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.experiment.domain.entity.ExperimentAttemptStatus;
 import com.naroom.api.experiment.domain.entity.ExperimentMissionType;
+import com.naroom.api.experiment.domain.entity.ExperimentRecommendationSourceType;
+import com.naroom.api.experiment.domain.entity.ExperimentRecommendationStatus;
 import com.naroom.api.experiment.domain.entity.ExperimentSourceType;
 import com.naroom.api.experiment.domain.entity.UserExperimentProgramStatus;
 import com.naroom.api.experiment.dto.EstimatedMinutesRange;
@@ -21,6 +23,7 @@ import com.naroom.api.experiment.dto.ExperimentProgramMissionResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramStartResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramSummaryResponse;
 import com.naroom.api.experiment.dto.ExperimentRandomProgramResponse;
+import com.naroom.api.experiment.dto.ExperimentRecommendationResponse;
 import com.naroom.api.experiment.dto.ExperimentTopicResponse;
 import com.naroom.api.experiment.dto.ExperimentUserComposedProgramResponse;
 import com.naroom.api.experiment.dto.ExperimentUserProgramMissionResponse;
@@ -37,6 +40,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -81,6 +85,9 @@ class ExperimentControllerTest {
 
 	@MockitoBean
 	private ExperimentReviewService experimentReviewService;
+
+	@MockitoBean
+	private ExperimentRecommendationService experimentRecommendationService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -294,6 +301,56 @@ class ExperimentControllerTest {
 		mockMvc.perform(get("/api/v1/experiments/user-programs/past").with(authentication(memberAuthentication())))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data[0].status").value("COMPLETED"));
+	}
+
+	@Test
+	void getRecommendations_authenticated_returnsList() throws Exception {
+		when(experimentRecommendationService.listActive(any())).thenReturn(List.of(new ExperimentRecommendationResponse(
+				UUID.randomUUID(),
+				new ExperimentProgramSummaryResponse(
+						UUID.randomUUID(), "NOW_MIND_3", "지금의 마음 알아보기", (short) 3, "EMOTION",
+						"설명", new EstimatedMinutesRange((short) 3, (short) 3), 3),
+				ExperimentRecommendationSourceType.RULE, "작은 실험이 처음이라면 이 코스로 가볍게 시작해볼 수 있어요.",
+				ExperimentRecommendationStatus.SHOWN, Instant.now())));
+
+		mockMvc.perform(get("/api/v1/experiments/recommendations").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].program.code").value("NOW_MIND_3"))
+				.andExpect(jsonPath("$.data[0].status").value("SHOWN"));
+	}
+
+	@Test
+	void viewRecommendation_authenticated_returnsViewed() throws Exception {
+		UUID recommendationId = UUID.randomUUID();
+		when(experimentRecommendationService.markViewed(any(), eq(recommendationId))).thenReturn(new ExperimentRecommendationResponse(
+				recommendationId,
+				new ExperimentProgramSummaryResponse(
+						UUID.randomUUID(), "NOW_MIND_3", "지금의 마음 알아보기", (short) 3, "EMOTION",
+						"설명", new EstimatedMinutesRange((short) 3, (short) 3), 3),
+				ExperimentRecommendationSourceType.RULE, "작은 실험이 처음이라면 이 코스로 가볍게 시작해볼 수 있어요.",
+				ExperimentRecommendationStatus.VIEWED, Instant.now()));
+
+		mockMvc.perform(post("/api/v1/experiments/recommendations/{id}/view", recommendationId)
+						.with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.status").value("VIEWED"));
+	}
+
+	@Test
+	void dismissRecommendation_authenticated_returnsDismissed() throws Exception {
+		UUID recommendationId = UUID.randomUUID();
+		when(experimentRecommendationService.dismiss(any(), eq(recommendationId))).thenReturn(new ExperimentRecommendationResponse(
+				recommendationId,
+				new ExperimentProgramSummaryResponse(
+						UUID.randomUUID(), "NOW_MIND_3", "지금의 마음 알아보기", (short) 3, "EMOTION",
+						"설명", new EstimatedMinutesRange((short) 3, (short) 3), 3),
+				ExperimentRecommendationSourceType.RULE, "작은 실험이 처음이라면 이 코스로 가볍게 시작해볼 수 있어요.",
+				ExperimentRecommendationStatus.DISMISSED, Instant.now()));
+
+		mockMvc.perform(post("/api/v1/experiments/recommendations/{id}/dismiss", recommendationId)
+						.with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.status").value("DISMISSED"));
 	}
 
 	private MemberAuthentication memberAuthentication() {

@@ -89,6 +89,38 @@ public class ExperimentRecommendation {
 	protected ExperimentRecommendation() {
 	}
 
+	// §14 추천 생성. 규칙 기반 추천은 항상 SHOWN으로 시작하고, 실제로 시작하지 않는 한 자동으로 상태가
+	// 바뀌지 않는다(§5.1 "추천은 자동 시작하지 않는다").
+	public static ExperimentRecommendation create(
+			Member member, ExperimentProgram program, ExperimentRecommendationSourceType sourceType,
+			Entry sourceEntry, String reasonCode, String reasonText, String evidence, Instant expiresAt) {
+		ExperimentRecommendation recommendation = new ExperimentRecommendation();
+		recommendation.member = member;
+		recommendation.program = program;
+		recommendation.sourceType = sourceType;
+		recommendation.sourceEntry = sourceEntry;
+		recommendation.reasonCode = reasonCode;
+		recommendation.reasonText = reasonText;
+		recommendation.evidence = evidence;
+		recommendation.status = ExperimentRecommendationStatus.SHOWN;
+		recommendation.expiresAt = expiresAt;
+		return recommendation;
+	}
+
+	// §11.5 "살펴봄" 상태. 목록에 노출된 것만으로는 살펴본 것으로 보지 않으므로 SHOWN에서만 전이한다.
+	public void view(Instant now) {
+		if (this.status == ExperimentRecommendationStatus.SHOWN) {
+			this.status = ExperimentRecommendationStatus.VIEWED;
+			this.viewedAt = now;
+		}
+	}
+
+	// "지금은 괜찮아요" - 추천을 넘긴다.
+	public void dismiss(Instant now) {
+		this.status = ExperimentRecommendationStatus.DISMISSED;
+		this.respondedAt = now;
+	}
+
 	// §13 코스 시작 트랜잭션 6단계: 추천으로 시작했다면 상태를 ACCEPTED로 바꾸고 시작된 코스를 연결한다.
 	public void accept(UserExperimentProgram startedUserProgram, Instant now) {
 		this.status = ExperimentRecommendationStatus.ACCEPTED;
