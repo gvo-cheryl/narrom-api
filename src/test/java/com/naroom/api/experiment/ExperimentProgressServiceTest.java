@@ -336,6 +336,47 @@ class ExperimentProgressServiceTest {
 		assertFalse(missions.days().get(0).replaced());
 	}
 
+	@Test
+	void pause_inProgressCourse_marksPausedWithoutTouchingProgress() {
+		Member member = memberRepository.save(Member.create("지연"));
+		ExperimentProgramStartResponse started = startThreeDayCourse(member.getId());
+
+		var response = experimentProgressService.pause(member.getId(), started.userExperimentProgramId());
+
+		assertEquals(UserExperimentProgramStatus.PAUSED, response.status());
+		var paused = userExperimentProgramRepository.findById(started.userExperimentProgramId()).orElseThrow();
+		assertEquals(UserExperimentProgramStatus.PAUSED, paused.getStatus());
+		assertEquals((short) 1, paused.getCurrentDay());
+	}
+
+	@Test
+	void pause_alreadyPaused_throwsUserProgramNotInProgress() {
+		Member member = memberRepository.save(Member.create("지연"));
+		ExperimentProgramStartResponse started = startThreeDayCourse(member.getId());
+		experimentProgressService.pause(member.getId(), started.userExperimentProgramId());
+
+		BusinessException exception = assertThrows(BusinessException.class,
+				() -> experimentProgressService.pause(member.getId(), started.userExperimentProgramId()));
+
+		assertEquals(ExperimentErrorCode.USER_PROGRAM_NOT_IN_PROGRESS, exception.errorCode());
+	}
+
+	@Test
+	void recordMission_pausedCourse_autoResumesToInProgress() {
+		Member member = memberRepository.save(Member.create("지연"));
+		ExperimentProgramStartResponse started = startThreeDayCourse(member.getId());
+		experimentProgressService.pause(member.getId(), started.userExperimentProgramId());
+
+		ExperimentMissionRecordResponse response = experimentProgressService.recordMission(
+				member.getId(), started.userExperimentProgramId(), started.todayMission().userProgramMissionId(),
+				recordRequest(ExperimentAttemptStatus.DONE, LocalDate.now(), false));
+
+		assertEquals(UserExperimentProgramStatus.IN_PROGRESS, response.status());
+		assertEquals(
+				UserExperimentProgramStatus.IN_PROGRESS,
+				userExperimentProgramRepository.findById(started.userExperimentProgramId()).orElseThrow().getStatus());
+	}
+
 	private void recordDay(UUID memberId, UUID userExperimentProgramId, int dayNumber, ExperimentAttemptStatus attemptStatus) {
 		UserProgramMission slot = userProgramMissionRepository
 				.findByUserExperimentProgram_IdAndDayNumber(userExperimentProgramId, (short) dayNumber)

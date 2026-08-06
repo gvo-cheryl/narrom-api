@@ -22,6 +22,7 @@ import com.naroom.api.experiment.dto.ExperimentMissionRecordRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
+import com.naroom.api.experiment.dto.ExperimentPauseResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramDayResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramMissionsResponse;
 import com.naroom.api.experiment.dto.ExperimentRestedDateResponse;
@@ -143,11 +144,27 @@ public class ExperimentProgressService {
 		return new ExperimentProgramMissionsResponse(days, restedDates);
 	}
 
+	// §11.6 DEC-04: 활성 코스를 "며칠 쉬기"·"나중에 다시 시작하기"로 멈춘다. 문구만 다르고 서버
+	// 동작은 하나다 - target_end_date·current_day·기존 기록은 건드리지 않는다.
+	@Transactional
+	public ExperimentPauseResponse pause(UUID memberId, UUID userExperimentProgramId) {
+		UserExperimentProgram program = getOwnedProgramOrThrow(memberId, userExperimentProgramId);
+		if (program.getStatus() != UserExperimentProgramStatus.IN_PROGRESS) {
+			throw new BusinessException(ExperimentErrorCode.USER_PROGRAM_NOT_IN_PROGRESS);
+		}
+		program.pause(Instant.now());
+		return new ExperimentPauseResponse(program.getId(), program.getStatus());
+	}
+
 	@Transactional
 	public ExperimentMissionRecordResponse recordMission(
 			UUID memberId, UUID userExperimentProgramId, UUID userProgramMissionId, ExperimentMissionRecordRequest request) {
 		UserExperimentProgram program = getOwnedProgramOrThrow(memberId, userExperimentProgramId);
-		if (program.getStatus() != UserExperimentProgramStatus.IN_PROGRESS) {
+		// §11.6 DEC-05: 재개는 자동이다 - PAUSED 상태에서 어떤 미션이든 기록하면 그 순간 IN_PROGRESS로
+		// 돌아간다. 별도의 "다시 시작하기" API나 확인 절차를 두지 않는다.
+		if (program.getStatus() == UserExperimentProgramStatus.PAUSED) {
+			program.resume();
+		} else if (program.getStatus() != UserExperimentProgramStatus.IN_PROGRESS) {
 			throw new BusinessException(ExperimentErrorCode.USER_PROGRAM_NOT_IN_PROGRESS);
 		}
 		UserProgramMission slot = userProgramMissionRepository

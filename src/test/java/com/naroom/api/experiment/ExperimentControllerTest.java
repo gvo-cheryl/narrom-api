@@ -22,6 +22,7 @@ import com.naroom.api.experiment.dto.ExperimentMissionCatalogResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
 import com.naroom.api.experiment.dto.ExperimentPastProgramResponse;
+import com.naroom.api.experiment.dto.ExperimentPauseResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramDayResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramMissionResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramMissionsResponse;
@@ -328,6 +329,18 @@ class ExperimentControllerTest {
 						.with(authentication(memberAuthentication())))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.status").value("ENDED_EARLY"));
+	}
+
+	@Test
+	void pauseProgram_authenticated_returnsPaused() throws Exception {
+		UUID userExperimentProgramId = UUID.randomUUID();
+		when(experimentProgressService.pause(any(), eq(userExperimentProgramId)))
+				.thenReturn(new ExperimentPauseResponse(userExperimentProgramId, UserExperimentProgramStatus.PAUSED));
+
+		mockMvc.perform(post("/api/v1/experiments/user-programs/{id}/pause", userExperimentProgramId)
+						.with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.status").value("PAUSED"));
 	}
 
 	@Test

@@ -11,6 +11,7 @@ import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
 import com.naroom.api.experiment.dto.ExperimentPastProgramResponse;
+import com.naroom.api.experiment.dto.ExperimentPauseResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramDetailResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramMissionsResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramSaveResponse;
@@ -171,6 +172,11 @@ public class ExperimentController {
 	@PostMapping("/user-programs/{userExperimentProgramId}/end-early")
 	public ApiResponse<ExperimentEndEarlyResponse> endEarly(@PathVariable UUID userExperimentProgramId) {
 		return ApiResponse.of(experimentReviewService.endEarly(currentMemberId(), userExperimentProgramId));
+	}
+
+	@PostMapping("/user-programs/{userExperimentProgramId}/pause")
+	public ApiResponse<ExperimentPauseResponse> pauseProgram(@PathVariable UUID userExperimentProgramId) {
+		return ApiResponse.of(experimentProgressService.pause(currentMemberId(), userExperimentProgramId));
 	}
 
 	@GetMapping("/user-programs/past")

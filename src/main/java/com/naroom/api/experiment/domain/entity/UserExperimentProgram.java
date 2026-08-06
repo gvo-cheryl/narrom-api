@@ -164,6 +164,20 @@ public class UserExperimentProgram {
 		this.endedEarlyAt = now;
 	}
 
+	// §11.6 DEC-04: "며칠 쉬기"·"나중에 다시 시작하기"는 같은 전환이다 - 문구만 다르고 서버 동작은
+	// 하나다. targetEndDate·currentDay·이미 기록된 일차는 건드리지 않는다(멈춘 기간을 계산·보정하지
+	// 않는다는 결정).
+	public void pause(Instant now) {
+		this.status = UserExperimentProgramStatus.PAUSED;
+		this.pausedAt = now;
+	}
+
+	// §11.6 DEC-05: 재개는 자동이다 - 별도 "다시 시작하기" API 없이 미션을 기록하는 순간(서비스
+	// 계층에서) 호출된다.
+	public void resume() {
+		this.status = UserExperimentProgramStatus.IN_PROGRESS;
+	}
+
 	// §13 미션 기록 트랜잭션 6단계: 미션을 소비한 기록이 저장된 뒤 다음 일차로 넘어간다. 다음 슬롯을
 	// CURRENT로 올리는 것은 서비스 계층이 UserProgramMission에 대해 별도로 한다.
 	public void advanceDay(LocalDate today) {

@@ -388,6 +388,25 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseExperimentCourseReviewResponse"
+  /api/v1/experiments/user-programs/{userExperimentProgramId}/pause:
+    post:
+      tags:
+      - experiment-controller
+      operationId: pauseProgram
+      parameters:
+      - name: userExperimentProgramId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentPauseResponse"
   /api/v1/experiments/user-programs/{userExperimentProgramId}/missions/{userProgramMissionId}/replace:
     post:
       tags:
@@ -1917,6 +1936,26 @@ components:
           type: boolean
         aiJob:
           $ref: "#/components/schemas/ExperimentAiJobSummary"
+    ApiResponseExperimentPauseResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentPauseResponse"
+    ExperimentPauseResponse:
+      type: object
+      properties:
+        userExperimentProgramId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - READY
+          - IN_PROGRESS
+          - PAUSED
+          - AWAITING_REVIEW
+          - COMPLETED
+          - ENDED_EARLY
     ExperimentMissionReplaceRequest:
       type: object
       properties:
