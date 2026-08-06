@@ -182,6 +182,16 @@ public class UserExperimentProgram {
 		this.reviewReadyAt = now;
 	}
 
+	// §5.4/§11.3 코스 돌아보기 저장. reviewEntry는 LifeTime에 노출할 경우에만 연결된다(선택 사항이 아니라
+	// 8-E 구현에서는 항상 만들지만, 엔티티 자체는 nullable 계약을 그대로 지킨다).
+	public void complete(String reviewData, String userSummary, Entry reviewEntry, Instant now) {
+		this.status = UserExperimentProgramStatus.COMPLETED;
+		this.reviewData = reviewData;
+		this.userSummary = userSummary;
+		this.reviewEntry = reviewEntry;
+		this.completedAt = now;
+	}
+
 	public UUID getId() {
 		return id;
 	}

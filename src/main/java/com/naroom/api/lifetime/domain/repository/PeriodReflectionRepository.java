@@ -19,6 +19,10 @@ public interface PeriodReflectionRepository extends JpaRepository<PeriodReflecti
 
 	Optional<PeriodReflection> findByIdAndMember_Id(UUID id, UUID memberId);
 
+	// §11.3 코스 전용 AI 회고 - 코스당 최신 버전 하나를 재사용/재시도 판단에 쓴다(generate()의 기간별 회고와
+	// 같은 원리). 재생성으로 버전이 여러 개 쌓일 수 있어 versionNo desc로 최신을 먼저 가져온다.
+	List<PeriodReflection> findByUserExperimentProgramIdOrderByVersionNoDesc(UUID userExperimentProgramId);
+
 	// 지난 회고 목록(히스토리) 조회용. 재생성으로 같은 기간에 버전이 여러 개 있을 수 있어, versionNo desc를
 	// 2차 정렬 기준으로 둬서 같은 periodStart 안에서는 항상 최신 버전이 먼저 나오게 한다 - 서비스 계층에서
 	// periodStart+featureType당 처음 나온(=최신 버전) 것만 남긴다.

@@ -2,10 +2,14 @@ package com.naroom.api.experiment;
 
 import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.experiment.dto.ExperimentActiveProgramResponse;
+import com.naroom.api.experiment.dto.ExperimentCourseReviewRequest;
+import com.naroom.api.experiment.dto.ExperimentCourseReviewResponse;
+import com.naroom.api.experiment.dto.ExperimentEndEarlyResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceRequest;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
+import com.naroom.api.experiment.dto.ExperimentPastProgramResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramDetailResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramSaveResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramStartRequest;
@@ -39,18 +43,21 @@ public class ExperimentController {
 	private final ExperimentRandomProgramComposer experimentRandomProgramComposer;
 	private final ExperimentEnrollmentService experimentEnrollmentService;
 	private final ExperimentProgressService experimentProgressService;
+	private final ExperimentReviewService experimentReviewService;
 
 	public ExperimentController(
 			ExperimentTopicService experimentTopicService,
 			ExperimentProgramService experimentProgramService,
 			ExperimentRandomProgramComposer experimentRandomProgramComposer,
 			ExperimentEnrollmentService experimentEnrollmentService,
-			ExperimentProgressService experimentProgressService) {
+			ExperimentProgressService experimentProgressService,
+			ExperimentReviewService experimentReviewService) {
 		this.experimentTopicService = experimentTopicService;
 		this.experimentProgramService = experimentProgramService;
 		this.experimentRandomProgramComposer = experimentRandomProgramComposer;
 		this.experimentEnrollmentService = experimentEnrollmentService;
 		this.experimentProgressService = experimentProgressService;
+		this.experimentReviewService = experimentReviewService;
 	}
 
 	@GetMapping("/topics")
@@ -133,6 +140,22 @@ public class ExperimentController {
 			@Valid @RequestBody ExperimentMissionReplaceRequest request) {
 		return ApiResponse.of(experimentProgressService.replaceMission(
 				currentMemberId(), userExperimentProgramId, userProgramMissionId, request));
+	}
+
+	@PostMapping("/user-programs/{userExperimentProgramId}/review")
+	public ApiResponse<ExperimentCourseReviewResponse> completeReview(
+			@PathVariable UUID userExperimentProgramId, @RequestBody ExperimentCourseReviewRequest request) {
+		return ApiResponse.of(experimentReviewService.completeReview(currentMemberId(), userExperimentProgramId, request));
+	}
+
+	@PostMapping("/user-programs/{userExperimentProgramId}/end-early")
+	public ApiResponse<ExperimentEndEarlyResponse> endEarly(@PathVariable UUID userExperimentProgramId) {
+		return ApiResponse.of(experimentReviewService.endEarly(currentMemberId(), userExperimentProgramId));
+	}
+
+	@GetMapping("/user-programs/past")
+	public ApiResponse<List<ExperimentPastProgramResponse>> getPastPrograms() {
+		return ApiResponse.of(experimentReviewService.listPast(currentMemberId()));
 	}
 
 	// JwtAuthenticationFilter가 SecurityContextHolder에 직접 채워 넣는 방식이라 여기서도 직접 꺼낸다

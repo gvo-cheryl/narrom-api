@@ -1,6 +1,8 @@
 package com.naroom.api.experiment;
 
 import com.naroom.api.account.domain.repository.AuthSessionRepository;
+import com.naroom.api.ai.domain.entity.AiFeatureType;
+import com.naroom.api.ai.domain.entity.AiJobStatus;
 import com.naroom.api.auth.security.JwtTokenProvider;
 import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.experiment.domain.entity.ExperimentAttemptStatus;
@@ -9,8 +11,12 @@ import com.naroom.api.experiment.domain.entity.ExperimentSourceType;
 import com.naroom.api.experiment.domain.entity.UserExperimentProgramStatus;
 import com.naroom.api.experiment.dto.EstimatedMinutesRange;
 import com.naroom.api.experiment.dto.ExperimentActiveProgramResponse;
+import com.naroom.api.experiment.dto.ExperimentAiJobSummary;
+import com.naroom.api.experiment.dto.ExperimentCourseReviewResponse;
+import com.naroom.api.experiment.dto.ExperimentEndEarlyResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionRecordResponse;
 import com.naroom.api.experiment.dto.ExperimentMissionReplaceResponse;
+import com.naroom.api.experiment.dto.ExperimentPastProgramResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramMissionResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramStartResponse;
 import com.naroom.api.experiment.dto.ExperimentProgramSummaryResponse;
@@ -72,6 +78,9 @@ class ExperimentControllerTest {
 
 	@MockitoBean
 	private ExperimentProgressService experimentProgressService;
+
+	@MockitoBean
+	private ExperimentReviewService experimentReviewService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -243,6 +252,48 @@ class ExperimentControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.replacementCount").value(1))
 				.andExpect(jsonPath("$.data.missionId").value(replacementMissionId.toString()));
+	}
+
+	@Test
+	void completeReview_authenticated_returnsCompletedWithAiJob() throws Exception {
+		UUID userExperimentProgramId = UUID.randomUUID();
+		when(experimentReviewService.completeReview(any(), eq(userExperimentProgramId), any()))
+				.thenReturn(new ExperimentCourseReviewResponse(
+						UserExperimentProgramStatus.COMPLETED, true,
+						new ExperimentAiJobSummary(AiFeatureType.THREE_DAY_REFLECTION, AiJobStatus.PENDING, null)));
+
+		mockMvc.perform(post("/api/v1/experiments/user-programs/{id}/review", userExperimentProgramId)
+						.with(authentication(memberAuthentication()))
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{ "discovery": "발견한 것", "requestAiReflection": true }
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.status").value("COMPLETED"))
+				.andExpect(jsonPath("$.data.aiJob.featureType").value("THREE_DAY_REFLECTION"));
+	}
+
+	@Test
+	void endEarly_authenticated_returnsEndedEarly() throws Exception {
+		UUID userExperimentProgramId = UUID.randomUUID();
+		when(experimentReviewService.endEarly(any(), eq(userExperimentProgramId)))
+				.thenReturn(new ExperimentEndEarlyResponse(userExperimentProgramId, UserExperimentProgramStatus.ENDED_EARLY));
+
+		mockMvc.perform(post("/api/v1/experiments/user-programs/{id}/end-early", userExperimentProgramId)
+						.with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.status").value("ENDED_EARLY"));
+	}
+
+	@Test
+	void getPastPrograms_authenticated_returnsList() throws Exception {
+		when(experimentReviewService.listPast(any())).thenReturn(List.of(new ExperimentPastProgramResponse(
+				UUID.randomUUID(), UserExperimentProgramStatus.COMPLETED, "지금의 마음 알아보기", (short) 3, (short) 3,
+				null, null, null)));
+
+		mockMvc.perform(get("/api/v1/experiments/user-programs/past").with(authentication(memberAuthentication())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].status").value("COMPLETED"));
 	}
 
 	private MemberAuthentication memberAuthentication() {

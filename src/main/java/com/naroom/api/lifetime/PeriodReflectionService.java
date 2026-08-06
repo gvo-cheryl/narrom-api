@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -90,6 +91,43 @@ public class PeriodReflectionService {
 		aiJobService.createForEntry(
 				memberId, featureType, envelopeEntry.getId(),
 				"period-reflection-" + featureType + "-" + period.start() + "-v" + periodReflection.getVersionNo());
+
+		return periodReflection;
+	}
+
+	// §11.3: 3일 코스 종료 시 사용자가 선택한 코스 전용 회고. 일반 기간별 회고와 달리 기간·근거는
+	// PeriodCalculator/PeriodReflectionEligibilityService가 아니라 호출자(ExperimentReviewService)가
+	// 코스 시작일과 이 코스에서 만들어진 기록으로 직접 정한다 - "이번 주/최근 3일 전체"가 아니라
+	// "이 코스가 진행된 기간"이 회고 대상이어야 하기 때문이다.
+	@Transactional
+	public PeriodReflection generateForExperimentCourse(
+			UUID memberId, UUID userExperimentProgramId, LocalDate periodStart, LocalDate periodEnd, List<Entry> evidenceEntries) {
+		List<PeriodReflection> existing = periodReflectionRepository
+				.findByUserExperimentProgramIdOrderByVersionNoDesc(userExperimentProgramId);
+		PeriodReflection previous = existing.isEmpty() ? null : existing.get(0);
+		if (previous != null && previous.getStatus() != AiJobStatus.FAILED) {
+			return previous;
+		}
+		if (evidenceEntries.isEmpty()) {
+			throw new BusinessException(LifetimeErrorCode.PERIOD_REFLECTION_INSUFFICIENT_RECORDS);
+		}
+
+		Member member = memberRepository.getReferenceById(memberId);
+		Entry envelopeEntry = entryRepository.save(
+				Entry.create(member, EntryType.THREE_DAY_REFLECTION, null, null, periodEnd, null, null, null));
+		envelopeEntry.publish();
+
+		PeriodReflection periodReflection = periodReflectionRepository.save(previous == null
+				? PeriodReflection.requestForExperimentCourse(member, envelopeEntry, periodStart, periodEnd, userExperimentProgramId)
+				: PeriodReflection.regenerate(member, envelopeEntry, previous));
+
+		for (Entry evidenceEntry : evidenceEntries) {
+			periodReflectionEntryRepository.save(PeriodReflectionEntry.link(periodReflection, evidenceEntry, null));
+		}
+
+		aiJobService.createForEntry(
+				memberId, AiFeatureType.THREE_DAY_REFLECTION, envelopeEntry.getId(),
+				"period-reflection-experiment-course-" + userExperimentProgramId + "-v" + periodReflection.getVersionNo());
 
 		return periodReflection;
 	}

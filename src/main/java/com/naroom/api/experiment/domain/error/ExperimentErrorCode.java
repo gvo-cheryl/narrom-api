@@ -155,6 +155,26 @@ public enum ExperimentErrorCode implements ErrorCode {
 			"더 이상 사용하지 않는 미션으로는 교체할 수 없습니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	USER_PROGRAM_NOT_AWAITING_REVIEW(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_USER_PROGRAM_NOT_AWAITING_REVIEW",
+			"urn:naroom:problem:experiment-user-program-not-awaiting-review",
+			"지금은 돌아볼 수 없는 코스입니다",
+			"모든 일차를 기록한 코스만 돌아보기를 저장할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	USER_PROGRAM_ALREADY_ENDED(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_USER_PROGRAM_ALREADY_ENDED",
+			"urn:naroom:problem:experiment-user-program-already-ended",
+			"이미 끝난 코스입니다",
+			"이미 완료되었거나 중단된 코스는 다시 마무리할 수 없습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

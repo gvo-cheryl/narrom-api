@@ -89,6 +89,12 @@ public class PeriodReflection {
 	@Column(name = "error_code", length = 80)
 	private String errorCode;
 
+	// 3일 코스 종료 시 요청한 코스 전용 AI 회고를 연결한다(§11.3). experiment 도메인 엔티티를 직접
+	// 참조하지 않고 단일 컬럼으로만 매핑한다 - lifetime↔experiment 패키지 순환 의존을 만들지 않기 위함이다
+	// (ExperimentMissionRecord가 복합 FK를 단일 컬럼으로 단순화한 것과 같은 이유).
+	@Column(name = "user_experiment_program_id")
+	private UUID userExperimentProgramId;
+
 	@CreationTimestamp
 	@Column(name = "requested_at", nullable = false, updatable = false)
 	private Instant requestedAt;
@@ -122,10 +128,20 @@ public class PeriodReflection {
 		return new PeriodReflection(member, entry, featureType, periodStart, periodEnd, 1, null);
 	}
 
+	// §11.3: 3일 코스 종료 시 사용자가 선택한 코스 전용 AI 회고다. featureType은 항상
+	// THREE_DAY_REFLECTION이고, 근거 기록은 이 코스에서 만들어진 기록으로 한정한다(호출자가 선정해서 넘김).
+	public static PeriodReflection requestForExperimentCourse(
+			Member member, Entry entry, LocalDate periodStart, LocalDate periodEnd, UUID userExperimentProgramId) {
+		PeriodReflection reflection = new PeriodReflection(
+				member, entry, AiFeatureType.THREE_DAY_REFLECTION, periodStart, periodEnd, 1, null);
+		reflection.userExperimentProgramId = userExperimentProgramId;
+		return reflection;
+	}
+
 	// 잘못된 과거 해석이 연쇄적으로 누적되는 것을 막기 위해 이전 대화를 이어가지 않고 기간 데이터로
 	// 새로 생성한다(§12.3) - previousReflection은 이력 추적용 참조일 뿐 내용을 상속하지 않는다.
 	public static PeriodReflection regenerate(Member member, Entry entry, PeriodReflection previousReflection) {
-		return new PeriodReflection(
+		PeriodReflection reflection = new PeriodReflection(
 				member,
 				entry,
 				previousReflection.featureType,
@@ -133,6 +149,8 @@ public class PeriodReflection {
 				previousReflection.periodEnd,
 				previousReflection.versionNo + 1,
 				previousReflection);
+		reflection.userExperimentProgramId = previousReflection.userExperimentProgramId;
+		return reflection;
 	}
 
 	public void complete(
@@ -225,6 +243,10 @@ public class PeriodReflection {
 
 	public String getErrorCode() {
 		return errorCode;
+	}
+
+	public UUID getUserExperimentProgramId() {
+		return userExperimentProgramId;
 	}
 
 	public Instant getRequestedAt() {
