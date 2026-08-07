@@ -60,7 +60,7 @@ class NotificationDispatchServiceTest {
 		int sent = notificationDispatchService.dispatchDue();
 
 		assertEquals(1, sent);
-		verify(expoPushClient).send(eq("ExponentPushToken[test]"), any(), any());
+		verify(expoPushClient).send(eq("ExponentPushToken[test]"), any(), any(), any());
 		NotificationPreference reloaded = notificationPreferenceRepository.findById(preference.getId()).orElseThrow();
 		assertNotNull(reloaded.getLastSentAt());
 	}

@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
 import java.util.List;
+import java.util.Map;
 
 // Expo Push Notification Service(DEC-01, docs/instruction/notification 설계 문서). 별도 API 키 없이
 // 회원 기기의 Expo 푸시 토큰만으로 발송한다. Beta 1 규모에서는 메시지 하나당 요청 하나로 충분해
@@ -22,11 +23,12 @@ public class ExpoPushClient {
 
 	// 발송 실패가 스케줄러 전체를 막지 않도록 예외를 던지지 않고 로그만 남긴다 - 다음 tick에 다시 시도하지는
 	// 않는다(§2 DEC-02: 하루 1회 제한을 먼저 마킹하기 때문). 토큰 만료 등은 이후 별도 정리 작업 대상이다.
-	public void send(String pushToken, String title, String body) {
+	// data.notificationType은 앱이 알림을 탭했을 때 유형별 딥링크로 이동하는 데 쓴다(설계 문서 §3 포함 범위).
+	public void send(String pushToken, String title, String body, Map<String, String> data) {
 		try {
 			restClient.post()
 					.uri(PUSH_SEND_URI)
-					.body(List.of(new ExpoPushMessage(pushToken, title, body, null)))
+					.body(List.of(new ExpoPushMessage(pushToken, title, body, data)))
 					.retrieve()
 					.body(ExpoPushTicketResponse.class);
 		} catch (RestClientResponseException ex) {

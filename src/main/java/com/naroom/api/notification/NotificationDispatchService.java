@@ -18,6 +18,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 // §2 DEC-02(발송 방식): 이벤트가 아니라 주기적 배치로 회원 timezone 기준 local_time/day_of_week가
 // 지금 이 tick 구간에 들어오는 알림 설정을 찾아 발송한다. 하루 1회 제한은 last_sent_at의 회원 시간대
@@ -88,9 +89,10 @@ public class NotificationDispatchService {
 		NotificationCopy.Content content = NotificationCopy.forType(preference.getNotificationType());
 		List<DeviceInstallation> devices = deviceInstallationRepository
 				.findByMember_IdAndRevokedAtIsNullAndPushTokenCiphertextIsNotNull(preference.getMember().getId());
+		Map<String, String> data = Map.of("notificationType", preference.getNotificationType().name());
 		for (DeviceInstallation device : devices) {
 			String pushToken = pushTokenCipher.decrypt(device.getPushTokenCiphertext());
-			expoPushClient.send(pushToken, content.title(), content.body());
+			expoPushClient.send(pushToken, content.title(), content.body(), data);
 		}
 	}
 
