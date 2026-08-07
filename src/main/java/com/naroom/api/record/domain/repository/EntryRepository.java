@@ -15,6 +15,9 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
 
 	Optional<Entry> findByIdAndMember_Id(UUID id, UUID memberId);
 
+	// 뱃지 판정(복귀형 RETURN_AFTER_GAP)이 새 기록을 저장하기 전 가장 최근 기록과의 공백을 계산할 때 쓴다.
+	Optional<Entry> findFirstByMember_IdOrderByRecordDateDescCreatedAtDesc(UUID memberId);
+
 	List<Entry> findByMember_IdOrderByRecordDateDescCreatedAtDesc(UUID memberId);
 
 	List<Entry> findByMember_IdAndEntryTypeOrderByRecordDateDescCreatedAtDesc(UUID memberId, EntryType entryType);

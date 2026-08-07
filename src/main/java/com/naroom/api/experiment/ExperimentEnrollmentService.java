@@ -2,6 +2,8 @@ package com.naroom.api.experiment;
 
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
+import com.naroom.api.badge.BadgeAwardService;
+import com.naroom.api.badge.domain.entity.BadgeCode;
 import com.naroom.api.experiment.domain.entity.ExperimentMission;
 import com.naroom.api.experiment.domain.entity.ExperimentProgram;
 import com.naroom.api.experiment.domain.entity.ExperimentProgramMission;
@@ -59,6 +61,7 @@ public class ExperimentEnrollmentService {
 	private final UserProgramMissionRepository userProgramMissionRepository;
 	private final ExperimentRecommendationRepository experimentRecommendationRepository;
 	private final ExperimentRandomProgramComposer experimentRandomProgramComposer;
+	private final BadgeAwardService badgeAwardService;
 
 	public ExperimentEnrollmentService(
 			MemberRepository memberRepository,
@@ -68,7 +71,8 @@ public class ExperimentEnrollmentService {
 			UserExperimentProgramRepository userExperimentProgramRepository,
 			UserProgramMissionRepository userProgramMissionRepository,
 			ExperimentRecommendationRepository experimentRecommendationRepository,
-			ExperimentRandomProgramComposer experimentRandomProgramComposer) {
+			ExperimentRandomProgramComposer experimentRandomProgramComposer,
+			BadgeAwardService badgeAwardService) {
 		this.memberRepository = memberRepository;
 		this.experimentProgramRepository = experimentProgramRepository;
 		this.experimentProgramMissionRepository = experimentProgramMissionRepository;
@@ -77,6 +81,7 @@ public class ExperimentEnrollmentService {
 		this.userProgramMissionRepository = userProgramMissionRepository;
 		this.experimentRecommendationRepository = experimentRecommendationRepository;
 		this.experimentRandomProgramComposer = experimentRandomProgramComposer;
+		this.badgeAwardService = badgeAwardService;
 	}
 
 	@Transactional
@@ -102,6 +107,7 @@ public class ExperimentEnrollmentService {
 		UserProgramMission today = promoteDayOneToCurrent(userProgram, now);
 		userProgram.activate(now);
 		acceptRecommendationIfPresent(memberId, request.recommendationId(), userProgram, now);
+		badgeAwardService.award(memberId, BadgeCode.FIRST_EXPERIMENT_START);
 
 		return toStartResponse(userProgram, today);
 	}
@@ -180,6 +186,7 @@ public class ExperimentEnrollmentService {
 		Instant now = Instant.now();
 		UserProgramMission today = promoteDayOneToCurrent(userProgram, now);
 		userProgram.activate(now);
+		badgeAwardService.award(memberId, BadgeCode.FIRST_EXPERIMENT_START);
 
 		return toStartResponse(userProgram, today);
 	}
@@ -196,6 +203,7 @@ public class ExperimentEnrollmentService {
 		Instant now = Instant.now();
 		UserProgramMission today = promoteDayOneToCurrent(userProgram, now);
 		userProgram.activate(now);
+		badgeAwardService.award(memberId, BadgeCode.FIRST_EXPERIMENT_START);
 
 		return toStartResponse(userProgram, today);
 	}

@@ -3,6 +3,8 @@ package com.naroom.api.experiment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
+import com.naroom.api.badge.BadgeAwardService;
+import com.naroom.api.badge.domain.entity.BadgeCode;
 import com.naroom.api.experiment.domain.entity.ExperimentAttemptStatus;
 import com.naroom.api.experiment.domain.entity.ExperimentMission;
 import com.naroom.api.experiment.domain.entity.ExperimentMissionRecord;
@@ -76,6 +78,7 @@ public class ExperimentProgressService {
 	private final EntryRepository entryRepository;
 	private final EntryTagRepository entryTagRepository;
 	private final TagRepository tagRepository;
+	private final BadgeAwardService badgeAwardService;
 
 	public ExperimentProgressService(
 			MemberRepository memberRepository,
@@ -86,7 +89,8 @@ public class ExperimentProgressService {
 			UserProgramMissionReplacementRepository userProgramMissionReplacementRepository,
 			EntryRepository entryRepository,
 			EntryTagRepository entryTagRepository,
-			TagRepository tagRepository) {
+			TagRepository tagRepository,
+			BadgeAwardService badgeAwardService) {
 		this.memberRepository = memberRepository;
 		this.userExperimentProgramRepository = userExperimentProgramRepository;
 		this.userProgramMissionRepository = userProgramMissionRepository;
@@ -96,6 +100,7 @@ public class ExperimentProgressService {
 		this.entryRepository = entryRepository;
 		this.entryTagRepository = entryTagRepository;
 		this.tagRepository = tagRepository;
+		this.badgeAwardService = badgeAwardService;
 	}
 
 	public Optional<ExperimentActiveProgramResponse> getActive(UUID memberId) {
@@ -164,6 +169,7 @@ public class ExperimentProgressService {
 		// 돌아간다. 별도의 "다시 시작하기" API나 확인 절차를 두지 않는다.
 		if (program.getStatus() == UserExperimentProgramStatus.PAUSED) {
 			program.resume();
+			badgeAwardService.award(memberId, BadgeCode.RESUME_PAUSED_EXPERIMENT);
 		} else if (program.getStatus() != UserExperimentProgramStatus.IN_PROGRESS) {
 			throw new BusinessException(ExperimentErrorCode.USER_PROGRAM_NOT_IN_PROGRESS);
 		}

@@ -2,6 +2,8 @@ package com.naroom.api.record;
 
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
+import com.naroom.api.badge.domain.entity.BadgeCode;
+import com.naroom.api.badge.domain.repository.MemberBadgeRepository;
 import com.naroom.api.content.domain.entity.Quote;
 import com.naroom.api.content.domain.repository.QuoteRepository;
 import com.naroom.api.global.error.exception.BusinessException;
@@ -43,6 +45,9 @@ class EntryServiceTest {
 
 	@Autowired
 	private QuoteRepository quoteRepository;
+
+	@Autowired
+	private MemberBadgeRepository memberBadgeRepository;
 
 	@Test
 	void createEntry_userCreatableType_createsDraftEntry() {
@@ -213,6 +218,48 @@ class EntryServiceTest {
 		entryService.deleteEntry(member.getId(), entry.getId());
 
 		assertTrue(entryRepository.findById(entry.getId()).isEmpty());
+	}
+
+	@Test
+	void createEntry_first_awardsFirstEntryBadge() {
+		Member member = memberRepository.save(Member.create("지연"));
+
+		entryService.createEntry(member.getId(), createRequest(EntryType.FREE, null, null));
+
+		assertEquals(1, countBadge(member.getId(), BadgeCode.FIRST_ENTRY));
+	}
+
+	// §7(뱃지 설계) 복귀형 RETURN_AFTER_GAP: 직전 기록과 3일 이상 벌어진 뒤 다시 기록하면 획득한다.
+	@Test
+	void createEntry_afterThreeDayGap_awardsReturnAfterGapBadge() {
+		Member member = memberRepository.save(Member.create("지연"));
+		LocalDate firstDate = LocalDate.now().minusDays(4);
+		entryService.createEntry(member.getId(), requestWithDate(EntryType.FREE, firstDate));
+
+		entryService.createEntry(member.getId(), requestWithDate(EntryType.FREE, firstDate.plusDays(3)));
+
+		assertEquals(1, countBadge(member.getId(), BadgeCode.RETURN_AFTER_GAP));
+	}
+
+	@Test
+	void createEntry_withoutGap_doesNotAwardReturnAfterGapBadge() {
+		Member member = memberRepository.save(Member.create("지연"));
+		LocalDate firstDate = LocalDate.now().minusDays(2);
+		entryService.createEntry(member.getId(), requestWithDate(EntryType.FREE, firstDate));
+
+		entryService.createEntry(member.getId(), requestWithDate(EntryType.FREE, firstDate.plusDays(1)));
+
+		assertEquals(0, countBadge(member.getId(), BadgeCode.RETURN_AFTER_GAP));
+	}
+
+	private long countBadge(UUID memberId, BadgeCode code) {
+		return memberBadgeRepository.findByMember_IdOrderByEarnedAtDesc(memberId).stream()
+				.filter(badge -> badge.getBadgeDefinition().getCode() == code)
+				.count();
+	}
+
+	private EntryCreateRequest requestWithDate(EntryType entryType, LocalDate recordDate) {
+		return new EntryCreateRequest(entryType, null, "본문", recordDate, null, null, null);
 	}
 
 	private EntryCreateRequest createRequest(EntryType entryType, UUID parentEntryId, UUID quoteId) {

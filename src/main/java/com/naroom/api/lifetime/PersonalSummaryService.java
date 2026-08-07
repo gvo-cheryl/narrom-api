@@ -2,6 +2,8 @@ package com.naroom.api.lifetime;
 
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
+import com.naroom.api.badge.BadgeAwardService;
+import com.naroom.api.badge.domain.entity.BadgeCode;
 import com.naroom.api.lifetime.domain.entity.PersonalSummary;
 import com.naroom.api.lifetime.domain.entity.SummaryScope;
 import com.naroom.api.lifetime.domain.repository.PersonalSummaryRepository;
@@ -29,12 +31,17 @@ public class PersonalSummaryService {
 	private final MemberRepository memberRepository;
 	private final EntryRepository entryRepository;
 	private final PersonalSummaryRepository personalSummaryRepository;
+	private final BadgeAwardService badgeAwardService;
 
 	public PersonalSummaryService(
-			MemberRepository memberRepository, EntryRepository entryRepository, PersonalSummaryRepository personalSummaryRepository) {
+			MemberRepository memberRepository,
+			EntryRepository entryRepository,
+			PersonalSummaryRepository personalSummaryRepository,
+			BadgeAwardService badgeAwardService) {
 		this.memberRepository = memberRepository;
 		this.entryRepository = entryRepository;
 		this.personalSummaryRepository = personalSummaryRepository;
+		this.badgeAwardService = badgeAwardService;
 	}
 
 	public Optional<PersonalSummaryResponse> getCurrent(UUID memberId) {
@@ -58,6 +65,7 @@ public class PersonalSummaryService {
 
 		PersonalSummary summary =
 				personalSummaryRepository.save(PersonalSummary.create(member, entry, SummaryScope.CURRENT_SELF, null, null));
+		badgeAwardService.award(memberId, BadgeCode.FIRST_PERSONAL_SUMMARY);
 		return PersonalSummaryResponse.from(summary);
 	}
 

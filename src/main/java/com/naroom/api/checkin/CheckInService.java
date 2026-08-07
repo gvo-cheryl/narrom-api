@@ -2,6 +2,8 @@ package com.naroom.api.checkin;
 
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
+import com.naroom.api.badge.BadgeAwardService;
+import com.naroom.api.badge.domain.entity.BadgeCode;
 import com.naroom.api.checkin.domain.entity.CheckIn;
 import com.naroom.api.checkin.domain.error.CheckInErrorCode;
 import com.naroom.api.checkin.domain.repository.CheckInRepository;
@@ -43,18 +45,21 @@ public class CheckInService {
 	private final EntryRepository entryRepository;
 	private final MemberRepository memberRepository;
 	private final TagRepository tagRepository;
+	private final BadgeAwardService badgeAwardService;
 
 	public CheckInService(
 			CheckInRepository checkInRepository,
 			EntryTagRepository entryTagRepository,
 			EntryRepository entryRepository,
 			MemberRepository memberRepository,
-			TagRepository tagRepository) {
+			TagRepository tagRepository,
+			BadgeAwardService badgeAwardService) {
 		this.checkInRepository = checkInRepository;
 		this.entryTagRepository = entryTagRepository;
 		this.entryRepository = entryRepository;
 		this.memberRepository = memberRepository;
 		this.tagRepository = tagRepository;
+		this.badgeAwardService = badgeAwardService;
 	}
 
 	public Optional<CheckInResponse> getTodayCheckIn(UUID memberId) {
@@ -91,6 +96,7 @@ public class CheckInService {
 		Entry entry = Entry.create(member, EntryType.CHECK_IN, null, null, checkInDate, null, null, null);
 		entry.publish();
 		entryRepository.save(entry);
+		badgeAwardService.award(member.getId(), BadgeCode.FIRST_CHECKIN);
 		return checkInRepository.save(CheckIn.create(member, entry, checkInDate));
 	}
 

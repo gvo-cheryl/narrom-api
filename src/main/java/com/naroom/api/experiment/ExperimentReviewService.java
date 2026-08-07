@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
+import com.naroom.api.badge.BadgeAwardService;
+import com.naroom.api.badge.domain.entity.BadgeCode;
 import com.naroom.api.experiment.domain.entity.UserExperimentProgram;
 import com.naroom.api.experiment.domain.entity.UserExperimentProgramStatus;
 import com.naroom.api.experiment.domain.error.ExperimentErrorCode;
@@ -49,18 +51,21 @@ public class ExperimentReviewService {
 	private final ExperimentMissionRecordRepository experimentMissionRecordRepository;
 	private final EntryRepository entryRepository;
 	private final PeriodReflectionService periodReflectionService;
+	private final BadgeAwardService badgeAwardService;
 
 	public ExperimentReviewService(
 			MemberRepository memberRepository,
 			UserExperimentProgramRepository userExperimentProgramRepository,
 			ExperimentMissionRecordRepository experimentMissionRecordRepository,
 			EntryRepository entryRepository,
-			PeriodReflectionService periodReflectionService) {
+			PeriodReflectionService periodReflectionService,
+			BadgeAwardService badgeAwardService) {
 		this.memberRepository = memberRepository;
 		this.userExperimentProgramRepository = userExperimentProgramRepository;
 		this.experimentMissionRecordRepository = experimentMissionRecordRepository;
 		this.entryRepository = entryRepository;
 		this.periodReflectionService = periodReflectionService;
+		this.badgeAwardService = badgeAwardService;
 	}
 
 	@Transactional
@@ -81,6 +86,7 @@ public class ExperimentReviewService {
 
 		Instant now = Instant.now();
 		program.complete(toJson(new ReviewData(request)), request.userSummary(), reviewEntry, now);
+		badgeAwardService.award(memberId, BadgeCode.FIRST_EXPERIMENT_REVIEW);
 
 		ExperimentAiJobSummary aiJobSummary = Boolean.TRUE.equals(request.requestAiReflection())
 				? requestAiReflectionIfEligible(memberId, member, program, today)

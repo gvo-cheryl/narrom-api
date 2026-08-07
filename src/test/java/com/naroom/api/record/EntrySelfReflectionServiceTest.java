@@ -5,6 +5,8 @@ import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.ai.domain.entity.AiReflection;
 import com.naroom.api.ai.domain.error.AiErrorCode;
 import com.naroom.api.ai.domain.repository.AiReflectionRepository;
+import com.naroom.api.badge.domain.entity.BadgeCode;
+import com.naroom.api.badge.domain.repository.MemberBadgeRepository;
 import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.record.domain.entity.Entry;
 import com.naroom.api.record.domain.entity.EntryType;
@@ -42,6 +44,9 @@ class EntrySelfReflectionServiceTest {
 
 	@Autowired
 	private AiReflectionRepository aiReflectionRepository;
+
+	@Autowired
+	private MemberBadgeRepository memberBadgeRepository;
 
 	@Test
 	void createReflection_withAiReflectionId_linksToAiReflection() {
@@ -109,6 +114,44 @@ class EntrySelfReflectionServiceTest {
 
 		List<EntrySelfReflectionResponse> reflections = entrySelfReflectionService.listReflections(member.getId(), entry.getId());
 		assertEquals(2, reflections.size());
+	}
+
+	@Test
+	void createReflection_first_awardsFirstSelfReflectionBadge() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+
+		entrySelfReflectionService.createReflection(member.getId(), entry.getId(), "첫 생각");
+
+		assertEquals(1, memberBadgeRepository.findByMember_IdOrderByEarnedAtDesc(member.getId()).stream()
+				.filter(badge -> badge.getBadgeDefinition().getCode() == BadgeCode.FIRST_SELF_REFLECTION)
+				.count());
+	}
+
+	// §7(뱃지 설계) SELF_REFLECTION_5: 다섯 번째에서만 획득하고, 그 이후 반복돼도 다시 획득하지 않는다.
+	@Test
+	void createReflection_fifthTime_awardsSelfReflectionFiveBadge() {
+		Member member = memberRepository.save(Member.create("지연"));
+		Entry entry = entryRepository.save(
+				Entry.create(member, EntryType.FREE, null, "본문", LocalDate.now(), null, null, null));
+
+		for (int i = 0; i < 4; i++) {
+			entrySelfReflectionService.createReflection(member.getId(), entry.getId(), "생각 " + i);
+		}
+		assertEquals(0, countBadge(member.getId(), BadgeCode.SELF_REFLECTION_5));
+
+		entrySelfReflectionService.createReflection(member.getId(), entry.getId(), "다섯 번째 생각");
+		assertEquals(1, countBadge(member.getId(), BadgeCode.SELF_REFLECTION_5));
+
+		entrySelfReflectionService.createReflection(member.getId(), entry.getId(), "여섯 번째 생각");
+		assertEquals(1, countBadge(member.getId(), BadgeCode.SELF_REFLECTION_5));
+	}
+
+	private long countBadge(UUID memberId, BadgeCode code) {
+		return memberBadgeRepository.findByMember_IdOrderByEarnedAtDesc(memberId).stream()
+				.filter(badge -> badge.getBadgeDefinition().getCode() == code)
+				.count();
 	}
 
 	@Test

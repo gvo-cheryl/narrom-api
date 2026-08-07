@@ -4,6 +4,8 @@ import com.naroom.api.ai.domain.entity.AiJobStatus;
 import com.naroom.api.ai.domain.entity.AiReflection;
 import com.naroom.api.ai.domain.error.AiErrorCode;
 import com.naroom.api.ai.domain.repository.AiReflectionRepository;
+import com.naroom.api.badge.BadgeAwardService;
+import com.naroom.api.badge.domain.entity.BadgeCode;
 import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.record.domain.entity.Entry;
 import com.naroom.api.record.domain.entity.EntrySelfReflection;
@@ -22,17 +24,23 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class EntrySelfReflectionService {
 
+	// §7(뱃지 설계) 자기정리형 SELF_REFLECTION_5의 누적 기준값.
+	private static final long SELF_REFLECTION_MILESTONE = 5;
+
 	private final EntryRepository entryRepository;
 	private final EntrySelfReflectionRepository entrySelfReflectionRepository;
 	private final AiReflectionRepository aiReflectionRepository;
+	private final BadgeAwardService badgeAwardService;
 
 	public EntrySelfReflectionService(
 			EntryRepository entryRepository,
 			EntrySelfReflectionRepository entrySelfReflectionRepository,
-			AiReflectionRepository aiReflectionRepository) {
+			AiReflectionRepository aiReflectionRepository,
+			BadgeAwardService badgeAwardService) {
 		this.entryRepository = entryRepository;
 		this.entrySelfReflectionRepository = entrySelfReflectionRepository;
 		this.aiReflectionRepository = aiReflectionRepository;
+		this.badgeAwardService = badgeAwardService;
 	}
 
 	public List<EntrySelfReflectionResponse> listReflections(UUID memberId, UUID entryId) {
@@ -55,7 +63,19 @@ public class EntrySelfReflectionService {
 		EntrySelfReflection reflection = aiReflectionId == null
 				? EntrySelfReflection.create(entry, content)
 				: EntrySelfReflection.createFromAiReflection(entry, getOwnedAiReflectionOrThrow(entryId, aiReflectionId), content);
-		return EntrySelfReflectionResponse.from(entrySelfReflectionRepository.save(reflection));
+		EntrySelfReflection saved = entrySelfReflectionRepository.save(reflection);
+		awardSelfReflectionBadges(memberId);
+		return EntrySelfReflectionResponse.from(saved);
+	}
+
+	// §7(뱃지 설계) 자기정리형 FIRST_SELF_REFLECTION + SELF_REFLECTION_5. count는 방금 저장한 것을
+	// 포함한 값이다.
+	private void awardSelfReflectionBadges(UUID memberId) {
+		badgeAwardService.award(memberId, BadgeCode.FIRST_SELF_REFLECTION);
+		long count = entrySelfReflectionRepository.countByEntry_Member_Id(memberId);
+		if (count == SELF_REFLECTION_MILESTONE) {
+			badgeAwardService.award(memberId, BadgeCode.SELF_REFLECTION_5);
+		}
 	}
 
 	// 존재 여부를 드러내지 않기 위해 다른 기록의 것이거나 아직 COMPLETED가 아닌 경우 모두 같은 REFLECTION_NOT_FOUND로 응답한다.

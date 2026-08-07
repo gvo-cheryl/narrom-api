@@ -7,9 +7,12 @@ import com.naroom.api.ai.domain.entity.AiGenerationRun;
 import com.naroom.api.ai.domain.entity.AiJob;
 import com.naroom.api.ai.domain.entity.AiPromptVersion;
 import com.naroom.api.ai.domain.error.AiErrorCode;
+import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.ai.domain.repository.AiGenerationRunRepository;
 import com.naroom.api.ai.domain.repository.AiJobRepository;
 import com.naroom.api.ai.result.PeriodReflectionResult;
+import com.naroom.api.badge.BadgeAwardService;
+import com.naroom.api.badge.domain.entity.BadgeCode;
 import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.lifetime.domain.entity.PeriodReflection;
 import com.naroom.api.lifetime.domain.error.LifetimeErrorCode;
@@ -32,6 +35,7 @@ public class PeriodReflectionOutcomeService {
 	private final AiPromptVersionResolver aiPromptVersionResolver;
 	private final AiGenerationRunRepository aiGenerationRunRepository;
 	private final AiJobService aiJobService;
+	private final BadgeAwardService badgeAwardService;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	public PeriodReflectionOutcomeService(
@@ -39,12 +43,14 @@ public class PeriodReflectionOutcomeService {
 			AiJobRepository aiJobRepository,
 			AiPromptVersionResolver aiPromptVersionResolver,
 			AiGenerationRunRepository aiGenerationRunRepository,
-			AiJobService aiJobService) {
+			AiJobService aiJobService,
+			BadgeAwardService badgeAwardService) {
 		this.periodReflectionRepository = periodReflectionRepository;
 		this.aiJobRepository = aiJobRepository;
 		this.aiPromptVersionResolver = aiPromptVersionResolver;
 		this.aiGenerationRunRepository = aiGenerationRunRepository;
 		this.aiJobService = aiJobService;
+		this.badgeAwardService = badgeAwardService;
 	}
 
 	@Transactional
@@ -83,6 +89,11 @@ public class PeriodReflectionOutcomeService {
 						context.parsedResult().reflectionQuestion(),
 						Instant.now());
 				aiJobService.completeJob(context.aiJobId(), context.leaseStartedAt());
+				// §7(뱃지 설계) 발견형 FIRST_WEEKLY_REFLECTION: 주간 회고가 실제로 완료된 시점에만
+				// 판정한다(THREE_DAY_REFLECTION은 작은 실험 코스 회고에도 쓰이므로 제외).
+				if (periodReflection.getFeatureType() == AiFeatureType.WEEKLY_REFLECTION) {
+					badgeAwardService.award(periodReflection.getMember().getId(), BadgeCode.FIRST_WEEKLY_REFLECTION);
+				}
 			}
 			case RESTRICTED -> {
 				periodReflection.blockAsUnsafe(run, "OUTPUT_RESTRICTED", Instant.now());

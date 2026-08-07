@@ -1367,6 +1367,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseCheckInResponse"
+  /api/v1/badges:
+    get:
+      tags:
+      - badge-controller
+      operationId: getEarnedBadges
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListMemberBadgeResponse"
   /api/v1/auth/session:
     get:
       tags:
@@ -3228,6 +3240,46 @@ components:
         quote:
           $ref: "#/components/schemas/QuoteResponse"
         savedAt:
+          type: string
+          format: date-time
+    ApiResponseListMemberBadgeResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberBadgeResponse"
+    MemberBadgeResponse:
+      type: object
+      properties:
+        badgeDefinitionId:
+          type: string
+          format: uuid
+        code:
+          type: string
+          enum:
+          - FIRST_ENTRY
+          - FIRST_CHECKIN
+          - FIRST_EXPERIMENT_START
+          - FIRST_WEEKLY_REFLECTION
+          - FIRST_EXPERIMENT_REVIEW
+          - FIRST_PERSONAL_SUMMARY
+          - RETURN_AFTER_GAP
+          - RESUME_PAUSED_EXPERIMENT
+          - FIRST_SELF_REFLECTION
+          - SELF_REFLECTION_5
+        category:
+          type: string
+          enum:
+          - TRIAL
+          - DISCOVERY
+          - RETURN
+          - SELF_ORGANIZATION
+        title:
+          type: string
+        description:
+          type: string
+        earnedAt:
           type: string
           format: date-time
     ApiResponseSessionCheckResponse:

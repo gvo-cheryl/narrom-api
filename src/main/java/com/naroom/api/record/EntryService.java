@@ -4,6 +4,8 @@ import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.ai.AiJobService;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
+import com.naroom.api.badge.BadgeAwardService;
+import com.naroom.api.badge.domain.entity.BadgeCode;
 import com.naroom.api.content.domain.entity.Quote;
 import com.naroom.api.content.domain.error.ContentErrorCode;
 import com.naroom.api.content.domain.repository.QuoteRepository;
@@ -26,6 +28,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -42,12 +45,16 @@ public class EntryService {
 	private static final Set<EntryType> USER_CREATABLE_TYPES = EnumSet.of(
 			EntryType.FREE, EntryType.GRATITUDE, EntryType.EMOTION, EntryType.PROMPT, EntryType.QUOTE_REFLECTION);
 
+	// §7(뱃지 설계) 복귀형 RETURN_AFTER_GAP: 직전 기록과 이번 기록의 recordDate 차이가 이 값 이상이면 공백 뒤 재기록으로 본다.
+	private static final long RETURN_GAP_DAYS = 3;
+
 	private static final Logger log = LoggerFactory.getLogger(EntryService.class);
 
 	private final EntryRepository entryRepository;
 	private final MemberRepository memberRepository;
 	private final QuoteRepository quoteRepository;
 	private final AiJobService aiJobService;
+	private final BadgeAwardService badgeAwardService;
 	private final TransactionTemplate requiresNewTransactionTemplate;
 
 	public EntryService(
@@ -55,11 +62,13 @@ public class EntryService {
 			MemberRepository memberRepository,
 			QuoteRepository quoteRepository,
 			AiJobService aiJobService,
+			BadgeAwardService badgeAwardService,
 			PlatformTransactionManager transactionManager) {
 		this.entryRepository = entryRepository;
 		this.memberRepository = memberRepository;
 		this.quoteRepository = quoteRepository;
 		this.aiJobService = aiJobService;
+		this.badgeAwardService = badgeAwardService;
 		this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager);
 		this.requiresNewTransactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 	}
@@ -72,6 +81,7 @@ public class EntryService {
 		Member member = memberRepository.getReferenceById(memberId);
 		Entry parentEntry = resolveParentEntry(memberId, request.parentEntryId());
 		Quote quote = resolveQuote(request.entryType(), request.quoteId());
+		Entry previousEntry = entryRepository.findFirstByMember_IdOrderByRecordDateDescCreatedAtDesc(memberId).orElse(null);
 
 		Entry entry = Entry.create(
 				member,
@@ -84,7 +94,18 @@ public class EntryService {
 				request.promptSnapshot());
 		Entry savedEntry = entryRepository.save(entry);
 		scheduleAiReflectionAfterCommit(memberId, savedEntry);
+		awardEntryBadges(memberId, previousEntry, request.recordDate());
 		return EntryResponse.from(savedEntry);
+	}
+
+	// §7(뱃지 설계) 시도형 FIRST_ENTRY + 복귀형 RETURN_AFTER_GAP. 이 서비스가 만드는 사용자 자유
+	// 기록에서만 판정한다 - CHECK_IN/EXPERIMENT_MISSION 등 다른 도메인이 직접 만드는 Entry는 각자의
+	// 서비스에서 판정한다(EntryService의 공개 API는 그 유형들을 애초에 받지 않는다).
+	private void awardEntryBadges(UUID memberId, Entry previousEntry, LocalDate recordDate) {
+		badgeAwardService.award(memberId, BadgeCode.FIRST_ENTRY);
+		if (previousEntry != null && ChronoUnit.DAYS.between(previousEntry.getRecordDate(), recordDate) >= RETURN_GAP_DAYS) {
+			badgeAwardService.award(memberId, BadgeCode.RETURN_AFTER_GAP);
+		}
 	}
 
 	// §7.2: 기록 저장 성공과 AI 생성 성공은 서로 다른 결과다 - AI 작업 생성이 실패해도 기록 저장 자체는 실패로
