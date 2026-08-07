@@ -52,6 +52,10 @@ public class NotificationPreference {
 	@Column(name = "day_of_week")
 	private Short dayOfWeek;
 
+	// 발송 스케줄러가 회원 시간대 기준 하루 1회로 제한하는 데 쓴다(§2 DEC-02).
+	@Column(name = "last_sent_at")
+	private Instant lastSentAt;
+
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
@@ -79,6 +83,10 @@ public class NotificationPreference {
 		this.dayOfWeek = dayOfWeek;
 	}
 
+	public void markSent(Instant sentAt) {
+		this.lastSentAt = sentAt;
+	}
+
 	public UUID getId() {
 		return id;
 	}
@@ -101,6 +109,10 @@ public class NotificationPreference {
 
 	public Short getDayOfWeek() {
 		return dayOfWeek;
+	}
+
+	public Instant getLastSentAt() {
+		return lastSentAt;
 	}
 
 	public Instant getCreatedAt() {

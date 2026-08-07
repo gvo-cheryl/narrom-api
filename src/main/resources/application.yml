@@ -45,3 +45,7 @@ naroom:
       model: ${OPENAI_MODEL:}
   push:
     token-encryption-key: ${PUSH_TOKEN_ENCRYPTION_KEY}
+  notification:
+    dispatch:
+      enabled: ${NOTIFICATION_DISPATCH_ENABLED:false}
+      poll-interval: ${NOTIFICATION_DISPATCH_POLL_INTERVAL:5m}
