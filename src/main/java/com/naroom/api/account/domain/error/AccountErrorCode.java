@@ -37,6 +37,16 @@ public enum AccountErrorCode implements ErrorCode {
 			"앱을 최신 버전으로 업데이트해 주세요.",
 			ErrorStage.ONBOARDING,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	DEVICE_INSTALLATION_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"DEVICE_INSTALLATION_NOT_FOUND",
+			"urn:naroom:problem:device-installation-not-found",
+			"기기 정보를 찾을 수 없습니다",
+			"로그인 시 등록된 기기가 아니거나 다른 계정의 기기입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

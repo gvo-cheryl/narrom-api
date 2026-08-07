@@ -96,6 +96,34 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseAiFeedbackResponse"
+  /api/v1/account/notification-preferences/{type}:
+    put:
+      tags:
+      - account-controller
+      operationId: updateNotificationPreference
+      parameters:
+      - name: type
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+          - WEEKLY_REFLECTION
+          - EXPERIMENT_MISSION
+          - DAILY_QUOTE
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferenceUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseNotificationPreferenceResponse"
   /api/v1/record/tags:
     post:
       tags:
@@ -889,6 +917,20 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseAiFeedbackResponse"
+  /api/v1/account/device/push-token:
+    patch:
+      tags:
+      - account-controller
+      operationId: updateDevicePushToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevicePushTokenUpdateRequest"
+        required: true
+      responses:
+        "204":
+          description: No Content
   /api/v1/record/tags/system:
     get:
       tags:
@@ -1391,6 +1433,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseSessionCheckResponse"
+  /api/v1/account/notification-preferences:
+    get:
+      tags:
+      - account-controller
+      operationId: getNotificationPreferences
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListNotificationPreferenceResponse"
 components:
   schemas:
     PersonalSummaryUpdateRequest:
@@ -1589,6 +1643,41 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/AiFeedbackResponse"
+    NotificationPreferenceUpdateRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        dayOfWeek:
+          type: integer
+          format: int32
+          maximum: 7
+          minimum: 1
+        localTime:
+          type: string
+      required:
+      - enabled
+    ApiResponseNotificationPreferenceResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/NotificationPreferenceResponse"
+    NotificationPreferenceResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - WEEKLY_REFLECTION
+          - EXPERIMENT_MISSION
+          - DAILY_QUOTE
+        enabled:
+          type: boolean
+        localTime:
+          type: string
+        dayOfWeek:
+          type: integer
+          format: int32
     UserTagCreateRequest:
       type: object
       properties:
@@ -2634,6 +2723,18 @@ components:
           type: boolean
       required:
       - applyLongTerm
+    DevicePushTokenUpdateRequest:
+      type: object
+      properties:
+        installationKey:
+          type: string
+          minLength: 1
+        pushToken:
+          type: string
+          minLength: 1
+      required:
+      - installationKey
+      - pushToken
     ApiResponseListTagResponse:
       type: object
       properties:
@@ -3301,6 +3402,13 @@ components:
           enum:
           - COMPLETE_ONBOARDING
           - ENTER_APP
+    ApiResponseListNotificationPreferenceResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationPreferenceResponse"
   securitySchemes:
     bearerAuth:
       type: http

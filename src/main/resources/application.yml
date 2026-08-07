@@ -43,3 +43,5 @@ naroom:
     openai:
       api-key: ${OPENAI_API_KEY:}
       model: ${OPENAI_MODEL:}
+  push:
+    token-encryption-key: ${PUSH_TOKEN_ENCRYPTION_KEY}

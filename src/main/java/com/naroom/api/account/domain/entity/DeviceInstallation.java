@@ -76,6 +76,13 @@ public class DeviceInstallation {
 		this.lastSeenAt = Instant.now();
 	}
 
+	// 푸시 권한은 보통 로그인 이후 비동기로 승인되기 때문에, 로그인 시점의 기기 등록과는 별도로
+	// 나중에 토큰만 갱신할 수 있어야 한다.
+	public void updatePushToken(String pushTokenCiphertext) {
+		this.pushTokenCiphertext = pushTokenCiphertext;
+		this.lastSeenAt = Instant.now();
+	}
+
 	public UUID getId() {
 		return id;
 	}
