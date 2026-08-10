@@ -809,6 +809,24 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseOnboardingCompleteResponse"
+  /api/v1/account/inquiries:
+    post:
+      tags:
+      - account-controller
+      operationId: submitInquiry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InquiryCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseInquiryResponse"
   /api/v1/record/entries/{entryId}:
     get:
       tags:
@@ -2734,6 +2752,29 @@ components:
           enum:
           - COMPLETE_ONBOARDING
           - ENTER_APP
+    InquiryCreateRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          maxLength: 2000
+          minLength: 0
+      required:
+      - content
+    ApiResponseInquiryResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/InquiryResponse"
+    InquiryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
     EntryUpdateRequest:
       type: object
       properties:

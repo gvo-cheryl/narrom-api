@@ -7,6 +7,7 @@ import com.naroom.api.account.domain.error.AccountErrorCode;
 import com.naroom.api.account.domain.repository.AuthSessionRepository;
 import com.naroom.api.account.dto.AccountSummary;
 import com.naroom.api.account.dto.AccountWithdrawalResponse;
+import com.naroom.api.account.dto.InquiryResponse;
 import com.naroom.api.account.dto.NotificationPreferenceResponse;
 import com.naroom.api.account.dto.OnboardingCompleteResponse;
 import com.naroom.api.auth.NextAction;
@@ -67,6 +68,9 @@ class AccountControllerTest {
 
 	@MockitoBean
 	private AccountWithdrawalService accountWithdrawalService;
+
+	@MockitoBean
+	private InquiryService inquiryService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -195,6 +199,35 @@ class AccountControllerTest {
 						.with(authentication(new MemberAuthentication(UUID.randomUUID(), UUID.randomUUID()))))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.scheduledDeletionAt").value("2026-08-14T00:00:00Z"));
+	}
+
+	@Test
+	void submitInquiry_authenticated_returnsCreatedInquiry() throws Exception {
+		UUID inquiryId = UUID.randomUUID();
+		Instant createdAt = Instant.parse("2026-08-10T00:00:00Z");
+		when(inquiryService.submit(any(), eq("로그인이 자꾸 풀려요")))
+				.thenReturn(new InquiryResponse(inquiryId, createdAt));
+
+		mockMvc.perform(post("/api/v1/account/inquiries")
+						.with(authentication(new MemberAuthentication(UUID.randomUUID(), UUID.randomUUID())))
+						.contentType("application/json")
+						.content("""
+								{ "content": "로그인이 자꾸 풀려요" }
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.id").value(inquiryId.toString()));
+	}
+
+	@Test
+	void submitInquiry_blankContent_returnsValidationFailed() throws Exception {
+		mockMvc.perform(post("/api/v1/account/inquiries")
+						.with(authentication(new MemberAuthentication(UUID.randomUUID(), UUID.randomUUID())))
+						.contentType("application/json")
+						.content("""
+								{ "content": "" }
+								"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
 	}
 
 	private String requestJson(int version) {

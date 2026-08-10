@@ -3,6 +3,8 @@ package com.naroom.api.account;
 import com.naroom.api.account.domain.entity.NotificationType;
 import com.naroom.api.account.dto.AccountWithdrawalResponse;
 import com.naroom.api.account.dto.DevicePushTokenUpdateRequest;
+import com.naroom.api.account.dto.InquiryCreateRequest;
+import com.naroom.api.account.dto.InquiryResponse;
 import com.naroom.api.account.dto.NotificationPreferenceResponse;
 import com.naroom.api.account.dto.NotificationPreferenceUpdateRequest;
 import com.naroom.api.account.dto.OnboardingCompleteRequest;
@@ -33,16 +35,19 @@ public class AccountController {
 	private final DeviceInstallationService deviceInstallationService;
 	private final NotificationPreferenceService notificationPreferenceService;
 	private final AccountWithdrawalService accountWithdrawalService;
+	private final InquiryService inquiryService;
 
 	public AccountController(
 			OnboardingService onboardingService,
 			DeviceInstallationService deviceInstallationService,
 			NotificationPreferenceService notificationPreferenceService,
-			AccountWithdrawalService accountWithdrawalService) {
+			AccountWithdrawalService accountWithdrawalService,
+			InquiryService inquiryService) {
 		this.onboardingService = onboardingService;
 		this.deviceInstallationService = deviceInstallationService;
 		this.notificationPreferenceService = notificationPreferenceService;
 		this.accountWithdrawalService = accountWithdrawalService;
+		this.inquiryService = inquiryService;
 	}
 
 	@PostMapping("/onboarding/complete")
@@ -70,6 +75,11 @@ public class AccountController {
 	@PostMapping("/withdrawal")
 	public ApiResponse<AccountWithdrawalResponse> requestWithdrawal() {
 		return ApiResponse.of(accountWithdrawalService.requestWithdrawal(currentMemberId()));
+	}
+
+	@PostMapping("/inquiries")
+	public ApiResponse<InquiryResponse> submitInquiry(@Valid @RequestBody InquiryCreateRequest request) {
+		return ApiResponse.of(inquiryService.submit(currentMemberId(), request.content()));
 	}
 
 	// JwtAuthenticationFilter가 SecurityContextHolder에 직접 채워 넣는 방식이라 여기서도 직접 꺼낸다
