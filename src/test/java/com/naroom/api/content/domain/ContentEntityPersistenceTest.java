@@ -17,7 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.temporal.ChronoUnit;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,8 +71,9 @@ class ContentEntityPersistenceTest {
 
 		MemberSavedQuoteId savedId = new MemberSavedQuoteId(member.getId(), quote.getId());
 		MemberSavedQuote reloadedSaved = memberSavedQuoteRepository.findById(savedId).orElseThrow();
-		// Postgres timestamptz는 마이크로초까지만 저장하므로 Instant.now()의 나노초 정밀도와 어긋난다.
-		assertEquals(saved.getSavedAt().truncatedTo(ChronoUnit.MICROS), reloadedSaved.getSavedAt());
+		// Postgres timestamptz는 마이크로초 단위로 반올림해 저장하므로 Instant.now()의 나노초 정밀도와
+		// 최대 1마이크로초 차이가 날 수 있다. truncate가 아닌 허용오차 비교로 확인한다.
+		assertTrue(Duration.between(saved.getSavedAt(), reloadedSaved.getSavedAt()).abs().toNanos() <= 1_000);
 		assertEquals(member.getId(), reloadedSaved.getMember().getId());
 	}
 
