@@ -6,6 +6,7 @@ import com.naroom.api.account.domain.entity.NotificationType;
 import com.naroom.api.account.domain.error.AccountErrorCode;
 import com.naroom.api.account.domain.repository.AuthSessionRepository;
 import com.naroom.api.account.dto.AccountSummary;
+import com.naroom.api.account.dto.AccountWithdrawalResponse;
 import com.naroom.api.account.dto.NotificationPreferenceResponse;
 import com.naroom.api.account.dto.OnboardingCompleteResponse;
 import com.naroom.api.auth.NextAction;
@@ -63,6 +64,9 @@ class AccountControllerTest {
 
 	@MockitoBean
 	private NotificationPreferenceService notificationPreferenceService;
+
+	@MockitoBean
+	private AccountWithdrawalService accountWithdrawalService;
 
 	@MockitoBean
 	private JwtTokenProvider jwtTokenProvider;
@@ -179,6 +183,18 @@ class AccountControllerTest {
 								"""))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.enabled").value(true));
+	}
+
+	@Test
+	void requestWithdrawal_authenticated_returnsScheduledDeletionAt() throws Exception {
+		Instant scheduledDeletionAt = Instant.parse("2026-08-14T00:00:00Z");
+		when(accountWithdrawalService.requestWithdrawal(any()))
+				.thenReturn(new AccountWithdrawalResponse(scheduledDeletionAt));
+
+		mockMvc.perform(post("/api/v1/account/withdrawal")
+						.with(authentication(new MemberAuthentication(UUID.randomUUID(), UUID.randomUUID()))))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.scheduledDeletionAt").value("2026-08-14T00:00:00Z"));
 	}
 
 	private String requestJson(int version) {

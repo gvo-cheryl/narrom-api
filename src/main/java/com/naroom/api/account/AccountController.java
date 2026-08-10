@@ -1,6 +1,7 @@
 package com.naroom.api.account;
 
 import com.naroom.api.account.domain.entity.NotificationType;
+import com.naroom.api.account.dto.AccountWithdrawalResponse;
 import com.naroom.api.account.dto.DevicePushTokenUpdateRequest;
 import com.naroom.api.account.dto.NotificationPreferenceResponse;
 import com.naroom.api.account.dto.NotificationPreferenceUpdateRequest;
@@ -31,14 +32,17 @@ public class AccountController {
 	private final OnboardingService onboardingService;
 	private final DeviceInstallationService deviceInstallationService;
 	private final NotificationPreferenceService notificationPreferenceService;
+	private final AccountWithdrawalService accountWithdrawalService;
 
 	public AccountController(
 			OnboardingService onboardingService,
 			DeviceInstallationService deviceInstallationService,
-			NotificationPreferenceService notificationPreferenceService) {
+			NotificationPreferenceService notificationPreferenceService,
+			AccountWithdrawalService accountWithdrawalService) {
 		this.onboardingService = onboardingService;
 		this.deviceInstallationService = deviceInstallationService;
 		this.notificationPreferenceService = notificationPreferenceService;
+		this.accountWithdrawalService = accountWithdrawalService;
 	}
 
 	@PostMapping("/onboarding/complete")
@@ -61,6 +65,11 @@ public class AccountController {
 	public ApiResponse<NotificationPreferenceResponse> updateNotificationPreference(
 			@PathVariable NotificationType type, @Valid @RequestBody NotificationPreferenceUpdateRequest request) {
 		return ApiResponse.of(notificationPreferenceService.update(currentMemberId(), type, request));
+	}
+
+	@PostMapping("/withdrawal")
+	public ApiResponse<AccountWithdrawalResponse> requestWithdrawal() {
+		return ApiResponse.of(accountWithdrawalService.requestWithdrawal(currentMemberId()));
 	}
 
 	// JwtAuthenticationFilter가 SecurityContextHolder에 직접 채워 넣는 방식이라 여기서도 직접 꺼낸다

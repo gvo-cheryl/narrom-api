@@ -101,6 +101,16 @@ public enum AuthErrorCode implements ErrorCode {
 			ClientAction.CONFIRM_ACCOUNT_RECOVERY,
 			false),
 
+	ACCOUNT_NOT_PENDING_DELETION(
+			HttpStatus.CONFLICT,
+			"ACCOUNT_NOT_PENDING_DELETION",
+			"urn:naroom:problem:account-not-pending-deletion",
+			"복구할 삭제 요청이 없습니다",
+			"이미 정상적으로 사용 중인 계정입니다. 로그인을 다시 시도해 주세요.",
+			ErrorStage.ACCOUNT,
+			ClientAction.CHECK_REQUEST,
+			false),
+
 	AUTH_ACCESS_TOKEN_EXPIRED(
 			HttpStatus.UNAUTHORIZED,
 			"AUTH_ACCESS_TOKEN_EXPIRED",

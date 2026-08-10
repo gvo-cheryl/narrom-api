@@ -692,6 +692,24 @@ paths:
       responses:
         "204":
           description: No Content
+  /api/v1/auth/restore:
+    post:
+      tags:
+      - auth-controller
+      operationId: restore
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KakaoLoginRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseKakaoLoginResponse"
   /api/v1/auth/refresh:
     post:
       tags:
@@ -761,6 +779,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseAiFeedbackReportResponse"
+  /api/v1/account/withdrawal:
+    post:
+      tags:
+      - account-controller
+      operationId: requestWithdrawal
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAccountWithdrawalResponse"
   /api/v1/account/onboarding/complete:
     post:
       tags:
@@ -2467,47 +2497,6 @@ components:
           format: int32
         replaceActiveProgram:
           type: boolean
-    RefreshRequest:
-      type: object
-      properties:
-        refreshToken:
-          type: string
-          minLength: 1
-        installationKey:
-          type: string
-      required:
-      - refreshToken
-    ApiResponseRefreshResponse:
-      type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/RefreshResponse"
-    RefreshResponse:
-      type: object
-      properties:
-        tokenType:
-          type: string
-        accessToken:
-          type: string
-        accessTokenExpiresAt:
-          type: string
-          format: date-time
-        refreshToken:
-          type: string
-        refreshTokenExpiresAt:
-          type: string
-          format: date-time
-        session:
-          $ref: "#/components/schemas/SessionSummary"
-    SessionSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        expiresAt:
-          type: string
-          format: date-time
     DeviceInfo:
       type: object
       properties:
@@ -2577,6 +2566,47 @@ components:
           enum:
           - COMPLETE_ONBOARDING
           - ENTER_APP
+    SessionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+        installationKey:
+          type: string
+      required:
+      - refreshToken
+    ApiResponseRefreshResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/RefreshResponse"
+    RefreshResponse:
+      type: object
+      properties:
+        tokenType:
+          type: string
+        accessToken:
+          type: string
+        accessTokenExpiresAt:
+          type: string
+          format: date-time
+        refreshToken:
+          type: string
+        refreshTokenExpiresAt:
+          type: string
+          format: date-time
+        session:
+          $ref: "#/components/schemas/SessionSummary"
     AiFeedbackReportCreateRequest:
       type: object
       properties:
@@ -2609,6 +2639,17 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/AiFeedbackReportResponse"
+    AccountWithdrawalResponse:
+      type: object
+      properties:
+        scheduledDeletionAt:
+          type: string
+          format: date-time
+    ApiResponseAccountWithdrawalResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AccountWithdrawalResponse"
     ConsentRequest:
       type: object
       properties:

@@ -44,6 +44,13 @@ public class AuthController {
 		return ApiResponse.of(kakaoLoginService.login(request));
 	}
 
+	// 탈퇴 유예(PENDING_DELETION) 상태에서 카카오 재인증으로 본인 확인 후 명시적으로 복구를 확인하는
+	// 전용 엔드포인트다 - kakao/login과 분리해, 일반 로그인 시도가 계정을 자동 복구하지 않게 한다.
+	@PostMapping("/restore")
+	public ApiResponse<KakaoLoginResponse> restore(@Valid @RequestBody KakaoLoginRequest request) {
+		return ApiResponse.of(kakaoLoginService.restore(request));
+	}
+
 	@PostMapping("/refresh")
 	public ApiResponse<RefreshResponse> refresh(@Valid @RequestBody RefreshRequest request) {
 		return ApiResponse.of(tokenRefreshService.refresh(request));

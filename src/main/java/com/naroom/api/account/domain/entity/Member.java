@@ -91,6 +91,22 @@ public class Member {
 		this.onboardingCompletedAt = Instant.now();
 	}
 
+	// Account Deletion Rules: 요청 직후 상태를 PENDING_DELETION으로 바꿔 로그인 접근을 즉시 막는다
+	// (requireLoginableStatus가 이 상태를 확인). scheduledDeletionAt은 호출자가 그레이스 기간을 더해 넘긴다.
+	public void requestWithdrawal(Instant now, Instant scheduledDeletionAt) {
+		this.status = MemberStatus.PENDING_DELETION;
+		this.withdrawalRequestedAt = now;
+		this.scheduledDeletionAt = scheduledDeletionAt;
+	}
+
+	// 그레이스 기간 안에 카카오로 본인 확인을 거친 뒤 명시적으로 복구를 확인했을 때만 호출된다
+	// (로그인만으로는 자동 복구되지 않는다 - CLAUDE.md 계정 삭제 규칙).
+	public void restore() {
+		this.status = MemberStatus.ACTIVE;
+		this.withdrawalRequestedAt = null;
+		this.scheduledDeletionAt = null;
+	}
+
 	public UUID getId() {
 		return id;
 	}

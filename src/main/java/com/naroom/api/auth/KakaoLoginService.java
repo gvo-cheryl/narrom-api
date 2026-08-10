@@ -3,6 +3,7 @@ package com.naroom.api.auth;
 import com.naroom.api.account.domain.entity.DeviceInstallation;
 import com.naroom.api.account.domain.entity.IdentityStatus;
 import com.naroom.api.account.domain.entity.Member;
+import com.naroom.api.account.domain.entity.MemberStatus;
 import com.naroom.api.account.domain.entity.SocialIdentity;
 import com.naroom.api.account.domain.entity.SocialProvider;
 import com.naroom.api.account.domain.repository.DeviceInstallationRepository;
@@ -49,6 +50,27 @@ public class KakaoLoginService {
 
 	@Transactional
 	public KakaoLoginResponse login(KakaoLoginRequest request) {
+		SocialIdentity socialIdentity = resolveSocialIdentity(request);
+		Member member = socialIdentity.getMember();
+		authSessionService.requireLoginableStatus(member);
+		return completeAuthentication(socialIdentity, request.device());
+	}
+
+	// Account Deletion Rules: 로그인만으로 자동 복구되지 않는다. 카카오로 본인 확인은 하되(계정 존재·
+	// REVOKED 여부 확인), PENDING_DELETION이 아니면 거부하고, 맞으면 이 호출 자체를 "명시적 복구 확인"
+	// 절차로 간주해(login()과 별도 엔드포인트) 즉시 복구하고 정상 세션을 발급한다.
+	@Transactional
+	public KakaoLoginResponse restore(KakaoLoginRequest request) {
+		SocialIdentity socialIdentity = resolveSocialIdentity(request);
+		Member member = socialIdentity.getMember();
+		if (member.getStatus() != MemberStatus.PENDING_DELETION) {
+			throw new BusinessException(AuthErrorCode.ACCOUNT_NOT_PENDING_DELETION);
+		}
+		member.restore();
+		return completeAuthentication(socialIdentity, request.device());
+	}
+
+	private SocialIdentity resolveSocialIdentity(KakaoLoginRequest request) {
 		validateDevice(request.device());
 
 		KakaoUserInfoResponse kakaoUser = kakaoClient.fetchUserInfo(request.providerAccessToken());
@@ -61,14 +83,15 @@ public class KakaoLoginService {
 		if (socialIdentity.getStatus() == IdentityStatus.REVOKED) {
 			throw new BusinessException(AuthErrorCode.AUTH_SOCIAL_IDENTITY_REVOKED);
 		}
+		return socialIdentity;
+	}
 
+	private KakaoLoginResponse completeAuthentication(SocialIdentity socialIdentity, KakaoLoginRequest.DeviceInfo device) {
 		Member member = socialIdentity.getMember();
-		authSessionService.requireLoginableStatus(member);
-
 		socialIdentity.recordLogin();
 
-		DeviceInstallation device = registerOrUpdateDevice(member, request.device());
-		IssuedTokens tokens = authSessionService.issue(member, device);
+		DeviceInstallation deviceInstallation = registerOrUpdateDevice(member, device);
+		IssuedTokens tokens = authSessionService.issue(member, deviceInstallation);
 
 		NextAction nextAction = NextAction.forMember(member);
 

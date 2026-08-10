@@ -47,6 +47,16 @@ public enum AccountErrorCode implements ErrorCode {
 			"로그인 시 등록된 기기가 아니거나 다른 계정의 기기입니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	ACCOUNT_NOT_ACTIVE(
+			HttpStatus.CONFLICT,
+			"ACCOUNT_NOT_ACTIVE",
+			"urn:naroom:problem:account-not-active",
+			"처리할 수 없는 계정 상태입니다",
+			"이미 탈퇴 절차가 진행 중이거나 잠긴 계정입니다.",
+			ErrorStage.ACCOUNT,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;
