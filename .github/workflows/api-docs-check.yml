@@ -41,6 +41,8 @@ jobs:
       OPENAPI_DOCS_PROFILE: ci
       # CI 전용 더미 값. 운영 서명 키가 아니며 HS256 최소 길이(32바이트) 요건만 맞춘다.
       JWT_SECRET: naroom-ci-test-jwt-secret-please-rotate-1234567890
+      # CI 전용 더미 값. 운영 암호화 키가 아니며 AES-256 요건(32바이트, base64)만 맞춘다.
+      PUSH_TOKEN_ENCRYPTION_KEY: 3XdLXKX3jIsf8nHMH7PtGhLmfWuvY3YEOP6M+J6l/CY=
 
     steps:
       - name: Checkout
