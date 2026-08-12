@@ -5,6 +5,7 @@ import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.ai.AiJobService;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.ai.domain.entity.AiJobStatus;
+import com.naroom.api.ai.domain.repository.AiJobRepository;
 import com.naroom.api.ai.dto.AiJobResponse;
 import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.lifetime.domain.entity.PeriodReflection;
@@ -47,6 +48,9 @@ class PeriodReflectionServiceTest {
 
 	@Autowired
 	private AiJobService aiJobService;
+
+	@Autowired
+	private AiJobRepository aiJobRepository;
 
 	@Test
 	void generate_threeDayWithOneRecord_createsEnvelopeAndLinksEvidenceAndSchedulesJob() {
@@ -168,9 +172,11 @@ class PeriodReflectionServiceTest {
 
 		assertEquals(reflection.getEntry().getId(), response.entryId());
 
-		// 이 테스트는 @Transactional(NOT_SUPPORTED)라 롤백되지 않는다 - generate()가 만든 AiJob을 여기서
-		// 직접 비워서 다른 테스트의 claimNextBatch() 결과 수를 오염시키지 않게 한다.
-		aiJobService.claimNextBatch(10);
+		// 이 테스트는 @Transactional(NOT_SUPPORTED)라 롤백되지 않는다 - generate()가 만든 AiJob을 실제로
+		// 지운다. claimNextBatch()로는 PENDING -> PROCESSING만 될 뿐 커밋된 채로 영구히 남아, 나중에
+		// reclaimExpiredLeases() 테스트의 stale job 카운트를 오염시킨다.
+		aiJobRepository.findFirstByEntry_IdOrderByCreatedAtDesc(reflection.getEntry().getId())
+				.ifPresent(aiJobRepository::delete);
 	}
 
 	private void publishedEntry(Member member, LocalDate recordDate) {

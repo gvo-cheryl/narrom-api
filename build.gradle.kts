@@ -53,6 +53,9 @@ dependencies {
 }
 
 tasks.withType<Test> {
+	// @SpringBootTest가 띄우는 전체 컨텍스트에서 AI 워커·알림 발송 스케줄러가 실제로 폴링하며
+	// 테스트 트랜잭션과 무관하게 커밋하는 것을 막는다. SchedulingConfig 참고.
+	systemProperty("naroom.scheduling.enabled", "false")
 	testLogging {
 		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 		showCauses = true
