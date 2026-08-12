@@ -243,11 +243,9 @@ If migrations, Entities, the data dictionary, and product documents do not agree
 - Apply the approved unique constraint to provider and provider user ID.
 - Email, nickname, name, birth date, gender, and age range are not primary identifiers.
 - Do not automatically merge accounts because personal information matches.
-- Implement only Kakao login in Beta 1.
-- The data model may remain extensible for future providers.
-- Do not implement Google login, account linking, login method management, or account merging without a separate request.
-
-Older documents may include Google login or Beta 1 account linking. The currently approved implementation scope is an extensible provider data structure and Kakao login only. Do not implement the older scope; report the conflict.
+- Beta 1 implements Kakao, Google, and Apple login (confirmed 2026-08-12; see `docs/instruction/0812_Naroom_Beta1_P1_Complementary_Plan.md`). Google and Apple were reinstated after being deferred out of an earlier version of this document; they are not a new scope expansion.
+- Linking an existing account to an additional provider requires re-authentication on the existing provider; do not link automatically from matching email alone.
+- Do not implement account merging across two already-separate members, or general login-method management beyond adding Google/Apple, without a separate request.
 
 ## Account Deletion Rules
 
