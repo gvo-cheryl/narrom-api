@@ -30,6 +30,12 @@ naroom:
     refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
     issuer: naroom-api
     audience: naroom-app
+  auth:
+    google:
+      allowed-audiences:
+        - ${GOOGLE_OAUTH_IOS_CLIENT_ID:}
+        - ${GOOGLE_OAUTH_ANDROID_CLIENT_ID:}
+        - ${GOOGLE_OAUTH_WEB_CLIENT_ID:}
   ai:
     worker:
       enabled: ${AI_WORKER_ENABLED:false}

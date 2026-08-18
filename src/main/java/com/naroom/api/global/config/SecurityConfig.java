@@ -33,6 +33,7 @@ public class SecurityConfig {
 			"/v3/api-docs/**",
 			"/api/v1/auth/kakao/login",
 			"/api/v1/auth/kakao/account-recovery",
+			"/api/v1/auth/google/login",
 			"/api/v1/auth/refresh"
 	};
 

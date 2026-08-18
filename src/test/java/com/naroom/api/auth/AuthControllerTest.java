@@ -4,10 +4,10 @@ import com.naroom.api.account.domain.entity.MemberStatus;
 import com.naroom.api.account.domain.repository.AuthSessionRepository;
 import com.naroom.api.account.dto.AccountSummary;
 import com.naroom.api.auth.domain.error.AuthErrorCode;
-import com.naroom.api.auth.dto.KakaoLoginResponse;
 import com.naroom.api.auth.dto.RefreshResponse;
 import com.naroom.api.auth.dto.SessionCheckResponse;
 import com.naroom.api.auth.dto.SessionSummary;
+import com.naroom.api.auth.dto.SocialLoginResponse;
 import com.naroom.api.auth.security.JwtTokenProvider;
 import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.global.config.SecurityConfig;
@@ -55,6 +55,9 @@ class AuthControllerTest {
 	private KakaoLoginService kakaoLoginService;
 
 	@MockitoBean
+	private GoogleLoginService googleLoginService;
+
+	@MockitoBean
 	private TokenRefreshService tokenRefreshService;
 
 	@MockitoBean
@@ -74,7 +77,7 @@ class AuthControllerTest {
 		UUID memberId = UUID.randomUUID();
 		UUID sessionId = UUID.randomUUID();
 		Instant now = Instant.now();
-		when(kakaoLoginService.login(any())).thenReturn(new KakaoLoginResponse(
+		when(kakaoLoginService.login(any())).thenReturn(new SocialLoginResponse(
 				"Bearer",
 				"access-token",
 				now.plusSeconds(3600),
@@ -112,6 +115,42 @@ class AuthControllerTest {
 						.content(loginRequestJson("", "installation-key")))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	@Test
+	void googleLogin_returns200WithTokens() throws Exception {
+		UUID memberId = UUID.randomUUID();
+		UUID sessionId = UUID.randomUUID();
+		Instant now = Instant.now();
+		when(googleLoginService.login(any())).thenReturn(new SocialLoginResponse(
+				"Bearer",
+				"access-token",
+				now.plusSeconds(3600),
+				"refresh-token",
+				now.plusSeconds(1_209_600),
+				new SessionSummary(sessionId, now.plusSeconds(1_209_600)),
+				new AccountSummary(memberId, "지연", MemberStatus.ACTIVE, null, 0L),
+				NextAction.COMPLETE_ONBOARDING));
+
+		mockMvc.perform(post("/api/v1/auth/google/login")
+						.contentType("application/json")
+						.content(googleLoginRequestJson("google-id-token", "installation-key")))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.accessToken").value("access-token"))
+				.andExpect(jsonPath("$.data.nextAction").value("COMPLETE_ONBOARDING"))
+				.andExpect(jsonPath("$.data.account.memberId").value(memberId.toString()));
+	}
+
+	@Test
+	void googleLogin_invalidToken_returnsProblemDetail() throws Exception {
+		when(googleLoginService.login(any()))
+				.thenThrow(new BusinessException(AuthErrorCode.AUTH_PROVIDER_TOKEN_INVALID));
+
+		mockMvc.perform(post("/api/v1/auth/google/login")
+						.contentType("application/json")
+						.content(googleLoginRequestJson("google-id-token", "installation-key")))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("AUTH_PROVIDER_TOKEN_INVALID"));
 	}
 
 	@Test
@@ -224,6 +263,19 @@ class AuthControllerTest {
 				  }
 				}
 				""".formatted(providerAccessToken, installationKey);
+	}
+
+	private String googleLoginRequestJson(String idToken, String installationKey) {
+		return """
+				{
+				  "idToken": "%s",
+				  "device": {
+				    "installationKey": "%s",
+				    "platform": "IOS",
+				    "appVersion": "1.0.0"
+				  }
+				}
+				""".formatted(idToken, installationKey);
 	}
 
 }

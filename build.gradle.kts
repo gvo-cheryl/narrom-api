@@ -38,6 +38,9 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 
+	// Google/Apple ID Token(JWKS 기반 RS256) 서명·클레임 검증에 사용 - 두 provider 모두 같은 방식이라 공용으로 쓴다.
+	implementation("com.nimbusds:nimbus-jose-jwt:10.9.1")
+
 	runtimeOnly("org.flywaydb:flyway-database-postgresql")
 	runtimeOnly("org.postgresql:postgresql")
 

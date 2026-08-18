@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record KakaoLoginRequest(
-		@NotBlank String providerAccessToken,
+public record GoogleLoginRequest(
+		@NotBlank String idToken,
 		@Valid @NotNull DeviceInfo device) {
 }

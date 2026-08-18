@@ -51,6 +51,26 @@ public enum AuthErrorCode implements ErrorCode {
 			ClientAction.RETRY,
 			true),
 
+	AUTH_PROVIDER_TOKEN_INVALID(
+			HttpStatus.UNAUTHORIZED,
+			"AUTH_PROVIDER_TOKEN_INVALID",
+			"urn:naroom:problem:auth-provider-token-invalid",
+			"소셜 로그인 인증 정보가 올바르지 않습니다",
+			"로그인을 다시 시도해 주세요.",
+			ErrorStage.LOGIN,
+			ClientAction.LOGIN_REQUIRED,
+			false),
+
+	AUTH_PROVIDER_UNAVAILABLE(
+			HttpStatus.SERVICE_UNAVAILABLE,
+			"AUTH_PROVIDER_UNAVAILABLE",
+			"urn:naroom:problem:auth-provider-unavailable",
+			"소셜 로그인 서비스에 일시적으로 연결할 수 없습니다",
+			"잠시 후 다시 시도해 주세요.",
+			ErrorStage.EXTERNAL,
+			ClientAction.RETRY,
+			true),
+
 	AUTH_SOCIAL_IDENTITY_REVOKED(
 			HttpStatus.FORBIDDEN,
 			"AUTH_SOCIAL_IDENTITY_REVOKED",

@@ -1,10 +1,11 @@
 package com.naroom.api.auth;
 
+import com.naroom.api.auth.dto.GoogleLoginRequest;
 import com.naroom.api.auth.dto.KakaoLoginRequest;
-import com.naroom.api.auth.dto.KakaoLoginResponse;
 import com.naroom.api.auth.dto.RefreshRequest;
 import com.naroom.api.auth.dto.RefreshResponse;
 import com.naroom.api.auth.dto.SessionCheckResponse;
+import com.naroom.api.auth.dto.SocialLoginResponse;
 import com.naroom.api.auth.security.MemberAuthentication;
 import com.naroom.api.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -24,31 +25,39 @@ public class AuthController {
 	private static final String LOGOUT_REVOKE_REASON = "LOGOUT";
 
 	private final KakaoLoginService kakaoLoginService;
+	private final GoogleLoginService googleLoginService;
 	private final TokenRefreshService tokenRefreshService;
 	private final AuthSessionService authSessionService;
 	private final SessionCheckService sessionCheckService;
 
 	public AuthController(
 			KakaoLoginService kakaoLoginService,
+			GoogleLoginService googleLoginService,
 			TokenRefreshService tokenRefreshService,
 			AuthSessionService authSessionService,
 			SessionCheckService sessionCheckService) {
 		this.kakaoLoginService = kakaoLoginService;
+		this.googleLoginService = googleLoginService;
 		this.tokenRefreshService = tokenRefreshService;
 		this.authSessionService = authSessionService;
 		this.sessionCheckService = sessionCheckService;
 	}
 
 	@PostMapping("/kakao/login")
-	public ApiResponse<KakaoLoginResponse> kakaoLogin(@Valid @RequestBody KakaoLoginRequest request) {
+	public ApiResponse<SocialLoginResponse> kakaoLogin(@Valid @RequestBody KakaoLoginRequest request) {
 		return ApiResponse.of(kakaoLoginService.login(request));
 	}
 
 	// 탈퇴 유예(PENDING_DELETION) 상태에서 카카오 재인증으로 본인 확인 후 명시적으로 복구를 확인하는
 	// 전용 엔드포인트다 - kakao/login과 분리해, 일반 로그인 시도가 계정을 자동 복구하지 않게 한다.
 	@PostMapping("/restore")
-	public ApiResponse<KakaoLoginResponse> restore(@Valid @RequestBody KakaoLoginRequest request) {
+	public ApiResponse<SocialLoginResponse> restore(@Valid @RequestBody KakaoLoginRequest request) {
 		return ApiResponse.of(kakaoLoginService.restore(request));
+	}
+
+	@PostMapping("/google/login")
+	public ApiResponse<SocialLoginResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+		return ApiResponse.of(googleLoginService.login(request));
 	}
 
 	@PostMapping("/refresh")

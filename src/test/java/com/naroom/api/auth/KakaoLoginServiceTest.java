@@ -7,8 +7,9 @@ import com.naroom.api.account.domain.entity.SocialProvider;
 import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.account.domain.repository.SocialIdentityRepository;
 import com.naroom.api.auth.domain.error.AuthErrorCode;
+import com.naroom.api.auth.dto.DeviceInfo;
 import com.naroom.api.auth.dto.KakaoLoginRequest;
-import com.naroom.api.auth.dto.KakaoLoginResponse;
+import com.naroom.api.auth.dto.SocialLoginResponse;
 import com.naroom.api.auth.kakao.KakaoClient;
 import com.naroom.api.auth.kakao.KakaoUserInfoResponse;
 import com.naroom.api.global.error.exception.BusinessException;
@@ -53,7 +54,7 @@ class KakaoLoginServiceTest {
 		String providerUserId = String.valueOf(System.nanoTime());
 		when(kakaoClient.fetchUserInfo(any())).thenReturn(kakaoUser(providerUserId, "지연"));
 
-		KakaoLoginResponse response = kakaoLoginService.login(loginRequest("installation-new-" + providerUserId));
+		SocialLoginResponse response = kakaoLoginService.login(loginRequest("installation-new-" + providerUserId));
 
 		assertEquals(NextAction.COMPLETE_ONBOARDING, response.nextAction());
 		assertEquals(MemberStatus.ACTIVE, response.account().status());
@@ -72,7 +73,7 @@ class KakaoLoginServiceTest {
 
 		when(kakaoClient.fetchUserInfo(any())).thenReturn(kakaoUser(providerUserId, "지연"));
 
-		KakaoLoginResponse response = kakaoLoginService.login(loginRequest("installation-existing-" + providerUserId));
+		SocialLoginResponse response = kakaoLoginService.login(loginRequest("installation-existing-" + providerUserId));
 
 		assertEquals(NextAction.ENTER_APP, response.nextAction());
 		assertEquals(member.getId(), response.account().memberId());
@@ -140,7 +141,7 @@ class KakaoLoginServiceTest {
 		BusinessException exception = assertThrows(
 				BusinessException.class,
 				() -> kakaoLoginService.login(new KakaoLoginRequest(
-						"kakao-token", new KakaoLoginRequest.DeviceInfo("", "IOS", "1.0.0"))));
+						"kakao-token", new DeviceInfo("", "IOS", "1.0.0"))));
 		assertEquals(AuthErrorCode.DEVICE_INSTALLATION_KEY_REQUIRED, exception.errorCode());
 	}
 
@@ -149,7 +150,7 @@ class KakaoLoginServiceTest {
 		BusinessException exception = assertThrows(
 				BusinessException.class,
 				() -> kakaoLoginService.login(new KakaoLoginRequest(
-						"kakao-token", new KakaoLoginRequest.DeviceInfo("installation-bad-platform", "WEB", "1.0.0"))));
+						"kakao-token", new DeviceInfo("installation-bad-platform", "WEB", "1.0.0"))));
 		assertEquals(AuthErrorCode.DEVICE_PLATFORM_UNSUPPORTED, exception.errorCode());
 	}
 
@@ -169,7 +170,7 @@ class KakaoLoginServiceTest {
 
 		when(kakaoClient.fetchUserInfo(any())).thenReturn(kakaoUser(providerUserId, "지연"));
 
-		KakaoLoginResponse response = kakaoLoginService.restore(loginRequest("installation-restore-" + providerUserId));
+		SocialLoginResponse response = kakaoLoginService.restore(loginRequest("installation-restore-" + providerUserId));
 
 		assertEquals(MemberStatus.ACTIVE, response.account().status());
 		assertNotNull(response.accessToken());
@@ -210,7 +211,7 @@ class KakaoLoginServiceTest {
 
 	private KakaoLoginRequest loginRequest(String installationKey) {
 		return new KakaoLoginRequest(
-				"kakao-provider-token", new KakaoLoginRequest.DeviceInfo(installationKey, "IOS", "1.0.0"));
+				"kakao-provider-token", new DeviceInfo(installationKey, "IOS", "1.0.0"));
 	}
 
 	private KakaoUserInfoResponse kakaoUser(String providerUserId, String nickname) {

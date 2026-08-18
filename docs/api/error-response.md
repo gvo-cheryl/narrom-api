@@ -75,6 +75,8 @@ CONTACT_SUPPORT
 | `DEVICE_PLATFORM_UNSUPPORTED` | 400 | DEVICE | CHECK_DEVICE | 지원하지 않는 플랫폼 |
 | `AUTH_KAKAO_TOKEN_INVALID` | 401 | LOGIN | LOGIN_REQUIRED | 카카오 인증 정보가 유효하지 않음 |
 | `AUTH_KAKAO_UNAVAILABLE` | 503 | EXTERNAL | RETRY | 카카오 서비스 일시 장애 |
+| `AUTH_PROVIDER_TOKEN_INVALID` | 401 | LOGIN | LOGIN_REQUIRED | Google 등 provider ID Token 서명·issuer·audience·만료 검증 실패 |
+| `AUTH_PROVIDER_UNAVAILABLE` | 503 | EXTERNAL | RETRY | provider 검증 키 조회 등 외부 서비스 일시 장애 |
 | `AUTH_SOCIAL_IDENTITY_REVOKED` | 403 | LOGIN | CONTACT_SUPPORT | 소셜 로그인 연결이 비활성화됨 |
 | `AUTH_REQUIRED` | 401 | TOKEN | LOGIN_REQUIRED | Access Token 없음 |
 | `AUTH_ACCESS_TOKEN_EXPIRED` | 401 | TOKEN | REFRESH_REQUIRED | Access Token 만료 |
