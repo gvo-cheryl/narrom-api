@@ -20,8 +20,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
 	/**
-	 * authentication.md "공개·보호 엔드포인트" 기준. 카카오 로그인·재발급·계정 복구는
-	 * 아직 Controller가 없지만(오늘 12번 구현 예정) 계약상 공개 경로로 이미 확정되어 있어 미리 등록한다.
+	 * authentication.md "공개·보호 엔드포인트" 기준. 삭제 대기(PENDING_DELETION) 복구 엔드포인트들은
+	 * 세션이 이미 전부 폐기된 사용자가 호출하는 것이라 Access Token을 요구할 수 없다 - 로그인 엔드포인트와
+	 * 동일하게 공개하되, provider 재인증 자체로 본인 확인을 한다.
 	 */
 	private static final String[] PUBLIC_PATHS = {
 			"/api/v1/health",
@@ -32,9 +33,11 @@ public class SecurityConfig {
 			"/v3/api-docs.yaml",
 			"/v3/api-docs/**",
 			"/api/v1/auth/kakao/login",
-			"/api/v1/auth/kakao/account-recovery",
+			"/api/v1/auth/restore",
 			"/api/v1/auth/google/login",
+			"/api/v1/auth/google/restore",
 			"/api/v1/auth/apple/login",
+			"/api/v1/auth/apple/restore",
 			"/api/v1/auth/refresh"
 	};
 

@@ -64,9 +64,23 @@ public class AuthController {
 		return ApiResponse.of(googleLoginService.login(request));
 	}
 
+	// 탈퇴 유예(PENDING_DELETION) 상태에서 Google 재인증으로 본인 확인 후 명시적으로 복구를 확인하는
+	// 전용 엔드포인트다 - google/login과 분리해, 일반 로그인 시도가 계정을 자동 복구하지 않게 한다.
+	@PostMapping("/google/restore")
+	public ApiResponse<SocialLoginResponse> googleRestore(@Valid @RequestBody GoogleLoginRequest request) {
+		return ApiResponse.of(googleLoginService.restore(request));
+	}
+
 	@PostMapping("/apple/login")
 	public ApiResponse<SocialLoginResponse> appleLogin(@Valid @RequestBody AppleLoginRequest request) {
 		return ApiResponse.of(appleLoginService.login(request));
+	}
+
+	// 탈퇴 유예(PENDING_DELETION) 상태에서 Apple 재인증으로 본인 확인 후 명시적으로 복구를 확인하는
+	// 전용 엔드포인트다 - apple/login과 분리해, 일반 로그인 시도가 계정을 자동 복구하지 않게 한다.
+	@PostMapping("/apple/restore")
+	public ApiResponse<SocialLoginResponse> appleRestore(@Valid @RequestBody AppleLoginRequest request) {
+		return ApiResponse.of(appleLoginService.restore(request));
 	}
 
 	@PostMapping("/refresh")

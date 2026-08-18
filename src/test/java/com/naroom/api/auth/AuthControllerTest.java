@@ -120,6 +120,30 @@ class AuthControllerTest {
 				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
 	}
 
+	// PENDING_DELETION 상태는 모든 세션이 이미 폐기돼 Access Token을 가질 수 없다 - /auth/restore가
+	// SecurityConfig의 공개 경로에서 빠져 있으면 이 흐름 자체가 불가능해지는 회귀를 잡기 위한 테스트다.
+	@Test
+	void restore_withoutAuthentication_reachesServiceInsteadOfAuthRequired() throws Exception {
+		UUID memberId = UUID.randomUUID();
+		UUID sessionId = UUID.randomUUID();
+		Instant now = Instant.now();
+		when(kakaoLoginService.restore(any())).thenReturn(new SocialLoginResponse(
+				"Bearer",
+				"access-token",
+				now.plusSeconds(3600),
+				"refresh-token",
+				now.plusSeconds(1_209_600),
+				new SessionSummary(sessionId, now.plusSeconds(1_209_600)),
+				new AccountSummary(memberId, "지연", MemberStatus.ACTIVE, null, 0L),
+				NextAction.ENTER_APP));
+
+		mockMvc.perform(post("/api/v1/auth/restore")
+						.contentType("application/json")
+						.content(loginRequestJson("kakao-provider-token", "installation-key")))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.accessToken").value("access-token"));
+	}
+
 	@Test
 	void googleLogin_returns200WithTokens() throws Exception {
 		UUID memberId = UUID.randomUUID();
@@ -154,6 +178,28 @@ class AuthControllerTest {
 						.content(googleLoginRequestJson("google-id-token", "installation-key")))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("AUTH_PROVIDER_TOKEN_INVALID"));
+	}
+
+	@Test
+	void googleRestore_withoutAuthentication_reachesServiceInsteadOfAuthRequired() throws Exception {
+		UUID memberId = UUID.randomUUID();
+		UUID sessionId = UUID.randomUUID();
+		Instant now = Instant.now();
+		when(googleLoginService.restore(any())).thenReturn(new SocialLoginResponse(
+				"Bearer",
+				"access-token",
+				now.plusSeconds(3600),
+				"refresh-token",
+				now.plusSeconds(1_209_600),
+				new SessionSummary(sessionId, now.plusSeconds(1_209_600)),
+				new AccountSummary(memberId, "지연", MemberStatus.ACTIVE, null, 0L),
+				NextAction.ENTER_APP));
+
+		mockMvc.perform(post("/api/v1/auth/google/restore")
+						.contentType("application/json")
+						.content(googleLoginRequestJson("google-id-token", "installation-key")))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.accessToken").value("access-token"));
 	}
 
 	@Test
@@ -199,6 +245,28 @@ class AuthControllerTest {
 						.content(appleLoginRequestJson("apple-identity-token", "", "installation-key")))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	@Test
+	void appleRestore_withoutAuthentication_reachesServiceInsteadOfAuthRequired() throws Exception {
+		UUID memberId = UUID.randomUUID();
+		UUID sessionId = UUID.randomUUID();
+		Instant now = Instant.now();
+		when(appleLoginService.restore(any())).thenReturn(new SocialLoginResponse(
+				"Bearer",
+				"access-token",
+				now.plusSeconds(3600),
+				"refresh-token",
+				now.plusSeconds(1_209_600),
+				new SessionSummary(sessionId, now.plusSeconds(1_209_600)),
+				new AccountSummary(memberId, "지연", MemberStatus.ACTIVE, null, 0L),
+				NextAction.ENTER_APP));
+
+		mockMvc.perform(post("/api/v1/auth/apple/restore")
+						.contentType("application/json")
+						.content(appleLoginRequestJson("apple-identity-token", "raw-nonce", "installation-key")))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.accessToken").value("access-token"));
 	}
 
 	@Test

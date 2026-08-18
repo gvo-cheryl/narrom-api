@@ -125,6 +125,45 @@ class AppleLoginServiceTest {
 	}
 
 	@Test
+	void restore_pendingDeletionMember_restoresAndReturnsSession() {
+		String sub = String.valueOf(System.nanoTime());
+		Member member = memberRepository.save(Member.create("지연"));
+		socialIdentityRepository.save(SocialIdentity.connect(
+				member, SocialProvider.APPLE, sub, null, false, "지연", null));
+		entityManager.createQuery(
+						"update Member m set m.status = :status, m.scheduledDeletionAt = :scheduledDeletionAt where m.id = :id")
+				.setParameter("status", MemberStatus.PENDING_DELETION)
+				.setParameter("scheduledDeletionAt", Instant.now().plusSeconds(604_800))
+				.setParameter("id", member.getId())
+				.executeUpdate();
+		entityManager.clear();
+
+		when(appleClient.verify(any(), any())).thenReturn(appleUser(sub));
+
+		SocialLoginResponse response = appleLoginService.restore(loginRequest(sub, "installation-restore-" + sub, null));
+
+		assertEquals(MemberStatus.ACTIVE, response.account().status());
+		assertNotNull(response.accessToken());
+		Member reloaded = memberRepository.findById(member.getId()).orElseThrow();
+		assertEquals(MemberStatus.ACTIVE, reloaded.getStatus());
+	}
+
+	@Test
+	void restore_activeMember_throwsAccountNotPendingDeletion() {
+		String sub = String.valueOf(System.nanoTime());
+		Member member = memberRepository.save(Member.create("지연"));
+		socialIdentityRepository.save(SocialIdentity.connect(
+				member, SocialProvider.APPLE, sub, null, false, "지연", null));
+
+		when(appleClient.verify(any(), any())).thenReturn(appleUser(sub));
+
+		BusinessException exception = assertThrows(
+				BusinessException.class,
+				() -> appleLoginService.restore(loginRequest(sub, "installation-restore-active-" + sub, null)));
+		assertEquals(AuthErrorCode.ACCOUNT_NOT_PENDING_DELETION, exception.errorCode());
+	}
+
+	@Test
 	void missingInstallationKey_throwsDeviceInstallationKeyRequired() {
 		BusinessException exception = assertThrows(
 				BusinessException.class,

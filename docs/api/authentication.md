@@ -232,7 +232,7 @@ POST /api/v1/auth/google/login
 - ID Token 원문은 저장하거나 로그에 남기지 않는다.
 - 동일 이메일만으로 기존(카카오 등) 회원과 자동 병합하지 않는다 - Google로 처음 로그인하면 이메일이 같아도 새 Member를 만든다.
 - 검증 실패 시 `AUTH_PROVIDER_TOKEN_INVALID`(서명·issuer·audience·만료), `AUTH_PROVIDER_UNAVAILABLE`(JWKS 조회 등 외부 장애)로 응답한다. 이 두 코드는 provider 중립적이라 이후 Apple 로그인에도 그대로 재사용한다.
-- `POST /api/v1/auth/restore`(삭제 대기 복구)는 아직 카카오 전용 DTO에 결합되어 있다. Google 계정의 삭제 대기 복구는 별도 작업으로 남아 있다.
+- 삭제 대기 복구는 `POST /api/v1/auth/google/restore`(아래 "삭제 대기 계정" 절 참고)를 쓴다.
 
 ## Apple 로그인
 
@@ -283,7 +283,7 @@ POST /api/v1/auth/apple/login
 - 동일 이메일만으로 기존 회원과 자동 병합하지 않는다.
 - 검증 실패 시 Google과 동일한 `AUTH_PROVIDER_TOKEN_INVALID`/`AUTH_PROVIDER_UNAVAILABLE`로 응답한다.
 - Apple 서버-투-서버 자격증명 철회 알림(webhook) 수신은 별도 작업으로 남아 있다.
-- `POST /api/v1/auth/restore`(삭제 대기 복구)는 아직 카카오 전용 DTO에 결합되어 있다. Apple 계정의 삭제 대기 복구는 Google과 함께 별도 작업으로 남아 있다.
+- 삭제 대기 복구는 `POST /api/v1/auth/apple/restore`(아래 "삭제 대기 계정" 절 참고)를 쓴다.
 
 ## 토큰 재발급
 
@@ -402,26 +402,32 @@ scheduled_deletion_at 기록
 즉시 로그아웃
 ```
 
-삭제 대기 회원이 카카오 로그인을 하면 정상 세션을 자동 발급하지 않는다.
+삭제 대기 회원이 일반 로그인(`/login`)을 하면 정상 세션을 자동 발급하지 않는다.
 
 ```text
-카카오 본인 확인
+provider 본인 확인
 → ACCOUNT_PENDING_DELETION
 → 삭제 예정일 표시
 → 사용자가 삭제 취소를 명시적으로 선택
-→ 카카오 재인증 기반 복구
+→ provider 재인증 기반 복구
 → ACTIVE 전환 후 새 세션 발급
 ```
 
 자동 복구는 금지한다. 복구 성공 시 `withdrawal_requested_at`과 `scheduled_deletion_at`을 함께 비우고 새 세션을 만든다.
 
-```http
-POST /api/v1/auth/kakao/account-recovery
-```
+각 provider마다 로그인과 분리된 전용 복구 엔드포인트가 있다. 요청 본문은 같은 provider의 로그인 요청과 완전히 같은 형태를 그대로 쓴다(별도의 `confirmRecovery` 필드는 없다 - `/login`과 분리된 경로 자체가 "명시적 복구 확인"이다).
 
-요청에는 카카오 Provider Token, `confirmRecovery: true`, 기기 정보를 포함한다. 서버는 카카오 사용자가 기존 `social_identities`와 일치하는지 다시 확인한 후에만 복구한다. 성공 응답은 카카오 로그인 성공 응답과 같은 토큰·계정·`nextAction` 구조를 사용한다.
+| Provider | 경로 |
+|---|---|
+| Kakao | `POST /api/v1/auth/restore` |
+| Google | `POST /api/v1/auth/google/restore` |
+| Apple | `POST /api/v1/auth/apple/restore` |
 
-이 엔드포인트는 `version`을 요구하지 않는다. 로그인이 막힌 상태에서 호출하므로 클라이언트가 최신 `version`을 미리 알 수 없고, 복구는 필드를 덮어쓰는 수정이 아니라 상태 전환(카카오 재인증으로 검증됨)이라 동시 호출이 발생해도 데이터 손실 위험이 없다.
+서버는 provider 사용자가 기존 `social_identities`와 일치하는지 다시 확인한 후에만 복구한다. 성공 응답은 로그인 성공 응답과 같은 `SocialLoginResponse` 구조를 그대로 쓴다.
+
+이 엔드포인트들은 `version`을 요구하지 않는다. 로그인이 막힌 상태에서 호출하므로 클라이언트가 최신 `version`을 미리 알 수 없고, 복구는 필드를 덮어쓰는 수정이 아니라 상태 전환(provider 재인증으로 검증됨)이라 동시 호출이 발생해도 데이터 손실 위험이 없다.
+
+PENDING_DELETION 상태는 로그아웃 처리로 모든 세션이 이미 폐기되어 있어 이 엔드포인트들은 Access Token 없이 호출할 수 있어야 한다(`SecurityConfig` 공개 경로).
 
 ## 요청 제한(Rate Limit)
 
@@ -433,9 +439,11 @@ POST /api/v1/auth/kakao/account-recovery
 | `POST /api/v1/auth/google/login` | 분당 10회 | 요청 IP |
 | `POST /api/v1/auth/apple/login` | 분당 10회 | 요청 IP |
 | `POST /api/v1/auth/refresh` | 분당 20회 | `installationKey` (기준 식별자를 아직 못 구했다면 IP로 보조 제한) |
-| `POST /api/v1/auth/kakao/account-recovery` | 분당 5회 | 요청 IP |
+| `POST /api/v1/auth/restore` | 분당 5회 | 요청 IP |
+| `POST /api/v1/auth/google/restore` | 분당 5회 | 요청 IP |
+| `POST /api/v1/auth/apple/restore` | 분당 5회 | 요청 IP |
 
-구체적인 수치는 실제 트래픽을 보고 조정 가능한 권장값이며, 이번 계약에서 확정하는 것은 "이 세 엔드포인트에는 반드시 제한이 있어야 한다"는 원칙이다.
+구체적인 수치는 실제 트래픽을 보고 조정 가능한 권장값이며, 이번 계약에서 확정하는 것은 "위 엔드포인트들에는 반드시 제한이 있어야 한다"는 원칙이다.
 
 ## 공개·보호 엔드포인트
 
@@ -443,9 +451,11 @@ POST /api/v1/auth/kakao/account-recovery
 |---|---|
 | `/api/v1/health` | 공개 |
 | `/api/v1/auth/kakao/login` | 공개, 카카오 토큰 검증 필수 |
-| `/api/v1/auth/kakao/account-recovery` | 공개, 카카오 재인증과 명시적 복구 확인 필수 |
+| `/api/v1/auth/restore` | 공개, 카카오 재인증과 명시적 복구 확인 필수 |
 | `/api/v1/auth/google/login` | 공개, Google ID Token 검증 필수 |
+| `/api/v1/auth/google/restore` | 공개, Google 재인증과 명시적 복구 확인 필수 |
 | `/api/v1/auth/apple/login` | 공개, Apple identity token 검증 필수 |
+| `/api/v1/auth/apple/restore` | 공개, Apple 재인증과 명시적 복구 확인 필수 |
 | `/api/v1/auth/refresh` | 공개, Refresh Token 검증 필수 |
 | `/api/v1/auth/session` | Access Token 필요 |
 | `/api/v1/auth/logout` | Access Token 필요 |

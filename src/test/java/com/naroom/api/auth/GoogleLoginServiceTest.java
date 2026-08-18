@@ -146,6 +146,45 @@ class GoogleLoginServiceTest {
 	}
 
 	@Test
+	void restore_pendingDeletionMember_restoresAndReturnsSession() {
+		String sub = String.valueOf(System.nanoTime());
+		Member member = memberRepository.save(Member.create("지연"));
+		socialIdentityRepository.save(SocialIdentity.connect(
+				member, SocialProvider.GOOGLE, sub, null, false, "지연", null));
+		entityManager.createQuery(
+						"update Member m set m.status = :status, m.scheduledDeletionAt = :scheduledDeletionAt where m.id = :id")
+				.setParameter("status", MemberStatus.PENDING_DELETION)
+				.setParameter("scheduledDeletionAt", Instant.now().plusSeconds(604_800))
+				.setParameter("id", member.getId())
+				.executeUpdate();
+		entityManager.clear();
+
+		when(googleClient.verify(any())).thenReturn(googleUser(sub, "지연"));
+
+		SocialLoginResponse response = googleLoginService.restore(loginRequest("installation-restore-" + sub));
+
+		assertEquals(MemberStatus.ACTIVE, response.account().status());
+		assertNotNull(response.accessToken());
+		Member reloaded = memberRepository.findById(member.getId()).orElseThrow();
+		assertEquals(MemberStatus.ACTIVE, reloaded.getStatus());
+	}
+
+	@Test
+	void restore_activeMember_throwsAccountNotPendingDeletion() {
+		String sub = String.valueOf(System.nanoTime());
+		Member member = memberRepository.save(Member.create("지연"));
+		socialIdentityRepository.save(SocialIdentity.connect(
+				member, SocialProvider.GOOGLE, sub, null, false, "지연", null));
+
+		when(googleClient.verify(any())).thenReturn(googleUser(sub, "지연"));
+
+		BusinessException exception = assertThrows(
+				BusinessException.class,
+				() -> googleLoginService.restore(loginRequest("installation-restore-active-" + sub)));
+		assertEquals(AuthErrorCode.ACCOUNT_NOT_PENDING_DELETION, exception.errorCode());
+	}
+
+	@Test
 	void missingInstallationKey_throwsDeviceInstallationKeyRequired() {
 		BusinessException exception = assertThrows(
 				BusinessException.class,
