@@ -8,6 +8,6 @@ public interface SocialProviderClient {
 
 	SocialProvider provider();
 
-	SocialUserInfo fetchUserInfo(String credential);
+	SocialUserInfo fetchUserInfo(SocialCredential credential);
 
 }

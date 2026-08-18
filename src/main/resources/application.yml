@@ -36,6 +36,9 @@ naroom:
         - ${GOOGLE_OAUTH_IOS_CLIENT_ID:}
         - ${GOOGLE_OAUTH_ANDROID_CLIENT_ID:}
         - ${GOOGLE_OAUTH_WEB_CLIENT_ID:}
+    apple:
+      allowed-audiences:
+        - ${APPLE_OAUTH_CLIENT_ID:}
   ai:
     worker:
       enabled: ${AI_WORKER_ENABLED:false}

@@ -1,6 +1,7 @@
 package com.naroom.api.auth.kakao;
 
 import com.naroom.api.account.domain.entity.SocialProvider;
+import com.naroom.api.auth.social.SocialCredential;
 import com.naroom.api.auth.social.SocialProviderClient;
 import com.naroom.api.auth.social.SocialUserInfo;
 import org.springframework.stereotype.Component;
@@ -22,8 +23,8 @@ public class KakaoSocialProviderClient implements SocialProviderClient {
 	}
 
 	@Override
-	public SocialUserInfo fetchUserInfo(String credential) {
-		KakaoUserInfoResponse kakaoUser = kakaoClient.fetchUserInfo(credential);
+	public SocialUserInfo fetchUserInfo(SocialCredential credential) {
+		KakaoUserInfoResponse kakaoUser = kakaoClient.fetchUserInfo(credential.token());
 		return new SocialUserInfo(
 				String.valueOf(kakaoUser.id()),
 				kakaoUser.email(),

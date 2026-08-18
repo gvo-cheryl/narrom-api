@@ -1,5 +1,6 @@
 package com.naroom.api.auth;
 
+import com.naroom.api.auth.dto.AppleLoginRequest;
 import com.naroom.api.auth.dto.GoogleLoginRequest;
 import com.naroom.api.auth.dto.KakaoLoginRequest;
 import com.naroom.api.auth.dto.RefreshRequest;
@@ -26,6 +27,7 @@ public class AuthController {
 
 	private final KakaoLoginService kakaoLoginService;
 	private final GoogleLoginService googleLoginService;
+	private final AppleLoginService appleLoginService;
 	private final TokenRefreshService tokenRefreshService;
 	private final AuthSessionService authSessionService;
 	private final SessionCheckService sessionCheckService;
@@ -33,11 +35,13 @@ public class AuthController {
 	public AuthController(
 			KakaoLoginService kakaoLoginService,
 			GoogleLoginService googleLoginService,
+			AppleLoginService appleLoginService,
 			TokenRefreshService tokenRefreshService,
 			AuthSessionService authSessionService,
 			SessionCheckService sessionCheckService) {
 		this.kakaoLoginService = kakaoLoginService;
 		this.googleLoginService = googleLoginService;
+		this.appleLoginService = appleLoginService;
 		this.tokenRefreshService = tokenRefreshService;
 		this.authSessionService = authSessionService;
 		this.sessionCheckService = sessionCheckService;
@@ -58,6 +62,11 @@ public class AuthController {
 	@PostMapping("/google/login")
 	public ApiResponse<SocialLoginResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
 		return ApiResponse.of(googleLoginService.login(request));
+	}
+
+	@PostMapping("/apple/login")
+	public ApiResponse<SocialLoginResponse> appleLogin(@Valid @RequestBody AppleLoginRequest request) {
+		return ApiResponse.of(appleLoginService.login(request));
 	}
 
 	@PostMapping("/refresh")

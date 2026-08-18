@@ -1,6 +1,7 @@
 package com.naroom.api.auth.google;
 
 import com.naroom.api.account.domain.entity.SocialProvider;
+import com.naroom.api.auth.social.SocialCredential;
 import com.naroom.api.auth.social.SocialProviderClient;
 import com.naroom.api.auth.social.SocialUserInfo;
 import org.springframework.stereotype.Component;
@@ -20,8 +21,8 @@ public class GoogleSocialProviderClient implements SocialProviderClient {
 	}
 
 	@Override
-	public SocialUserInfo fetchUserInfo(String credential) {
-		GoogleUserInfo googleUser = googleClient.verify(credential);
+	public SocialUserInfo fetchUserInfo(SocialCredential credential) {
+		GoogleUserInfo googleUser = googleClient.verify(credential.token());
 		return new SocialUserInfo(
 				googleUser.sub(),
 				googleUser.email(),

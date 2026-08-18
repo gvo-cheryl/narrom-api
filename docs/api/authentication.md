@@ -1,7 +1,7 @@
 # 인증·세션·온보딩 계약
 
 상태: Beta 1 계약안  
-구현 범위: 카카오·Google 로그인. Apple 로그인은 데이터 구조(`social_provider.APPLE`)만 유지하고 API는 아직 없다.
+구현 범위: 카카오·Google·Apple 로그인.
 
 ## ERD 기준
 
@@ -234,6 +234,57 @@ POST /api/v1/auth/google/login
 - 검증 실패 시 `AUTH_PROVIDER_TOKEN_INVALID`(서명·issuer·audience·만료), `AUTH_PROVIDER_UNAVAILABLE`(JWKS 조회 등 외부 장애)로 응답한다. 이 두 코드는 provider 중립적이라 이후 Apple 로그인에도 그대로 재사용한다.
 - `POST /api/v1/auth/restore`(삭제 대기 복구)는 아직 카카오 전용 DTO에 결합되어 있다. Google 계정의 삭제 대기 복구는 별도 작업으로 남아 있다.
 
+## Apple 로그인
+
+```http
+POST /api/v1/auth/apple/login
+```
+
+요청:
+
+```json
+{
+  "identityToken": "<apple-identity-token>",
+  "rawNonce": "<client가 authorization 요청에 쓴 원문 nonce>",
+  "fullName": "지연",
+  "device": {
+    "installationKey": "7d637e26-851d-4f13-83bf-cd296aa20d61",
+    "platform": "IOS",
+    "appVersion": "1.0.0"
+  }
+}
+```
+
+`fullName`은 Apple이 최초 승인 응답에서만 내려주는 값이라 클라이언트가 그 시점에만 채워 보낼 수 있다(선택값, 재로그인 시에는 비어 있어도 된다).
+
+처리 순서:
+
+```text
+기기 DTO 검증
+→ Apple identity token 서명·issuer·audience·만료 검증(JWKS, RS256)
+→ rawNonce의 SHA-256 해시가 identity token의 nonce claim과 일치하는지 확인
+→ APPLE + sub로 SocialIdentity 조회
+→ 없으면 Member와 SocialIdentity 생성(표시 이름은 요청의 fullName, 없으면 기본값)
+→ identity_status 확인
+→ member_status 확인
+→ DeviceInstallation 등록·갱신
+→ AuthSession 생성
+→ Access·Refresh Token 발급
+→ 온보딩 완료 여부에 따른 nextAction 반환
+```
+
+응답은 카카오·Google 로그인과 동일한 `SocialLoginResponse`를 그대로 재사용한다.
+
+- `sub`(Apple 고유 사용자 ID)를 유일한 provider 식별자로 쓴다.
+- nonce 검증은 필수다. 클라이언트는 원문 nonce를 생성해 그 SHA-256 해시를 Apple authorization 요청에 실어 보내고(Apple 공식 가이드), 로그인 요청에는 원문 `rawNonce`를 그대로 담아 보낸다. 서버는 같은 해시를 계산해 identity token의 `nonce` claim과 비교한다 - 불일치·누락 시 `AUTH_PROVIDER_TOKEN_INVALID`.
+- 허용 audience(`aud`)는 `APPLE_OAUTH_CLIENT_ID`(iOS 앱 Bundle ID)로 서버에 등록된 값만 통과한다.
+- Apple이 내려주는 이메일이 비공개 릴레이 주소(`@privaterelay.appleid.com`)여도 일반 이메일과 동일하게 저장·처리한다.
+- identity token 원문은 저장하거나 로그에 남기지 않는다.
+- 동일 이메일만으로 기존 회원과 자동 병합하지 않는다.
+- 검증 실패 시 Google과 동일한 `AUTH_PROVIDER_TOKEN_INVALID`/`AUTH_PROVIDER_UNAVAILABLE`로 응답한다.
+- Apple 서버-투-서버 자격증명 철회 알림(webhook) 수신은 별도 작업으로 남아 있다.
+- `POST /api/v1/auth/restore`(삭제 대기 복구)는 아직 카카오 전용 DTO에 결합되어 있다. Apple 계정의 삭제 대기 복구는 Google과 함께 별도 작업으로 남아 있다.
+
 ## 토큰 재발급
 
 ```http
@@ -380,6 +431,7 @@ POST /api/v1/auth/kakao/account-recovery
 |---|---|---|
 | `POST /api/v1/auth/kakao/login` | 분당 10회 | 요청 IP |
 | `POST /api/v1/auth/google/login` | 분당 10회 | 요청 IP |
+| `POST /api/v1/auth/apple/login` | 분당 10회 | 요청 IP |
 | `POST /api/v1/auth/refresh` | 분당 20회 | `installationKey` (기준 식별자를 아직 못 구했다면 IP로 보조 제한) |
 | `POST /api/v1/auth/kakao/account-recovery` | 분당 5회 | 요청 IP |
 
@@ -393,6 +445,7 @@ POST /api/v1/auth/kakao/account-recovery
 | `/api/v1/auth/kakao/login` | 공개, 카카오 토큰 검증 필수 |
 | `/api/v1/auth/kakao/account-recovery` | 공개, 카카오 재인증과 명시적 복구 확인 필수 |
 | `/api/v1/auth/google/login` | 공개, Google ID Token 검증 필수 |
+| `/api/v1/auth/apple/login` | 공개, Apple identity token 검증 필수 |
 | `/api/v1/auth/refresh` | 공개, Refresh Token 검증 필수 |
 | `/api/v1/auth/session` | Access Token 필요 |
 | `/api/v1/auth/logout` | Access Token 필요 |

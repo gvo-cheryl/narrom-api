@@ -57,7 +57,7 @@ public class SocialLoginService {
 	}
 
 	@Transactional
-	public SocialLoginResponse login(SocialProvider provider, String credential, DeviceInfo device) {
+	public SocialLoginResponse login(SocialProvider provider, SocialCredential credential, DeviceInfo device) {
 		SocialIdentity socialIdentity = resolveSocialIdentity(provider, credential, device);
 		Member member = socialIdentity.getMember();
 		authSessionService.requireLoginableStatus(member);
@@ -68,7 +68,7 @@ public class SocialLoginService {
 	// REVOKED 여부 확인), PENDING_DELETION이 아니면 거부하고, 맞으면 이 호출 자체를 "명시적 복구 확인"
 	// 절차로 간주해(login()과 별도 진입점) 즉시 복구하고 정상 세션을 발급한다.
 	@Transactional
-	public SocialLoginResponse restore(SocialProvider provider, String credential, DeviceInfo device) {
+	public SocialLoginResponse restore(SocialProvider provider, SocialCredential credential, DeviceInfo device) {
 		SocialIdentity socialIdentity = resolveSocialIdentity(provider, credential, device);
 		Member member = socialIdentity.getMember();
 		if (member.getStatus() != MemberStatus.PENDING_DELETION) {
@@ -78,7 +78,7 @@ public class SocialLoginService {
 		return completeAuthentication(socialIdentity, device);
 	}
 
-	private SocialIdentity resolveSocialIdentity(SocialProvider provider, String credential, DeviceInfo device) {
+	private SocialIdentity resolveSocialIdentity(SocialProvider provider, SocialCredential credential, DeviceInfo device) {
 		validateDevice(device);
 
 		SocialUserInfo userInfo = clientOf(provider).fetchUserInfo(credential);
