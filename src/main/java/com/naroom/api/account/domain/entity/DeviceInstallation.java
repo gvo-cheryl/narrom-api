@@ -25,7 +25,7 @@ public class DeviceInstallation {
 	private UUID id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "member_id", nullable = false, updatable = false)
+	@JoinColumn(name = "member_id", nullable = false)
 	private Member member;
 
 	@Column(name = "installation_key", nullable = false, length = 255, updatable = false)
@@ -74,6 +74,12 @@ public class DeviceInstallation {
 	public void markSeen(String appVersion) {
 		this.appVersion = appVersion;
 		this.lastSeenAt = Instant.now();
+	}
+
+	// 같은 기기(installationKey)로 다른 회원이 로그인한 경우(기기 공유, 계정 전환) 이 설치를 새 회원
+	// 소유로 옮긴다. 옛 회원이 이 기기로 발급받았던 세션을 정리하는 것은 호출자(SocialLoginService)의 책임이다.
+	public void reassignTo(Member member) {
+		this.member = member;
 	}
 
 	// 푸시 권한은 보통 로그인 이후 비동기로 승인되기 때문에, 로그인 시점의 기기 등록과는 별도로

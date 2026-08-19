@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-// 로그인 시 기기 등록(installationKey/platform/appVersion)은 KakaoLoginService가 이미 담당한다.
+// 로그인 시 기기 등록(installationKey/platform/appVersion)은 SocialLoginService가 이미 담당한다.
 // 이 서비스는 로그인 이후 비동기로 승인되는 푸시 토큰만 별도로 갱신한다(§3 DEC-03: 임시 AES/GCM 암호화).
 @Service
 @Transactional(readOnly = true)
