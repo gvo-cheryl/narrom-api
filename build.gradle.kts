@@ -33,6 +33,8 @@ dependencies {
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	// 관리자 Google OIDC 로그인(Authorization Code + PKCE, 서버 측 code 교환)에 사용.
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
 	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")

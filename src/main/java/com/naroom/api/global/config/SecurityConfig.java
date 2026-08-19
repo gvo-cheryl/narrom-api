@@ -5,6 +5,7 @@ import com.naroom.api.global.security.ApiAccessDeniedHandler;
 import com.naroom.api.global.security.ApiAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -54,7 +55,10 @@ public class SecurityConfig {
 		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
 	}
 
+	// /api/v1/admin/**은 AdminSecurityConfig(@Order(1))가 먼저 가져가므로, 회원 체인은 그 나머지를 담당하는
+	// catch-all로 뒤에 둔다.
 	@Bean
+	@Order(2)
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 				.csrf(AbstractHttpConfigurer::disable)

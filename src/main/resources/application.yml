@@ -39,6 +39,19 @@ naroom:
     apple:
       allowed-audiences:
         - ${APPLE_OAUTH_CLIENT_ID:}
+  admin:
+    session:
+      idle-timeout: ${ADMIN_SESSION_IDLE_TIMEOUT:30m}
+      absolute-timeout: ${ADMIN_SESSION_ABSOLUTE_TIMEOUT:8h}
+      cookie-name: ${ADMIN_SESSION_COOKIE_NAME:naroom_admin_session}
+      cookie-domain: ${ADMIN_SESSION_COOKIE_DOMAIN:}
+      frontend-redirect-uri: ${ADMIN_FRONTEND_REDIRECT_URI:}
+    google-oauth:
+      # 값이 없어도(로컬/CI) 문제 없이 뜨도록 플레이스홀더 기본값을 둔다 - 이 값 그대로는 실제 Google
+      # 로그인이 될 리 없으니 안전하다. ADMIN_GOOGLE_OAUTH_CLIENT_ID를 실제로 설정하기 전까지는
+      # /api/v1/admin/auth/login/google이 진짜 인증에 성공하지 않는다.
+      client-id: ${ADMIN_GOOGLE_OAUTH_CLIENT_ID:unconfigured-admin-google-client-id}
+      client-secret: ${ADMIN_GOOGLE_OAUTH_CLIENT_SECRET:unconfigured-admin-google-client-secret}
   ai:
     worker:
       enabled: ${AI_WORKER_ENABLED:false}

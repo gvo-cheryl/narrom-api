@@ -95,6 +95,20 @@ CONTACT_SUPPORT
 | `ONBOARDING_CONSENT_REQUIRED` | 400 | ONBOARDING | CHECK_REQUEST | 필수 동의 누락 |
 | `ONBOARDING_DOCUMENT_VERSION_INVALID` | 409 | ONBOARDING | CHECK_REQUEST | 현재 허용하지 않는 문서 버전 |
 
+## 관리자 오류
+
+`/api/v1/admin/**` 전용. 회원 인증(위 표)과 완전히 분리된 별도 오류 체계다 - 관리자 세션은 회원 Access
+Token과 다른 쿠키·저장소를 쓴다(`docs/instruction/0812_Admin_Web_Implementation_Spec.md` 17장).
+
+| 코드 | HTTP | 단계 | action | 의미 |
+|---|---:|---|---|---|
+| `ADMIN_AUTHENTICATION_FAILED` | 401 | LOGIN | LOGIN_REQUIRED | Google OIDC 검증 실패 |
+| `ADMIN_ACCESS_DENIED` | 403 | ACCOUNT | CONTACT_SUPPORT | 승인된 관리자(sub allowlist)가 아님 |
+| `ADMIN_ACCOUNT_DISABLED` | 403 | ACCOUNT | CONTACT_SUPPORT | 비활성화된 관리자 계정 |
+| `ADMIN_SESSION_EXPIRED` | 401 | SESSION | LOGIN_REQUIRED | 관리자 세션 없음·만료·폐기 |
+| `ADMIN_CSRF_INVALID` | 403 | REQUEST | RELOAD_RESOURCE | CSRF 토큰 검증 실패 |
+| `ADMIN_REAUTH_REQUIRED` | 403 | SESSION | LOGIN_REQUIRED | 민감 작업(AI 활성화 등) 재인증 필요 |
+
 ## 삭제 대기 오류
 
 ```json
