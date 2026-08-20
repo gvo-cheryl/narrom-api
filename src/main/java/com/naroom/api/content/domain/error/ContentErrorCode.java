@@ -25,6 +25,36 @@ public enum ContentErrorCode implements ErrorCode {
 			"삭제되었거나 존재하지 않는 주제입니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	QUOTE_CODE_ALREADY_EXISTS(
+			HttpStatus.CONFLICT,
+			"CONTENT_QUOTE_CODE_ALREADY_EXISTS",
+			"urn:naroom:problem:content-quote-code-already-exists",
+			"이미 사용 중인 코드입니다",
+			"기존 문장을 수정하려면 새 버전(revision)을 만들어 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	QUOTE_NOT_DRAFT(
+			HttpStatus.CONFLICT,
+			"CONTENT_QUOTE_NOT_DRAFT",
+			"urn:naroom:problem:content-quote-not-draft",
+			"수정할 수 없는 상태입니다",
+			"초안(DRAFT) 상태의 문장만 수정하거나 발행할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	QUOTE_NOT_PUBLISHED(
+			HttpStatus.CONFLICT,
+			"CONTENT_QUOTE_NOT_PUBLISHED",
+			"urn:naroom:problem:content-quote-not-published",
+			"처리할 수 없는 상태입니다",
+			"발행(PUBLISHED) 상태의 문장에만 적용할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

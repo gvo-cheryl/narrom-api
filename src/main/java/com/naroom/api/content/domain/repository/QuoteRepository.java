@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface QuoteRepository extends JpaRepository<Quote, UUID> {
@@ -15,5 +16,11 @@ public interface QuoteRepository extends JpaRepository<Quote, UUID> {
 
 	@Query("SELECT q FROM Quote q JOIN q.topics t WHERE t.id = :topicId AND q.status = :status")
 	List<Quote> findByTopicIdAndStatus(@Param("topicId") UUID topicId, @Param("status") QuoteStatus status);
+
+	boolean existsByCode(String code);
+
+	Optional<Quote> findByCodeAndStatus(String code, QuoteStatus status);
+
+	List<Quote> findAllByOrderByCodeAscVersionNoDesc();
 
 }
