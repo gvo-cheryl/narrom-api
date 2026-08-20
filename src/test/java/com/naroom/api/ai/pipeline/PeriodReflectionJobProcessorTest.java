@@ -168,6 +168,28 @@ class PeriodReflectionJobProcessorTest {
 		assertTrue(result.nextRetryAt().isAfter(Instant.now()));
 	}
 
+	// 안전 분류가 "따라 읽기" 재검증보다 항상 먼저 확정돼야 한다 - 순서가 바뀌면 위기 상황의 응답이
+	// CRISIS 라우팅에 닿기도 전에 재검증 예외로 재시도되어 버려질 수 있다(리뷰에서 발견된 버그).
+	@Test
+	void process_crisisOutputWithVerbatimSummary_stillRoutesToSafetySupport() {
+		Member member = memberRepository.save(Member.create("지연"));
+		String body = "오늘은 회사에서 팀장님과 의견이 부딪혀서 마음이 많이 답답하고 속상했다";
+		Entry evidenceEntry = entryRepository.save(publishedEntry(member, body));
+		Entry envelope = entryRepository.save(envelopeEntry(member));
+		PeriodReflection reflection = periodReflectionRepository.save(PeriodReflection.request(
+				member, envelope, AiFeatureType.WEEKLY_REFLECTION, LocalDate.now().minusDays(6), LocalDate.now()));
+		periodReflectionEntryRepository.save(PeriodReflectionEntry.link(reflection, evidenceEntry, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.WEEKLY_REFLECTION, envelope.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+		PeriodReflectionJobProcessor processor = newProcessor(
+				new FakeAiModerationClient(AiSafetyGrade.NORMAL, AiSafetyGrade.CRISIS),
+				new FakeAiResponseGenerationClient(verbatimOutputJson(evidenceEntry.getId(), body)));
+
+		processor.process(claimed);
+
+		assertEquals(AiJobStatus.SAFETY_SUPPORT, aiJobService.getJob(member.getId(), claimed.id()).status());
+	}
+
 	@Test
 	void process_malformedOutput_schedulesRetryWithBackoff() {
 		Member member = memberRepository.save(Member.create("지연"));
