@@ -43,8 +43,8 @@ public class AccountWithdrawalService {
 		Instant scheduledDeletionAt = now.plus(GRACE_PERIOD);
 		member.requestWithdrawal(now, scheduledDeletionAt);
 
-		authSessionRepository.findByMember_IdAndRevokedAtIsNull(memberId)
-				.forEach(session -> session.revoke(WITHDRAWAL_REVOKE_REASON));
+		authSessionRepository.revokeAll(
+				authSessionRepository.findByMember_IdAndRevokedAtIsNull(memberId), WITHDRAWAL_REVOKE_REASON);
 
 		return new AccountWithdrawalResponse(scheduledDeletionAt);
 	}

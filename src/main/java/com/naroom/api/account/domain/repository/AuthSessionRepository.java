@@ -16,4 +16,14 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, UUID> 
 	// 탈퇴 요청 시 활성 세션을 모두 revoke하는 데 쓴다(Account Deletion Rules: 즉시 접근 차단).
 	List<AuthSession> findByMember_IdAndRevokedAtIsNull(UUID memberId);
 
+	// 기기가 다른 회원 소유로 재할당될 때, 옛 회원이 이 기기로 발급받았던 활성 세션을 모두 revoke하는 데 쓴다.
+	List<AuthSession> findByDeviceInstallation_IdAndRevokedAtIsNull(UUID deviceInstallationId);
+
+	// WITHDRAWAL/DEVICE_REASSIGNED 등 여러 호출부(AccountWithdrawalService,
+	// DeviceInstallationService)에서 반복되는 "조회 후 일괄 revoke" 패턴을 하나로 모은다. 세션은 이미
+	// 관리 상태(managed)로 조회된 것을 넘겨받는다는 전제라 별도 save() 없이 dirty checking으로 반영된다.
+	default void revokeAll(List<AuthSession> sessions, String reason) {
+		sessions.forEach(session -> session.revoke(reason));
+	}
+
 }
