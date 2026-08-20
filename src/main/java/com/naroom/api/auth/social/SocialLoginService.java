@@ -1,13 +1,12 @@
 package com.naroom.api.auth.social;
 
+import com.naroom.api.account.DeviceInstallationService;
 import com.naroom.api.account.domain.entity.DeviceInstallation;
 import com.naroom.api.account.domain.entity.IdentityStatus;
 import com.naroom.api.account.domain.entity.Member;
 import com.naroom.api.account.domain.entity.MemberStatus;
 import com.naroom.api.account.domain.entity.SocialIdentity;
 import com.naroom.api.account.domain.entity.SocialProvider;
-import com.naroom.api.account.domain.repository.AuthSessionRepository;
-import com.naroom.api.account.domain.repository.DeviceInstallationRepository;
 import com.naroom.api.account.domain.repository.MemberRepository;
 import com.naroom.api.account.domain.repository.SocialIdentityRepository;
 import com.naroom.api.account.dto.AccountSummary;
@@ -30,37 +29,31 @@ import java.util.stream.Collectors;
 
 // authentication.md 카카오 로그인 처리 순서를 provider 공통으로 일반화한 것.
 // 카카오/Google/Apple 각 SocialProviderClient가 자격 증명 검증만 다르게 하고, 이후 흐름(SocialIdentity
-// 조회·회원 생성·기기 등록·세션 발급)은 여기서 한 번만 구현한다.
+// 조회·회원 생성·기기 등록·세션 발급)은 여기서 한 번만 구현한다. 기기 등록·재사용·재할당 자체는
+// DeviceInstallationService가 담당한다(계정 전환 시 세션 폐기·행 잠금까지 한 곳에서 책임진다).
 @Service
 public class SocialLoginService {
 
 	private static final Set<String> SUPPORTED_PLATFORMS = Set.of("IOS", "ANDROID");
 	private static final String DEFAULT_DISPLAY_NAME = "나로움";
 
-	// AuthSession.revoke()의 revoke_reason 값(자유 varchar) 중 하나 - AccountWithdrawalService의
-	// WITHDRAWAL_REVOKE_REASON, AuthController의 LOGOUT_REVOKE_REASON과 같은 성격이다.
-	private static final String DEVICE_REASSIGNED_REVOKE_REASON = "DEVICE_REASSIGNED";
-
 	private final Map<SocialProvider, SocialProviderClient> clientsByProvider;
 	private final SocialIdentityRepository socialIdentityRepository;
 	private final MemberRepository memberRepository;
-	private final DeviceInstallationRepository deviceInstallationRepository;
-	private final AuthSessionRepository authSessionRepository;
+	private final DeviceInstallationService deviceInstallationService;
 	private final AuthSessionService authSessionService;
 
 	public SocialLoginService(
 			List<SocialProviderClient> clients,
 			SocialIdentityRepository socialIdentityRepository,
 			MemberRepository memberRepository,
-			DeviceInstallationRepository deviceInstallationRepository,
-			AuthSessionRepository authSessionRepository,
+			DeviceInstallationService deviceInstallationService,
 			AuthSessionService authSessionService) {
 		this.clientsByProvider = clients.stream()
 				.collect(Collectors.toUnmodifiableMap(SocialProviderClient::provider, Function.identity()));
 		this.socialIdentityRepository = socialIdentityRepository;
 		this.memberRepository = memberRepository;
-		this.deviceInstallationRepository = deviceInstallationRepository;
-		this.authSessionRepository = authSessionRepository;
+		this.deviceInstallationService = deviceInstallationService;
 		this.authSessionService = authSessionService;
 	}
 
@@ -113,7 +106,8 @@ public class SocialLoginService {
 		Member member = socialIdentity.getMember();
 		socialIdentity.recordLogin();
 
-		DeviceInstallation deviceInstallation = registerOrUpdateDevice(member, device);
+		DeviceInstallation deviceInstallation = deviceInstallationService.registerOrReuseDevice(
+				member, device.installationKey(), device.platform(), device.appVersion());
 		IssuedTokens tokens = authSessionService.issue(member, deviceInstallation);
 
 		NextAction nextAction = NextAction.forMember(member);
@@ -155,27 +149,6 @@ public class SocialLoginService {
 				userInfo.profileName(),
 				userInfo.profileImageUrl());
 		return socialIdentityRepository.save(socialIdentity);
-	}
-
-	private DeviceInstallation registerOrUpdateDevice(Member member, DeviceInfo device) {
-		return deviceInstallationRepository.findByInstallationKey(device.installationKey())
-				.map(existing -> reuseDevice(existing, member, device))
-				.orElseGet(() -> deviceInstallationRepository.save(
-						DeviceInstallation.register(member, device.installationKey(), device.platform(), device.appVersion())));
-	}
-
-	// 같은 기기(installationKey)로 다른 회원이 로그인하는 경우(기기 공유, 계정 전환) - 이 설치를 새 회원
-	// 소유로 옮기고, 옛 회원이 이 기기로 발급받았던 활성 세션은 모두 폐기한다. 그대로 두면 옛 회원의 세션이
-	// 새 회원 소유가 된 기기를 계속 가리키게 되어(§ DeviceInstallationService 소유권 검증과 불일치) 이후
-	// 푸시 토큰 갱신 등이 DEVICE_INSTALLATION_NOT_FOUND로 실패한다.
-	private DeviceInstallation reuseDevice(DeviceInstallation existing, Member member, DeviceInfo device) {
-		if (!existing.getMember().getId().equals(member.getId())) {
-			authSessionRepository.findByDeviceInstallation_IdAndRevokedAtIsNull(existing.getId())
-					.forEach(session -> session.revoke(DEVICE_REASSIGNED_REVOKE_REASON));
-			existing.reassignTo(member);
-		}
-		existing.markSeen(device.appVersion());
-		return existing;
 	}
 
 }

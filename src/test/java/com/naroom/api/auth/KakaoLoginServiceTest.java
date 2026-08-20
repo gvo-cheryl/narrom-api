@@ -30,6 +30,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,8 +93,9 @@ class KakaoLoginServiceTest {
 	}
 
 	// 같은 기기(installationKey)로 다른 회원이 로그인하는 경우 - 기기 공유/계정 전환 시나리오.
-	// SocialLoginService.reuseDevice가 이 기기를 새 회원 소유로 옮기고, 옛 회원이 이 기기로 발급받았던
-	// 세션을 폐기하지 않으면 이후 푸시 토큰 갱신이 DEVICE_INSTALLATION_NOT_FOUND로 실패한다.
+	// DeviceInstallationService.registerOrReuseDevice가 이 기기를 새 회원 소유로 옮기고, 옛 회원이 이
+	// 기기로 발급받았던 세션을 폐기하지 않으면 이후 푸시 토큰 갱신이 DEVICE_INSTALLATION_NOT_FOUND로
+	// 실패한다. 옛 회원이 등록해 둔 푸시 토큰도 새 회원에게 그대로 넘어가면 안 된다.
 	@Test
 	void sameInstallationKey_differentMember_reassignsDeviceAndRevokesOldMemberSessions() {
 		String firstProviderUserId = String.valueOf(System.nanoTime());
@@ -102,12 +104,16 @@ class KakaoLoginServiceTest {
 
 		when(kakaoClient.fetchUserInfo(any())).thenReturn(kakaoUser(firstProviderUserId, "먼저"));
 		SocialLoginResponse firstLogin = kakaoLoginService.login(loginRequest(installationKey));
+		deviceInstallationRepository.findByInstallationKey(installationKey)
+				.orElseThrow()
+				.updatePushToken("first-member-push-token-ciphertext");
 
 		when(kakaoClient.fetchUserInfo(any())).thenReturn(kakaoUser(secondProviderUserId, "나중"));
 		SocialLoginResponse secondLogin = kakaoLoginService.login(loginRequest(installationKey));
 
 		DeviceInstallation device = deviceInstallationRepository.findByInstallationKey(installationKey).orElseThrow();
 		assertEquals(secondLogin.account().memberId(), device.getMember().getId());
+		assertNull(device.getPushTokenCiphertext());
 
 		List<AuthSession> firstMemberActiveSessions =
 				authSessionRepository.findByMember_IdAndRevokedAtIsNull(firstLogin.account().memberId());

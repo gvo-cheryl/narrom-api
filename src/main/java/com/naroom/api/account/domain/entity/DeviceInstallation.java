@@ -77,9 +77,12 @@ public class DeviceInstallation {
 	}
 
 	// 같은 기기(installationKey)로 다른 회원이 로그인한 경우(기기 공유, 계정 전환) 이 설치를 새 회원
-	// 소유로 옮긴다. 옛 회원이 이 기기로 발급받았던 세션을 정리하는 것은 호출자(SocialLoginService)의 책임이다.
+	// 소유로 옮긴다. 옛 회원이 등록해 둔 푸시 토큰은 새 회원이 스스로 알림을 등록하기 전까지 발송 대상에서
+	// 빠지도록 함께 지운다. 옛 회원이 이 기기로 발급받았던 세션을 정리하는 것은 호출자
+	// (DeviceInstallationService.registerOrReuseDevice)의 책임이다.
 	public void reassignTo(Member member) {
 		this.member = member;
+		this.pushTokenCiphertext = null;
 	}
 
 	// 푸시 권한은 보통 로그인 이후 비동기로 승인되기 때문에, 로그인 시점의 기기 등록과는 별도로

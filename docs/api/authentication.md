@@ -285,6 +285,20 @@ POST /api/v1/auth/apple/login
 - Apple 서버-투-서버 자격증명 철회 알림(webhook) 수신은 별도 작업으로 남아 있다.
 - 삭제 대기 복구는 `POST /api/v1/auth/apple/restore`(아래 "삭제 대기 계정" 절 참고)를 쓴다.
 
+## 기기 재사용과 재할당
+
+로그인 요청의 `installationKey`가 이미 다른 회원 소유의 `device_installations` 행과 일치하면(기기 공유, 계정 전환) 로그인 즉시 그 기기를 새로 로그인한 회원 소유로 재할당한다.
+
+```text
+같은 installationKey로 다른 회원 로그인
+→ device_installations.member_id를 새 회원으로 갱신
+→ 그 기기로 이전 회원이 발급받았던 활성 auth_sessions 전부 폐기(revoke_reason = DEVICE_REASSIGNED)
+→ 이전에 등록돼 있던 push_token_ciphertext 초기화(새 회원이 스스로 알림을 등록하기 전까지 발송 대상에서 제외)
+```
+
+- 이 흐름은 카카오·Google·Apple 로그인·복구 요청 모두에서 공통으로 적용된다(`DeviceInstallationService.registerOrReuseDevice`).
+- 재할당과 세션 폐기는 같은 트랜잭션에서 행 잠금(`SELECT ... FOR UPDATE`)을 잡고 수행해, 같은 기기로 동시에 로그인하는 두 요청이 서로의 재할당을 덮어쓰지 않게 한다.
+
 ## 토큰 재발급
 
 ```http
