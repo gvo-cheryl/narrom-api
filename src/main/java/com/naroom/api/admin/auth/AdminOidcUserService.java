@@ -33,10 +33,12 @@ public class AdminOidcUserService extends OidcUserService {
 		OidcUser oidcUser = super.loadUser(userRequest);
 		String sub = oidcUser.getSubject();
 
+		// OAuth2Error.description을 sub 전달용으로 사용한다 - AdminAuthenticationFailureHandler가 이 값을
+		// 감사 로그에만 기록하고(브라우저 응답에는 노출하지 않음) 신규 관리자 등록 시 sub 확인 용도로 쓴다.
 		AdminUser adminUser = adminUserRepository.findByGoogleSub(sub)
-				.orElseThrow(() -> new OAuth2AuthenticationException(new OAuth2Error(ERROR_NOT_ALLOWLISTED)));
+				.orElseThrow(() -> new OAuth2AuthenticationException(new OAuth2Error(ERROR_NOT_ALLOWLISTED, sub, null)));
 		if (adminUser.getStatus() != AdminStatus.ACTIVE) {
-			throw new OAuth2AuthenticationException(new OAuth2Error(ERROR_ACCOUNT_DISABLED));
+			throw new OAuth2AuthenticationException(new OAuth2Error(ERROR_ACCOUNT_DISABLED, sub, null));
 		}
 
 		adminUser.recordLogin(oidcUser.getEmail(), Boolean.TRUE.equals(oidcUser.getEmailVerified()), oidcUser.getFullName());

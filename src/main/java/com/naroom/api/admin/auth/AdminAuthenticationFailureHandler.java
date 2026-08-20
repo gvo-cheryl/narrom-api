@@ -32,12 +32,17 @@ public class AdminAuthenticationFailureHandler implements AuthenticationFailureH
 		String internalReason = exception instanceof OAuth2AuthenticationException oauth2Exception
 				? oauth2Exception.getError().getErrorCode()
 				: exception.getClass().getSimpleName();
+		// AdminOidcUserService가 거부 사유를 만들 때 OAuth2Error.description에 실어 보낸 google sub.
+		// 신규 관리자를 등록하려면 이 값이 필요한데 브라우저에는 절대 노출하지 않고 감사 로그에만 남긴다.
+		String rejectedGoogleSub = exception instanceof OAuth2AuthenticationException oauth2Exception
+				? oauth2Exception.getError().getDescription()
+				: null;
 
 		auditLogService.record(
 				null,
 				"ADMIN_LOGIN",
-				"AdminSession",
-				null,
+				"AdminUser",
+				rejectedGoogleSub,
 				internalReason,
 				request.getHeader("X-Trace-Id"),
 				request.getMethod(),
