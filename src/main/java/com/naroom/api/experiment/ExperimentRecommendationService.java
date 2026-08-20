@@ -8,6 +8,7 @@ import com.naroom.api.checkin.domain.repository.CheckInRepository;
 import com.naroom.api.experiment.domain.entity.ExperimentAttemptStatus;
 import com.naroom.api.experiment.domain.entity.ExperimentProgram;
 import com.naroom.api.experiment.domain.entity.ExperimentProgramMission;
+import com.naroom.api.experiment.domain.entity.ExperimentProgramStatus;
 import com.naroom.api.experiment.domain.entity.ExperimentRecommendation;
 import com.naroom.api.experiment.domain.entity.ExperimentRecommendationSourceType;
 import com.naroom.api.experiment.domain.entity.ExperimentRecommendationStatus;
@@ -144,7 +145,9 @@ public class ExperimentRecommendationService {
 	private void createRecommendationIfFresh(
 			Member member, String programCode, ExperimentRecommendationSourceType sourceType, Entry sourceEntry,
 			String reasonCode, String reasonText, String evidence, Set<UUID> notAFitMissionIds, Instant now, Instant expiresAt) {
-		ExperimentProgram program = experimentProgramRepository.findByCode(programCode).orElseThrow();
+		ExperimentProgram program = experimentProgramRepository
+				.findByCodeAndStatus(programCode, ExperimentProgramStatus.PUBLISHED)
+				.orElseThrow();
 		if (isDeprioritizedByNotAFit(program, notAFitMissionIds)) {
 			return;
 		}
