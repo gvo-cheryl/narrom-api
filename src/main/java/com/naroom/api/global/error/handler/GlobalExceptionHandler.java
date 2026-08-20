@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -75,6 +76,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problemDetail =
 				problemDetailFactory.createValidation(CommonErrorCode.VALIDATION_FAILED, request, violations);
 		return ResponseEntity.status(CommonErrorCode.VALIDATION_FAILED.httpStatus()).body(problemDetail);
+	}
+
+	// @PreAuthorize(AuthorizationDeniedException 포함, AccessDeniedException의 하위 타입)를 여기서 잡으면
+	// SecurityConfig/AdminSecurityConfig에 등록한 AccessDeniedHandler(ApiAccessDeniedHandler/
+	// AdminAccessDeniedHandler)까지 도달하지 못하고 COMMON_INTERNAL_ERROR 500으로 뭉개진다 -
+	// ExceptionTranslationFilter가 처리하도록 그대로 다시 던진다.
+	@ExceptionHandler(AccessDeniedException.class)
+	public void handleAccessDenied(AccessDeniedException ex) throws AccessDeniedException {
+		throw ex;
 	}
 
 	@ExceptionHandler(Exception.class)
