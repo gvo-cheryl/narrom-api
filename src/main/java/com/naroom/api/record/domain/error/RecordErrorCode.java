@@ -85,6 +85,56 @@ public enum RecordErrorCode implements ErrorCode {
 			"month는 1에서 12 사이여야 합니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROMPT_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"RECORD_PROMPT_NOT_FOUND",
+			"urn:naroom:problem:record-prompt-not-found",
+			"질문을 찾을 수 없습니다",
+			"존재하지 않는 질문 버전입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROMPT_CODE_ALREADY_EXISTS(
+			HttpStatus.CONFLICT,
+			"RECORD_PROMPT_CODE_ALREADY_EXISTS",
+			"urn:naroom:problem:record-prompt-code-already-exists",
+			"이미 사용 중인 코드입니다",
+			"기존 질문을 수정하려면 새 버전(revision)을 만들어 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROMPT_NOT_DRAFT(
+			HttpStatus.CONFLICT,
+			"RECORD_PROMPT_NOT_DRAFT",
+			"urn:naroom:problem:record-prompt-not-draft",
+			"수정할 수 없는 상태입니다",
+			"초안(DRAFT) 상태의 질문만 수정하거나 발행할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROMPT_NOT_PUBLISHED(
+			HttpStatus.CONFLICT,
+			"RECORD_PROMPT_NOT_PUBLISHED",
+			"urn:naroom:problem:record-prompt-not-published",
+			"처리할 수 없는 상태입니다",
+			"발행(PUBLISHED) 상태의 질문에만 적용할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROMPT_LAST_PUBLISHED_CANNOT_BE_ARCHIVED(
+			HttpStatus.CONFLICT,
+			"RECORD_PROMPT_LAST_PUBLISHED_CANNOT_BE_ARCHIVED",
+			"urn:naroom:problem:record-prompt-last-published-cannot-be-archived",
+			"마지막 질문은 보관할 수 없습니다",
+			"발행된 질문이 0개가 되지 않도록, 새 질문을 먼저 발행한 뒤 보관해 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;
