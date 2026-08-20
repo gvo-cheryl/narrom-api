@@ -1553,6 +1553,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseSessionCheckResponse"
+  /api/v1/admin/auth/session:
+    get:
+      tags:
+      - admin-session-controller
+      operationId: session_1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminSessionResponse"
   /api/v1/account/notification-preferences:
     get:
       tags:
@@ -3585,6 +3597,34 @@ components:
           enum:
           - COMPLETE_ONBOARDING
           - ENTER_APP
+    AdminSessionResponse:
+      type: object
+      properties:
+        adminId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+            - SUPER_ADMIN
+            - CONTENT_EDITOR
+            - AI_OPERATOR
+            - SUPPORT_READ_ONLY
+          uniqueItems: true
+        expiresAt:
+          type: string
+          format: date-time
+    ApiResponseAdminSessionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminSessionResponse"
     ApiResponseListNotificationPreferenceResponse:
       type: object
       properties:
