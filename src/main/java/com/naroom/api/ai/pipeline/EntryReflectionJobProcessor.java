@@ -16,6 +16,7 @@ import com.naroom.api.ai.prompt.AssembledPrompt;
 import com.naroom.api.ai.prompt.PromptAssembler;
 import com.naroom.api.ai.result.EntryReflectionResponseParser;
 import com.naroom.api.ai.result.EntryReflectionResult;
+import com.naroom.api.ai.result.SummaryOriginalityValidator;
 import com.openai.errors.InternalServerException;
 import com.openai.errors.OpenAIIoException;
 import com.openai.errors.OpenAIRetryableException;
@@ -100,6 +101,12 @@ public class EntryReflectionJobProcessor {
 		// 8장: 출력 Moderation. 사용자에게 실제로 보여줄 자연어(summary+reflectionQuestion)만 검사한다.
 		String outputText = parsedResult.summary() + "\n" + parsedResult.reflectionQuestion();
 		AiSafetyGrade outputGrade = moderationClient.classify(outputText);
+		// 안전 분류가 항상 먼저 확정돼야 한다 - "따라 읽기" 재검증을 먼저 하면 위기·제한 상태를 걸러야 할
+		// 응답이 CRISIS/RESTRICTED 라우팅(EntryReflectionOutcomeService)에 닿기도 전에 예외로 재시도되어
+		// 버려질 수 있다. NORMAL로 판정된 응답에만 이 품질 재검증을 적용한다.
+		if (outputGrade == AiSafetyGrade.NORMAL) {
+			SummaryOriginalityValidator.validate(prompt.contextContent(), parsedResult.summary());
+		}
 
 		EntryReflectionGenerationContext context = new EntryReflectionGenerationContext(
 				job.id(),

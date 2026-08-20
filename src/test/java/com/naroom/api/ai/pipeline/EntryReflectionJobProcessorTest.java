@@ -130,6 +130,45 @@ class EntryReflectionJobProcessorTest {
 		assertTrue(result.nextRetryAt().isAfter(Instant.now()));
 	}
 
+	// SummaryOriginalityValidator("따라 읽기" 금지 재검증)가 IllegalArgumentException을 던지면 스키마 파싱
+	// 실패와 같은 재시도 경로를 타야 한다.
+	@Test
+	void process_verbatimSummary_schedulesRetryWithBackoff() {
+		Member member = memberRepository.save(Member.create("지연"));
+		String body = "오늘은 회사에서 팀장님과 의견이 부딪혀서 마음이 많이 답답하고 속상했다";
+		Entry entry = entryRepository.save(Entry.create(member, EntryType.FREE, null, body, LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+		EntryReflectionJobProcessor processor = newProcessor(
+				new FakeAiModerationClient(AiSafetyGrade.NORMAL),
+				new FakeAiResponseGenerationClient(verbatimOutputJson(entry.getId(), body)));
+
+		processor.process(claimed);
+
+		AiJobResponse result = aiJobService.getJob(member.getId(), claimed.id());
+		assertEquals(AiJobStatus.FAILED, result.status());
+		assertEquals(1, result.attemptCount());
+		assertTrue(result.nextRetryAt().isAfter(Instant.now()));
+	}
+
+	// 안전 분류가 "따라 읽기" 재검증보다 항상 먼저 확정돼야 한다 - 순서가 바뀌면 위기 상황의 응답이
+	// CRISIS 라우팅에 닿기도 전에 재검증 예외로 재시도되어 버려질 수 있다(리뷰에서 발견된 버그).
+	@Test
+	void process_crisisOutputWithVerbatimSummary_stillRoutesToSafetySupport() {
+		Member member = memberRepository.save(Member.create("지연"));
+		String body = "오늘은 회사에서 팀장님과 의견이 부딪혀서 마음이 많이 답답하고 속상했다";
+		Entry entry = entryRepository.save(Entry.create(member, EntryType.FREE, null, body, LocalDate.now(), null, null, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.ENTRY_REFLECTION, entry.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+		EntryReflectionJobProcessor processor = newProcessor(
+				new FakeAiModerationClient(AiSafetyGrade.NORMAL, AiSafetyGrade.CRISIS),
+				new FakeAiResponseGenerationClient(verbatimOutputJson(entry.getId(), body)));
+
+		processor.process(claimed);
+
+		assertEquals(AiJobStatus.SAFETY_SUPPORT, aiJobService.getJob(member.getId(), claimed.id()).status());
+	}
+
 	@Test
 	void process_unexpectedException_failsPermanently() {
 		Member member = memberRepository.save(Member.create("지연"));
@@ -176,6 +215,19 @@ class EntryReflectionJobProcessorTest {
 				outcomeService,
 				aiJobService,
 				new OpenAiProperties("", "fake-model"));
+	}
+
+	private String verbatimOutputJson(java.util.UUID entryId, String body) {
+		return """
+				{
+				  "summary": "%s",
+				  "emotionCandidates": [],
+				  "suggestedTagNames": [],
+				  "reflectionQuestion": "그 순간 어떤 마음이 가장 컸나요?",
+				  "evidenceEntryIds": ["%s"],
+				  "safetyStatus": "NORMAL"
+				}
+				""".formatted(body, entryId);
 	}
 
 	private String validOutputJson(java.util.UUID entryId) {

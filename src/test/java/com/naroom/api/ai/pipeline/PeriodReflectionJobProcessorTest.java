@@ -143,6 +143,53 @@ class PeriodReflectionJobProcessorTest {
 		assertEquals(0, generationClient.callCount());
 	}
 
+	// SummaryOriginalityValidator("따라 읽기" 금지 재검증)가 IllegalArgumentException을 던지면 스키마 파싱
+	// 실패와 같은 재시도 경로를 타야 한다.
+	@Test
+	void process_verbatimSummary_schedulesRetryWithBackoff() {
+		Member member = memberRepository.save(Member.create("지연"));
+		String body = "오늘은 회사에서 팀장님과 의견이 부딪혀서 마음이 많이 답답하고 속상했다";
+		Entry evidenceEntry = entryRepository.save(publishedEntry(member, body));
+		Entry envelope = entryRepository.save(envelopeEntry(member));
+		PeriodReflection reflection = periodReflectionRepository.save(PeriodReflection.request(
+				member, envelope, AiFeatureType.WEEKLY_REFLECTION, LocalDate.now().minusDays(6), LocalDate.now()));
+		periodReflectionEntryRepository.save(PeriodReflectionEntry.link(reflection, evidenceEntry, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.WEEKLY_REFLECTION, envelope.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+		PeriodReflectionJobProcessor processor = newProcessor(
+				new FakeAiModerationClient(AiSafetyGrade.NORMAL),
+				new FakeAiResponseGenerationClient(verbatimOutputJson(evidenceEntry.getId(), body)));
+
+		processor.process(claimed);
+
+		AiJobResponse result = aiJobService.getJob(member.getId(), claimed.id());
+		assertEquals(AiJobStatus.FAILED, result.status());
+		assertEquals(1, result.attemptCount());
+		assertTrue(result.nextRetryAt().isAfter(Instant.now()));
+	}
+
+	// 안전 분류가 "따라 읽기" 재검증보다 항상 먼저 확정돼야 한다 - 순서가 바뀌면 위기 상황의 응답이
+	// CRISIS 라우팅에 닿기도 전에 재검증 예외로 재시도되어 버려질 수 있다(리뷰에서 발견된 버그).
+	@Test
+	void process_crisisOutputWithVerbatimSummary_stillRoutesToSafetySupport() {
+		Member member = memberRepository.save(Member.create("지연"));
+		String body = "오늘은 회사에서 팀장님과 의견이 부딪혀서 마음이 많이 답답하고 속상했다";
+		Entry evidenceEntry = entryRepository.save(publishedEntry(member, body));
+		Entry envelope = entryRepository.save(envelopeEntry(member));
+		PeriodReflection reflection = periodReflectionRepository.save(PeriodReflection.request(
+				member, envelope, AiFeatureType.WEEKLY_REFLECTION, LocalDate.now().minusDays(6), LocalDate.now()));
+		periodReflectionEntryRepository.save(PeriodReflectionEntry.link(reflection, evidenceEntry, null));
+		aiJobService.createForEntry(member.getId(), AiFeatureType.WEEKLY_REFLECTION, envelope.getId(), "key-" + System.nanoTime());
+		AiJobResponse claimed = aiJobService.claimNextBatch(10).get(0);
+		PeriodReflectionJobProcessor processor = newProcessor(
+				new FakeAiModerationClient(AiSafetyGrade.NORMAL, AiSafetyGrade.CRISIS),
+				new FakeAiResponseGenerationClient(verbatimOutputJson(evidenceEntry.getId(), body)));
+
+		processor.process(claimed);
+
+		assertEquals(AiJobStatus.SAFETY_SUPPORT, aiJobService.getJob(member.getId(), claimed.id()).status());
+	}
+
 	@Test
 	void process_malformedOutput_schedulesRetryWithBackoff() {
 		Member member = memberRepository.save(Member.create("지연"));
@@ -264,6 +311,22 @@ class PeriodReflectionJobProcessorTest {
 		Entry entry = Entry.create(member, EntryType.WEEKLY_REFLECTION, null, null, LocalDate.now(), null, null, null);
 		entry.publish();
 		return entry;
+	}
+
+	private String verbatimOutputJson(java.util.UUID evidenceEntryId, String body) {
+		return """
+				{
+				  "summary": "%s",
+				  "repeatedEmotionsAndSituations": [],
+				  "difficultMoments": [],
+				  "gratefulMoments": [],
+				  "triedResponses": [],
+				  "helpfulConditions": [],
+				  "reflectionQuestion": "이번 주 무엇이 가장 힘들었나요?",
+				  "evidenceEntryIds": ["%s"],
+				  "safetyStatus": "NORMAL"
+				}
+				""".formatted(body, evidenceEntryId);
 	}
 
 	private String validOutputJson(java.util.UUID evidenceEntryId) {

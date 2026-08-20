@@ -16,6 +16,7 @@ import com.naroom.api.ai.prompt.AssembledPrompt;
 import com.naroom.api.ai.prompt.PromptAssembler;
 import com.naroom.api.ai.result.PeriodReflectionResponseParser;
 import com.naroom.api.ai.result.PeriodReflectionResult;
+import com.naroom.api.ai.result.SummaryOriginalityValidator;
 import com.naroom.api.lifetime.PeriodReflectionService;
 import com.naroom.api.lifetime.PeriodReflectionService.ProcessingContext;
 import com.naroom.api.lifetime.domain.entity.PeriodReflection;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -148,6 +150,18 @@ public class PeriodReflectionJobProcessor {
 				String.join("\n", parsedResult.helpfulConditions()),
 				parsedResult.reflectionQuestion());
 		AiSafetyGrade outputGrade = moderationClient.classify(outputText);
+		// 안전 분류가 항상 먼저 확정돼야 한다(EntryReflectionJobProcessor와 같은 이유). NORMAL로 판정된
+		// 응답에만 "따라 읽기" 재검증을 적용한다. 비교 대상도 prompt.contextContent() 전체가 아니라 근거
+		// 기록의 원문(evidenceEntries)만 쓴다 - contextContent에는 이전 개별 기록 AI 요약도 섞여 있어서,
+		// 그걸 그대로 쓰면 모델이 자신이 이미 만든 AI 요약 문구를 재사용한 것까지 "사용자 원문을 베꼈다"로
+		// 오탐할 수 있다.
+		if (outputGrade == AiSafetyGrade.NORMAL) {
+			String evidenceEntryBodies = evidenceEntries.stream()
+					.map(Entry::getBody)
+					.filter(Objects::nonNull)
+					.collect(Collectors.joining("\n"));
+			SummaryOriginalityValidator.validate(evidenceEntryBodies, parsedResult.summary());
+		}
 
 		PeriodReflectionGenerationContext context = new PeriodReflectionGenerationContext(
 				job.id(),
