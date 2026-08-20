@@ -16,6 +16,7 @@ import com.naroom.api.ai.prompt.AssembledPrompt;
 import com.naroom.api.ai.prompt.PromptAssembler;
 import com.naroom.api.ai.result.PeriodReflectionResponseParser;
 import com.naroom.api.ai.result.PeriodReflectionResult;
+import com.naroom.api.ai.result.SummaryOriginalityValidator;
 import com.naroom.api.lifetime.PeriodReflectionService;
 import com.naroom.api.lifetime.PeriodReflectionService.ProcessingContext;
 import com.naroom.api.lifetime.domain.entity.PeriodReflection;
@@ -138,6 +139,7 @@ public class PeriodReflectionJobProcessor {
 		int latencyMs = (int) (System.currentTimeMillis() - generationStartedAt);
 
 		PeriodReflectionResult parsedResult = responseParser.parse(generationResult.outputJson(), allowedEvidenceEntryIds);
+		SummaryOriginalityValidator.validate(prompt.contextContent(), parsedResult.summary());
 
 		String outputText = String.join("\n",
 				parsedResult.summary(),

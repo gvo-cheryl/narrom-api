@@ -93,7 +93,7 @@ class PromptAssemblerTest {
 		AssembledPrompt prompt = promptAssembler.assembleForPeriodReflection(
 				member, AiFeatureType.WEEKLY_REFLECTION, periodStart, periodEnd, List.of(entry));
 
-		assertEquals("weekly-reflection-v1", prompt.featureInstructionsVersion());
+		assertEquals("weekly-reflection-v2", prompt.featureInstructionsVersion());
 		assertEquals("period-reflection-schema-v1", prompt.outputSchemaVersion());
 		assertTrue(prompt.contextContent().contains("이번 주 있었던 일"));
 		assertTrue(prompt.contextContent().contains("감정 강도=4"));

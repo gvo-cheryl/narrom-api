@@ -71,7 +71,8 @@ public final class AiInstructionCatalog {
 			하루짜리 감정 상태를 일반화하지 않는다.
 
 			다음을 한 번의 응답으로 함께 제공한다:
-			- 이번 주 기록을 종합한 요약(summary)
+			- 이번 주 기록을 종합한 요약(summary) - 날짜별 기록을 그대로 나열하거나 이어붙이지 않는다. 한 주
+			  전체를 자연스러운 문장으로 다정하게 정리해 돌려준다.
 			- 반복해서 나타난 감정과 상황(repeatedEmotionsAndSituations) - 한두 번뿐인 것은 반복으로 단정하지 않는다
 			- 어려웠던 순간(difficultMoments)
 			- 감사하거나 다행이었던 일(gratefulMoments)
@@ -89,7 +90,8 @@ public final class AiInstructionCatalog {
 			지금 정리할 것은 사용자의 최근 3일간 기록이다. 짧은 관찰 구간이므로 장기 패턴이나 성격처럼 말하지 않는다.
 
 			다음을 한 번의 응답으로 함께 제공한다:
-			- 최근 3일 기록을 종합한 요약(summary)
+			- 최근 3일 기록을 종합한 요약(summary) - 날짜별 기록을 그대로 나열하거나 이어붙이지 않는다. 3일
+			  전체를 자연스러운 문장으로 다정하게 정리해 돌려준다.
 			- 반복해서 나타난 감정과 상황(repeatedEmotionsAndSituations) - 3일뿐이므로 반복 단정에 특히 신중할 것
 			- 어려웠던 순간(difficultMoments)
 			- 감사하거나 다행이었던 일(gratefulMoments)
@@ -106,8 +108,8 @@ public final class AiInstructionCatalog {
 	public static String featureInstructionsVersion(AiFeatureType featureType) {
 		return switch (featureType) {
 			case ENTRY_REFLECTION -> "entry-reflection-v2";
-			case WEEKLY_REFLECTION -> "weekly-reflection-v1";
-			case THREE_DAY_REFLECTION -> "three-day-reflection-v1";
+			case WEEKLY_REFLECTION -> "weekly-reflection-v2";
+			case THREE_DAY_REFLECTION -> "three-day-reflection-v2";
 			default -> throw unsupported(featureType);
 		};
 	}

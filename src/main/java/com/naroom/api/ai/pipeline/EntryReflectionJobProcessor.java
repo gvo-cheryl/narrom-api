@@ -16,6 +16,7 @@ import com.naroom.api.ai.prompt.AssembledPrompt;
 import com.naroom.api.ai.prompt.PromptAssembler;
 import com.naroom.api.ai.result.EntryReflectionResponseParser;
 import com.naroom.api.ai.result.EntryReflectionResult;
+import com.naroom.api.ai.result.SummaryOriginalityValidator;
 import com.openai.errors.InternalServerException;
 import com.openai.errors.OpenAIIoException;
 import com.openai.errors.OpenAIRetryableException;
@@ -96,6 +97,7 @@ public class EntryReflectionJobProcessor {
 		int latencyMs = (int) (System.currentTimeMillis() - generationStartedAt);
 
 		EntryReflectionResult parsedResult = responseParser.parse(generationResult.outputJson(), job.memberId());
+		SummaryOriginalityValidator.validate(prompt.contextContent(), parsedResult.summary());
 
 		// 8장: 출력 Moderation. 사용자에게 실제로 보여줄 자연어(summary+reflectionQuestion)만 검사한다.
 		String outputText = parsedResult.summary() + "\n" + parsedResult.reflectionQuestion();
