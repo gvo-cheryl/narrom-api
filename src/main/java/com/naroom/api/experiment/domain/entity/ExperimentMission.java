@@ -97,6 +97,90 @@ public class ExperimentMission {
 	protected ExperimentMission() {
 	}
 
+	private ExperimentMission(
+			String code,
+			ExperimentTopic topic,
+			String title,
+			String description,
+			String instruction,
+			ExperimentMissionType missionType,
+			String responseType,
+			short estimatedMinutes,
+			ExperimentEmotionalLoad emotionalLoad,
+			String reflectionQuestions,
+			String examples,
+			String responseSchema,
+			String safetyNote,
+			boolean active) {
+		this.code = code;
+		this.contentVersion = 1;
+		this.topic = topic;
+		this.title = title;
+		this.description = description;
+		this.instruction = instruction;
+		this.missionType = missionType;
+		this.responseType = responseType;
+		this.estimatedMinutes = estimatedMinutes;
+		this.emotionalLoad = emotionalLoad;
+		this.reflectionQuestions = reflectionQuestions;
+		this.examples = examples;
+		this.responseSchema = responseSchema;
+		this.safetyNote = safetyNote;
+		this.active = active;
+	}
+
+	public static ExperimentMission create(
+			String code,
+			ExperimentTopic topic,
+			String title,
+			String description,
+			String instruction,
+			ExperimentMissionType missionType,
+			String responseType,
+			short estimatedMinutes,
+			ExperimentEmotionalLoad emotionalLoad,
+			String reflectionQuestions,
+			String examples,
+			String responseSchema,
+			String safetyNote,
+			boolean active) {
+		return new ExperimentMission(
+				code, topic, title, description, instruction, missionType, responseType, estimatedMinutes,
+				emotionalLoad, reflectionQuestions, examples, responseSchema, safetyNote, active);
+	}
+
+	// 이미 시작한 사용자의 기록은 UserProgramMission에 스냅샷으로 복사되어 있어(§12.2) 여기 내용을
+	// 수정해도 과거 기록의 의미가 바뀌지 않는다 - 그래서 새 row를 만들지 않고 그대로 갱신한다.
+	public void update(
+			ExperimentTopic topic,
+			String title,
+			String description,
+			String instruction,
+			ExperimentMissionType missionType,
+			String responseType,
+			short estimatedMinutes,
+			ExperimentEmotionalLoad emotionalLoad,
+			String reflectionQuestions,
+			String examples,
+			String responseSchema,
+			String safetyNote,
+			boolean active) {
+		this.contentVersion += 1;
+		this.topic = topic;
+		this.title = title;
+		this.description = description;
+		this.instruction = instruction;
+		this.missionType = missionType;
+		this.responseType = responseType;
+		this.estimatedMinutes = estimatedMinutes;
+		this.emotionalLoad = emotionalLoad;
+		this.reflectionQuestions = reflectionQuestions;
+		this.examples = examples;
+		this.responseSchema = responseSchema;
+		this.safetyNote = safetyNote;
+		this.active = active;
+	}
+
 	public UUID getId() {
 		return id;
 	}

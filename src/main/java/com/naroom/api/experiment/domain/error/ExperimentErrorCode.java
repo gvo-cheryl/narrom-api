@@ -195,6 +195,36 @@ public enum ExperimentErrorCode implements ErrorCode {
 			"이미 수락했거나 넘긴 추천은 다시 살펴보거나 넘길 수 없습니다.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	TOPIC_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"EXPERIMENT_TOPIC_NOT_FOUND",
+			"urn:naroom:problem:experiment-topic-not-found",
+			"주제를 찾을 수 없습니다",
+			"존재하지 않는 주제입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	TOPIC_CODE_DUPLICATE(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_TOPIC_CODE_DUPLICATE",
+			"urn:naroom:problem:experiment-topic-code-duplicate",
+			"이미 사용 중인 코드입니다",
+			"다른 code 값을 사용해 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	MISSION_CODE_DUPLICATE(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_MISSION_CODE_DUPLICATE",
+			"urn:naroom:problem:experiment-mission-code-duplicate",
+			"이미 사용 중인 코드입니다",
+			"다른 code 값을 사용해 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

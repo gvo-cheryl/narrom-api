@@ -12,8 +12,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 import java.util.UUID;
 
-// 감정·생각·관계 등 작은 실험의 주제 분류. 콘텐츠 원본이라 Flyway 시드(V16)로만 채워지고
-// 별도 작성 API는 두지 않는다.
+// 감정·생각·관계 등 작은 실험의 주제 분류. Flyway 시드(V16)로 최초 채워지고, 이후에는
+// 관리자 웹(com.naroom.api.admin.experiment)에서 명시적으로 수정한다. code는 다른 테이블이
+// 참조하는 안정 식별자라 생성 후 불변으로 둔다.
 @Entity
 @Table(name = "experiment_topics")
 public class ExperimentTopic {
@@ -47,6 +48,25 @@ public class ExperimentTopic {
 	private Instant updatedAt;
 
 	protected ExperimentTopic() {
+	}
+
+	private ExperimentTopic(String code, String name, String description, int displayOrder, boolean active) {
+		this.code = code;
+		this.name = name;
+		this.description = description;
+		this.displayOrder = displayOrder;
+		this.active = active;
+	}
+
+	public static ExperimentTopic create(String code, String name, String description, int displayOrder, boolean active) {
+		return new ExperimentTopic(code, name, description, displayOrder, active);
+	}
+
+	public void update(String name, String description, int displayOrder, boolean active) {
+		this.name = name;
+		this.description = description;
+		this.displayOrder = displayOrder;
+		this.active = active;
 	}
 
 	public UUID getId() {
