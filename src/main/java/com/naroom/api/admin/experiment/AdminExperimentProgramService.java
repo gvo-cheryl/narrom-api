@@ -1,5 +1,7 @@
 package com.naroom.api.admin.experiment;
 
+import com.naroom.api.admin.common.AdminSearchSpecifications;
+import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.experiment.dto.AdminExperimentProgramCreateRequest;
 import com.naroom.api.admin.experiment.dto.AdminExperimentProgramDayMissionRequest;
 import com.naroom.api.admin.experiment.dto.AdminExperimentProgramResponse;
@@ -15,6 +17,8 @@ import com.naroom.api.experiment.domain.repository.ExperimentProgramMissionRepos
 import com.naroom.api.experiment.domain.repository.ExperimentProgramRepository;
 import com.naroom.api.experiment.domain.repository.ExperimentTopicRepository;
 import com.naroom.api.global.error.exception.BusinessException;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +33,12 @@ import java.util.stream.IntStream;
 public class AdminExperimentProgramService {
 
 	private static final Set<Short> ALLOWED_DURATIONS = Set.of((short) 3, (short) 7);
+
+	// docs/contracts/drafts/admin-list-search-sort.md 권장안.
+	private static final List<String> SEARCH_FIELDS = List.of("title", "code", "description");
+	private static final Set<String> SORTABLE_FIELDS = Set.of("code", "title", "status", "updatedAt", "createdAt");
+	private static final Sort DEFAULT_SORT =
+			Sort.by(Sort.Direction.ASC, "code").and(Sort.by(Sort.Direction.DESC, "contentVersion"));
 
 	private final ExperimentProgramRepository experimentProgramRepository;
 	private final ExperimentProgramMissionRepository experimentProgramMissionRepository;
@@ -47,8 +57,10 @@ public class AdminExperimentProgramService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AdminExperimentProgramResponse> list() {
-		return experimentProgramRepository.findAllByOrderByCodeAscContentVersionDesc().stream()
+	public List<AdminExperimentProgramResponse> list(String q, String sort) {
+		Specification<ExperimentProgram> specification = AdminSearchSpecifications.containsAnyIgnoreCase(q, SEARCH_FIELDS);
+		Sort resolvedSort = AdminSortParser.parse(sort, SORTABLE_FIELDS, DEFAULT_SORT);
+		return experimentProgramRepository.findAll(Specification.where(specification), resolvedSort).stream()
 				.map(program -> AdminExperimentProgramResponse.from(program, dayMissionsOf(program.getId())))
 				.toList();
 	}

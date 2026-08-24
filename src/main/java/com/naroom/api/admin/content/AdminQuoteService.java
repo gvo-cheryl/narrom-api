@@ -1,5 +1,7 @@
 package com.naroom.api.admin.content;
 
+import com.naroom.api.admin.common.AdminSearchSpecifications;
+import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.content.dto.AdminQuoteCreateRequest;
 import com.naroom.api.admin.content.dto.AdminQuoteResponse;
 import com.naroom.api.admin.content.dto.AdminQuoteUpdateRequest;
@@ -10,6 +12,8 @@ import com.naroom.api.content.domain.error.ContentErrorCode;
 import com.naroom.api.content.domain.repository.QuoteRepository;
 import com.naroom.api.content.domain.repository.QuoteTopicRepository;
 import com.naroom.api.global.error.exception.BusinessException;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +25,12 @@ import java.util.stream.Collectors;
 @Service
 public class AdminQuoteService {
 
+	// docs/contracts/drafts/admin-list-search-sort.md 권장안: 검색 대상 필드와 정렬 허용 필드.
+	private static final List<String> SEARCH_FIELDS = List.of("text", "authorName", "sourceName", "code");
+	private static final Set<String> SORTABLE_FIELDS = Set.of("code", "status", "updatedAt", "createdAt", "activeFrom");
+	// 파라미터가 없을 때는 기존 목록 화면 관성(같은 code끼리 모아 최신 버전 먼저)을 그대로 유지한다.
+	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.ASC, "code").and(Sort.by(Sort.Direction.DESC, "versionNo"));
+
 	private final QuoteRepository quoteRepository;
 	private final QuoteTopicRepository quoteTopicRepository;
 
@@ -30,8 +40,10 @@ public class AdminQuoteService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AdminQuoteResponse> list() {
-		return quoteRepository.findAllByOrderByCodeAscVersionNoDesc().stream()
+	public List<AdminQuoteResponse> list(String q, String sort) {
+		Specification<Quote> specification = AdminSearchSpecifications.containsAnyIgnoreCase(q, SEARCH_FIELDS);
+		Sort resolvedSort = AdminSortParser.parse(sort, SORTABLE_FIELDS, DEFAULT_SORT);
+		return quoteRepository.findAll(Specification.where(specification), resolvedSort).stream()
 				.map(AdminQuoteResponse::from)
 				.toList();
 	}

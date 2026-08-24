@@ -1,5 +1,7 @@
 package com.naroom.api.admin.record;
 
+import com.naroom.api.admin.common.AdminSearchSpecifications;
+import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.record.dto.AdminRecordPromptCreateRequest;
 import com.naroom.api.admin.record.dto.AdminRecordPromptResponse;
 import com.naroom.api.admin.record.dto.AdminRecordPromptUpdateRequest;
@@ -8,14 +10,23 @@ import com.naroom.api.record.domain.entity.RecordPrompt;
 import com.naroom.api.record.domain.entity.RecordPromptStatus;
 import com.naroom.api.record.domain.error.RecordErrorCode;
 import com.naroom.api.record.domain.repository.RecordPromptRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class AdminRecordPromptService {
+
+	// docs/contracts/drafts/admin-list-search-sort.md 권장안.
+	private static final List<String> SEARCH_FIELDS = List.of("questionText", "helperText", "code");
+	private static final Set<String> SORTABLE_FIELDS =
+			Set.of("code", "status", "displayOrder", "updatedAt", "createdAt");
+	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.ASC, "code").and(Sort.by(Sort.Direction.DESC, "versionNo"));
 
 	private final RecordPromptRepository recordPromptRepository;
 
@@ -24,8 +35,10 @@ public class AdminRecordPromptService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AdminRecordPromptResponse> list() {
-		return recordPromptRepository.findAllByOrderByCodeAscVersionNoDesc().stream()
+	public List<AdminRecordPromptResponse> list(String q, String sort) {
+		Specification<RecordPrompt> specification = AdminSearchSpecifications.containsAnyIgnoreCase(q, SEARCH_FIELDS);
+		Sort resolvedSort = AdminSortParser.parse(sort, SORTABLE_FIELDS, DEFAULT_SORT);
+		return recordPromptRepository.findAll(Specification.where(specification), resolvedSort).stream()
 				.map(AdminRecordPromptResponse::from)
 				.toList();
 	}

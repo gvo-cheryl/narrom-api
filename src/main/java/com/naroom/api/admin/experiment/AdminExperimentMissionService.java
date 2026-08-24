@@ -1,5 +1,7 @@
 package com.naroom.api.admin.experiment;
 
+import com.naroom.api.admin.common.AdminSearchSpecifications;
+import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.experiment.dto.AdminExperimentMissionCreateRequest;
 import com.naroom.api.admin.experiment.dto.AdminExperimentMissionResponse;
 import com.naroom.api.admin.experiment.dto.AdminExperimentMissionUpdateRequest;
@@ -9,14 +11,23 @@ import com.naroom.api.experiment.domain.error.ExperimentErrorCode;
 import com.naroom.api.experiment.domain.repository.ExperimentMissionRepository;
 import com.naroom.api.experiment.domain.repository.ExperimentTopicRepository;
 import com.naroom.api.global.error.exception.BusinessException;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class AdminExperimentMissionService {
+
+	// docs/contracts/drafts/admin-list-search-sort.md 권장안.
+	private static final List<String> SEARCH_FIELDS = List.of("title", "code", "description", "instruction");
+	private static final Set<String> SORTABLE_FIELDS =
+			Set.of("code", "title", "missionType", "updatedAt", "createdAt");
+	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "updatedAt");
 
 	private final ExperimentMissionRepository experimentMissionRepository;
 	private final ExperimentTopicRepository experimentTopicRepository;
@@ -28,8 +39,10 @@ public class AdminExperimentMissionService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AdminExperimentMissionResponse> list() {
-		return experimentMissionRepository.findAll().stream()
+	public List<AdminExperimentMissionResponse> list(String q, String sort) {
+		Specification<ExperimentMission> specification = AdminSearchSpecifications.containsAnyIgnoreCase(q, SEARCH_FIELDS);
+		Sort resolvedSort = AdminSortParser.parse(sort, SORTABLE_FIELDS, DEFAULT_SORT);
+		return experimentMissionRepository.findAll(Specification.where(specification), resolvedSort).stream()
 				.map(AdminExperimentMissionResponse::from)
 				.toList();
 	}

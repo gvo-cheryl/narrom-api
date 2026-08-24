@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Set;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -140,6 +141,50 @@ class AdminQuoteControllerTest {
 		mockMvc.perform(post("/api/v1/admin/content/quotes/" + id + "/archive").cookie(cookie).with(csrf()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.status").value("ARCHIVED"));
+	}
+
+	@Test
+	void list_withQ_returnsOnlyMatchingQuotes() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+		String uniqueMarker = "찾아줘" + System.nanoTime();
+		createQuote(cookie, "q-match-" + System.nanoTime(), uniqueMarker + " 문장");
+		createQuote(cookie, "q-nomatch-" + System.nanoTime(), "관련 없는 문장");
+
+		mockMvc.perform(get("/api/v1/admin/content/quotes").cookie(cookie).param("q", uniqueMarker))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.length()").value(1))
+				.andExpect(jsonPath("$.data[0].text").value(uniqueMarker + " 문장"));
+	}
+
+	@Test
+	void list_withSort_ordersByRequestedField() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+		String prefix = "sort-" + System.nanoTime() + "-";
+		createQuote(cookie, prefix + "b", "b 문장");
+		createQuote(cookie, prefix + "a", "a 문장");
+
+		mockMvc.perform(get("/api/v1/admin/content/quotes").cookie(cookie).param("q", prefix).param("sort", "code,asc"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].code").value(prefix + "a"))
+				.andExpect(jsonPath("$.data[1].code").value(prefix + "b"));
+	}
+
+	@Test
+	void list_withDisallowedSortField_returnsValidationError() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+
+		mockMvc.perform(get("/api/v1/admin/content/quotes").cookie(cookie).param("sort", "authorName,asc"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	private void createQuote(Cookie cookie, String code, String text) throws Exception {
+		mockMvc.perform(post("/api/v1/admin/content/quotes")
+						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"code":"%s","text":"%s","topicIds":[]}
+								""".formatted(code, text)))
+				.andExpect(status().isOk());
 	}
 
 	private Cookie sessionCookie(Set<AdminRole> roles) {

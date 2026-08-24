@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Set;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -140,6 +141,37 @@ class AdminRecordPromptControllerTest {
 		mockMvc.perform(post("/api/v1/admin/content/record-prompts/" + id + "/archive").cookie(cookie).with(csrf()))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.code").value("RECORD_PROMPT_LAST_PUBLISHED_CANNOT_BE_ARCHIVED"));
+	}
+
+	@Test
+	void list_withQ_returnsOnlyMatchingPrompts() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+		String uniqueMarker = "찾아줘" + System.nanoTime();
+		createPrompt(cookie, "rp-match-" + System.nanoTime(), uniqueMarker + " 질문");
+		createPrompt(cookie, "rp-nomatch-" + System.nanoTime(), "관련 없는 질문");
+
+		mockMvc.perform(get("/api/v1/admin/content/record-prompts").cookie(cookie).param("q", uniqueMarker))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.length()").value(1))
+				.andExpect(jsonPath("$.data[0].questionText").value(uniqueMarker + " 질문"));
+	}
+
+	@Test
+	void list_withDisallowedSortField_returnsValidationError() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+
+		mockMvc.perform(get("/api/v1/admin/content/record-prompts").cookie(cookie).param("sort", "helperText,asc"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	private void createPrompt(Cookie cookie, String code, String questionText) throws Exception {
+		mockMvc.perform(post("/api/v1/admin/content/record-prompts")
+						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"code":"%s","questionText":"%s","entryType":"PROMPT","displayOrder":1}
+								""".formatted(code, questionText)))
+				.andExpect(status().isOk());
 	}
 
 	private Cookie sessionCookie(Set<AdminRole> roles) {
