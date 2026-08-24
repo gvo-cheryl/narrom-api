@@ -8,6 +8,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +40,24 @@ class AdminSecurityConfigTest {
 	void adminLoginPath_isPublic_redirectsToGoogle() throws Exception {
 		mockMvc.perform(get("/api/v1/admin/auth/login/google"))
 				.andExpect(status().is3xxRedirection());
+	}
+
+	@Test
+	void adminPath_preflightFromAllowedOrigin_allowsCredentials() throws Exception {
+		mockMvc.perform(options("/api/v1/admin/auth/session")
+						.header("Origin", "http://localhost:3000")
+						.header("Access-Control-Request-Method", "GET"))
+				.andExpect(status().isOk())
+				.andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
+				.andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+	}
+
+	@Test
+	void adminPath_preflightFromDisallowedOrigin_isRejected() throws Exception {
+		mockMvc.perform(options("/api/v1/admin/auth/session")
+						.header("Origin", "https://evil.example.com")
+						.header("Access-Control-Request-Method", "GET"))
+				.andExpect(status().isForbidden());
 	}
 
 }
