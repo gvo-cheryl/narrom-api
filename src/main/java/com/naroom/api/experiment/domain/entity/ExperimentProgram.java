@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -33,7 +34,10 @@ public class ExperimentProgram {
 	@Column(name = "code", nullable = false, updatable = false, length = 80)
 	private String code;
 
-	@Column(name = "content_version", nullable = false)
+	// 사람이 보는 리비전 번호. row 생성 시점에 고정되고 DRAFT 내용 수정으로는 바뀌지 않는다 - 새 리비전은
+	// createRevision이 새 row를 만들며 +1한 값을 넣는다(quotes/record_prompts의 versionNo와 동일한 패턴,
+	// V27: 낙관적 잠금과는 분리 - 자세한 경위는 V27 마이그레이션 주석 참고).
+	@Column(name = "content_version", nullable = false, updatable = false)
 	private int contentVersion;
 
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -75,6 +79,15 @@ public class ExperimentProgram {
 	@Column(name = "display_order", nullable = false)
 	private int displayOrder;
 
+	// 다른 experiment_programs row를 가리키는 이력 정보라 연관관계 대신 원문 UUID만 보관한다(Quote와 동일한 이유).
+	@Column(name = "supersedes_program_id", updatable = false)
+	private UUID supersedesProgramId;
+
+	// admin_users는 별도 신원 체계(com.naroom.api.admin)라 엔티티 연관관계 대신 원문 UUID만 보관한다.
+	// 초기 시드 데이터는 관리자가 만든 게 아니라 NULL일 수 있다.
+	@Column(name = "created_by_admin_id", updatable = false)
+	private UUID createdByAdminId;
+
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
@@ -83,7 +96,96 @@ public class ExperimentProgram {
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
 
+	@Version
+	@Column(name = "version", nullable = false)
+	private Long version;
+
 	protected ExperimentProgram() {
+	}
+
+	private ExperimentProgram(
+			String code,
+			int contentVersion,
+			ExperimentTopic primaryTopic,
+			String title,
+			String description,
+			short durationDays,
+			ExperimentSourceType sourceType,
+			short estimatedMinutesMin,
+			short estimatedMinutesMax,
+			boolean featured,
+			boolean beginner,
+			int displayOrder,
+			UUID supersedesProgramId,
+			UUID createdByAdminId) {
+		this.code = code;
+		this.contentVersion = contentVersion;
+		this.primaryTopic = primaryTopic;
+		this.title = title;
+		this.description = description;
+		this.durationDays = durationDays;
+		this.sourceType = sourceType;
+		this.status = ExperimentProgramStatus.DRAFT;
+		this.estimatedMinutesMin = estimatedMinutesMin;
+		this.estimatedMinutesMax = estimatedMinutesMax;
+		this.featured = featured;
+		this.beginner = beginner;
+		this.displayOrder = displayOrder;
+		this.supersedesProgramId = supersedesProgramId;
+		this.createdByAdminId = createdByAdminId;
+	}
+
+	public static ExperimentProgram create(
+			String code,
+			int contentVersion,
+			ExperimentTopic primaryTopic,
+			String title,
+			String description,
+			short durationDays,
+			ExperimentSourceType sourceType,
+			short estimatedMinutesMin,
+			short estimatedMinutesMax,
+			boolean featured,
+			boolean beginner,
+			int displayOrder,
+			UUID supersedesProgramId,
+			UUID createdByAdminId) {
+		return new ExperimentProgram(
+				code, contentVersion, primaryTopic, title, description, durationDays, sourceType,
+				estimatedMinutesMin, estimatedMinutesMax, featured, beginner, displayOrder,
+				supersedesProgramId, createdByAdminId);
+	}
+
+	// DRAFT 상태에서만 그대로 수정한다 - 이미 PUBLISHED된 버전은 절대 UPDATE하지 않는다(§8.5).
+	public void updateDraft(
+			ExperimentTopic primaryTopic,
+			String title,
+			String description,
+			short durationDays,
+			ExperimentSourceType sourceType,
+			short estimatedMinutesMin,
+			short estimatedMinutesMax,
+			boolean featured,
+			boolean beginner,
+			int displayOrder) {
+		this.primaryTopic = primaryTopic;
+		this.title = title;
+		this.description = description;
+		this.durationDays = durationDays;
+		this.sourceType = sourceType;
+		this.estimatedMinutesMin = estimatedMinutesMin;
+		this.estimatedMinutesMax = estimatedMinutesMax;
+		this.featured = featured;
+		this.beginner = beginner;
+		this.displayOrder = displayOrder;
+	}
+
+	public void publish() {
+		this.status = ExperimentProgramStatus.PUBLISHED;
+	}
+
+	public void archive() {
+		this.status = ExperimentProgramStatus.ARCHIVED;
 	}
 
 	public UUID getId() {
@@ -142,12 +244,24 @@ public class ExperimentProgram {
 		return displayOrder;
 	}
 
+	public UUID getSupersedesProgramId() {
+		return supersedesProgramId;
+	}
+
+	public UUID getCreatedByAdminId() {
+		return createdByAdminId;
+	}
+
 	public Instant getCreatedAt() {
 		return createdAt;
 	}
 
 	public Instant getUpdatedAt() {
 		return updatedAt;
+	}
+
+	public Long getVersion() {
+		return version;
 	}
 
 }

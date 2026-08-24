@@ -12,4 +12,6 @@ public interface ExperimentProgramMissionRepository
 
 	List<ExperimentProgramMission> findByProgram_IdOrderById_DayNumberAsc(UUID programId);
 
+	void deleteByProgram_Id(UUID programId);
+
 }

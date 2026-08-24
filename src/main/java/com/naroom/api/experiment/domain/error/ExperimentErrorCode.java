@@ -225,6 +225,46 @@ public enum ExperimentErrorCode implements ErrorCode {
 			"다른 code 값을 사용해 주세요.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROGRAM_CODE_DUPLICATE(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_PROGRAM_CODE_DUPLICATE",
+			"urn:naroom:problem:experiment-program-code-duplicate",
+			"이미 사용 중인 코드입니다",
+			"다른 code 값을 사용해 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROGRAM_NOT_DRAFT(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_PROGRAM_NOT_DRAFT",
+			"urn:naroom:problem:experiment-program-not-draft",
+			"수정할 수 없는 코스입니다",
+			"DRAFT 상태의 코스만 내용을 수정할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROGRAM_NOT_PUBLISHED(
+			HttpStatus.CONFLICT,
+			"EXPERIMENT_PROGRAM_NOT_PUBLISHED",
+			"urn:naroom:problem:experiment-program-not-published",
+			"처리할 수 없는 코스입니다",
+			"PUBLISHED 상태의 코스에서만 새 리비전을 만들거나 보관할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROGRAM_REPLACEMENT_GROUP_INVALID(
+			HttpStatus.UNPROCESSABLE_ENTITY,
+			"EXPERIMENT_PROGRAM_REPLACEMENT_GROUP_INVALID",
+			"urn:naroom:problem:experiment-program-replacement-group-invalid",
+			"게시할 수 없는 코스입니다",
+			"교체 가능으로 표시된 미션은 replacementGroup이 있어야 하고, 같은 그룹 안에 대체 후보가 1개 이상 있어야 합니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

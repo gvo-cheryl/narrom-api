@@ -24,4 +24,8 @@ public interface ExperimentProgramRepository extends JpaRepository<ExperimentPro
 	// "현재 이 code로 노출 중인 프로그램"을 찾을 때는 findByCode 대신 이 메서드를 쓴다.
 	Optional<ExperimentProgram> findByCodeAndStatus(String code, ExperimentProgramStatus status);
 
+	boolean existsByCode(String code);
+
+	List<ExperimentProgram> findAllByOrderByCodeAscContentVersionDesc();
+
 }
