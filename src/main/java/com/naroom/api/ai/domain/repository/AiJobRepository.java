@@ -66,4 +66,15 @@ public interface AiJobRepository extends JpaRepository<AiJob, UUID> {
 			@Param("nextRetryAt") Instant nextRetryAt,
 			@Param("expiredBefore") Instant expiredBefore);
 
+	// 관리자 AI 운영 화면의 "런타임 현황"(§15.1) 성공률 집계용. 기능 유형별로 최근 창 안의 전체/완료 건수를 센다.
+	@Query("""
+			select j.featureType as featureType, count(j) as totalCount,
+			       sum(case when j.status = :completedStatus then 1L else 0L end) as completedCount
+			from AiJob j
+			where j.createdAt >= :since
+			group by j.featureType
+			""")
+	List<AiJobStatusAggregate> aggregateStatusCountsSince(
+			@Param("since") Instant since, @Param("completedStatus") AiJobStatus completedStatus);
+
 }
