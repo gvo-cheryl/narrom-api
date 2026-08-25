@@ -121,6 +121,30 @@ class AdminExperimentTopicControllerTest {
 				.andExpect(jsonPath("$.code").value("EXPERIMENT_TOPIC_NOT_FOUND"));
 	}
 
+	@Test
+	void list_withQ_returnsOnlyMatchingTopics() throws Exception {
+		String uniqueMarker = "찾아줘" + System.nanoTime();
+		experimentTopicRepository.save(
+				ExperimentTopic.create("topic-match-" + System.nanoTime(), uniqueMarker + " 주제", null, 1, true));
+		experimentTopicRepository.save(
+				ExperimentTopic.create("topic-nomatch-" + System.nanoTime(), "관련 없는 주제", null, 2, true));
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+
+		mockMvc.perform(get("/api/v1/admin/experiments/topics").cookie(cookie).param("q", uniqueMarker))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.length()").value(1))
+				.andExpect(jsonPath("$.data[0].name").value(uniqueMarker + " 주제"));
+	}
+
+	@Test
+	void list_withDisallowedSortField_returnsValidationError() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+
+		mockMvc.perform(get("/api/v1/admin/experiments/topics").cookie(cookie).param("sort", "description,asc"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
 	private Cookie sessionCookie(Set<AdminRole> roles) {
 		AdminUser adminUser = adminUserRepository.save(
 				AdminUser.bootstrap("google-sub-" + System.nanoTime(), "admin@naroom.io", "관리자", roles));

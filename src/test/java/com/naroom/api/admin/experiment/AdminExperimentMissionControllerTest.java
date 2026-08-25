@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -184,6 +185,36 @@ class AdminExperimentMissionControllerTest {
 						.content(body))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.code").value("EXPERIMENT_MISSION_CODE_DUPLICATE"));
+	}
+
+	@Test
+	void list_withQ_returnsOnlyMatchingMissions() throws Exception {
+		ExperimentTopic topic = experimentTopicRepository.save(
+				ExperimentTopic.create("topic-" + System.nanoTime(), "주제", null, 1, true));
+		String uniqueMarker = "찾아줘" + System.nanoTime();
+		experimentMissionRepository.save(ExperimentMission.create(
+				"mission-match-" + System.nanoTime(), topic, uniqueMarker + " 미션", "설명", "지시문",
+				ExperimentMissionType.OBSERVATION, "TEXT", (short) 5, ExperimentEmotionalLoad.LOW,
+				"[]", "[]", "{}", null, true));
+		experimentMissionRepository.save(ExperimentMission.create(
+				"mission-nomatch-" + System.nanoTime(), topic, "관련 없는 미션", "설명", "지시문",
+				ExperimentMissionType.OBSERVATION, "TEXT", (short) 5, ExperimentEmotionalLoad.LOW,
+				"[]", "[]", "{}", null, true));
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+
+		mockMvc.perform(get("/api/v1/admin/experiments/missions").cookie(cookie).param("q", uniqueMarker))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.length()").value(1))
+				.andExpect(jsonPath("$.data[0].title").value(uniqueMarker + " 미션"));
+	}
+
+	@Test
+	void list_withDisallowedSortField_returnsValidationError() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+
+		mockMvc.perform(get("/api/v1/admin/experiments/missions").cookie(cookie).param("sort", "description,asc"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
 	}
 
 	private Cookie sessionCookie(Set<AdminRole> roles) {

@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Set;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -126,6 +127,39 @@ class AdminAppContentItemControllerTest {
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
 				.andExpect(status().isUnprocessableEntity())
 				.andExpect(jsonPath("$.code").value("APP_CONTENT_VALUE_TYPE_MISMATCH"));
+	}
+
+	@Test
+	void list_withQ_returnsOnlyMatchingItems() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+		String uniqueMarker = "찾아줘" + System.nanoTime();
+		createItem(cookie, "ac-match-" + System.nanoTime(), uniqueMarker + " 문구");
+		createItem(cookie, "ac-nomatch-" + System.nanoTime(), "관련 없는 문구");
+
+		mockMvc.perform(get("/api/v1/admin/content/app-copy").cookie(cookie).param("q", uniqueMarker))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.length()").value(1))
+				.andExpect(jsonPath("$.data[0].valueText").value(uniqueMarker + " 문구"));
+	}
+
+	@Test
+	void list_withDisallowedSortField_returnsValidationError() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+
+		mockMvc.perform(get("/api/v1/admin/content/app-copy").cookie(cookie).param("sort", "valueText,asc"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	private void createItem(Cookie cookie, String key, String valueText) throws Exception {
+		mockMvc.perform(post("/api/v1/admin/content/app-copy")
+						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"contentKey":"%s","surface":"home","locale":null,"valueType":"TEXT",
+								"valueText":"%s","valueJson":null,"schemaVersion":"v1",
+								"activeFrom":null,"activeUntil":null,"fallbackRequired":true}
+								""".formatted(key, valueText)))
+				.andExpect(status().isOk());
 	}
 
 	private Cookie sessionCookie(Set<AdminRole> roles) {
