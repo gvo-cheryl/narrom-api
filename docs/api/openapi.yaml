@@ -1874,6 +1874,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseQuoteResponse"
+  /api/v1/preview/content/experiment-programs:
+    get:
+      tags:
+      - preview-experiment-program-controller
+      operationId: getPreviewProgramDetail
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseExperimentProgramDetailResponse"
   /api/v1/lifetime/timeline:
     get:
       tags:
@@ -4693,6 +4705,85 @@ components:
           type: string
         name:
           type: string
+    ApiResponseExperimentProgramDetailResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ExperimentProgramDetailResponse"
+    ExperimentProgramDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        contentVersion:
+          type: integer
+          format: int32
+        title:
+          type: string
+        description:
+          type: string
+        durationDays:
+          type: integer
+          format: int32
+        primaryTopicCode:
+          type: string
+        sourceType:
+          type: string
+          enum:
+          - TEMPLATE
+          - RANDOM
+          - AI_RECOMMENDED
+          - USER_COMPOSED
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          - ARCHIVED
+        isFeatured:
+          type: boolean
+        isBeginner:
+          type: boolean
+        estimatedMinutesMin:
+          type: integer
+          format: int32
+        estimatedMinutesMax:
+          type: integer
+          format: int32
+        displayOrder:
+          type: integer
+          format: int32
+        missions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExperimentProgramMissionResponse"
+    ExperimentProgramMissionResponse:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        missionId:
+          type: string
+          format: uuid
+        missionCode:
+          type: string
+        title:
+          type: string
+        missionType:
+          type: string
+          enum:
+          - OBSERVATION
+          - QUESTION
+          - ACTION
+          - RECORD
+          - REVIEW
+        estimatedMinutes:
+          type: integer
+          format: int32
     ApiResponseListEntryTimelineResponse:
       type: object
       properties:
@@ -5035,85 +5126,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExperimentProgramSummaryResponse"
-    ApiResponseExperimentProgramDetailResponse:
-      type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/ExperimentProgramDetailResponse"
-    ExperimentProgramDetailResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        code:
-          type: string
-        contentVersion:
-          type: integer
-          format: int32
-        title:
-          type: string
-        description:
-          type: string
-        durationDays:
-          type: integer
-          format: int32
-        primaryTopicCode:
-          type: string
-        sourceType:
-          type: string
-          enum:
-          - TEMPLATE
-          - RANDOM
-          - AI_RECOMMENDED
-          - USER_COMPOSED
-        status:
-          type: string
-          enum:
-          - DRAFT
-          - PUBLISHED
-          - ARCHIVED
-        isFeatured:
-          type: boolean
-        isBeginner:
-          type: boolean
-        estimatedMinutesMin:
-          type: integer
-          format: int32
-        estimatedMinutesMax:
-          type: integer
-          format: int32
-        displayOrder:
-          type: integer
-          format: int32
-        missions:
-          type: array
-          items:
-            $ref: "#/components/schemas/ExperimentProgramMissionResponse"
-    ExperimentProgramMissionResponse:
-      type: object
-      properties:
-        dayNumber:
-          type: integer
-          format: int32
-        missionId:
-          type: string
-          format: uuid
-        missionCode:
-          type: string
-        title:
-          type: string
-        missionType:
-          type: string
-          enum:
-          - OBSERVATION
-          - QUESTION
-          - ACTION
-          - RECORD
-          - REVIEW
-        estimatedMinutes:
-          type: integer
-          format: int32
     ApiResponseExperimentRandomProgramResponse:
       type: object
       properties:
