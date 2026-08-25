@@ -26,6 +26,16 @@ public enum PreviewErrorCode implements ErrorCode {
 			"관리자 화면에서 미리보기를 다시 열어 주세요.",
 			ErrorStage.SESSION,
 			ClientAction.LOGIN_REQUIRED,
+			false),
+
+	PREVIEW_CONTENT_NOT_SELECTED(
+			HttpStatus.NOT_FOUND,
+			"PREVIEW_CONTENT_NOT_SELECTED",
+			"urn:naroom:problem:preview-content-not-selected",
+			"미리보기로 선택된 콘텐츠가 없습니다",
+			"관리자 화면에서 미리보기할 콘텐츠를 선택해 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

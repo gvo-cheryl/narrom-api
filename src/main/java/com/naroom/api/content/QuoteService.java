@@ -62,6 +62,14 @@ public class QuoteService {
 		return QuoteResponse.of(quote, isSavedByMember(quoteId, memberId));
 	}
 
+	// preview는 synthetic 세션이라 실제 회원 저장 상태가 없으므로 항상 saved=false로 내려준다.
+	// status와 무관하게 조회한다 - 관리자가 preview session 발급 시 이미 어떤 버전을 보여줄지 결정했다.
+	public QuoteResponse getQuoteForPreview(UUID quoteId) {
+		Quote quote = quoteRepository.findById(quoteId)
+				.orElseThrow(() -> new BusinessException(ContentErrorCode.QUOTE_NOT_FOUND));
+		return QuoteResponse.of(quote, false);
+	}
+
 	public List<QuoteTopicResponse> getActiveTopics() {
 		return quoteTopicRepository.findByActiveTrue().stream()
 				.map(QuoteTopicResponse::from)

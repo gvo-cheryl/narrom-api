@@ -1862,6 +1862,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePreviewSessionInfoResponse"
+  /api/v1/preview/content/quotes/today:
+    get:
+      tags:
+      - preview-quote-controller
+      operationId: getPreviewTodayQuote
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseQuoteResponse"
   /api/v1/lifetime/timeline:
     get:
       tags:
@@ -4646,6 +4658,41 @@ components:
             format: uuid
         scenarioKey:
           type: string
+    ApiResponseQuoteResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/QuoteResponse"
+    QuoteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        text:
+          type: string
+        authorName:
+          type: string
+        sourceName:
+          type: string
+        sourceUrl:
+          type: string
+        topics:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuoteTopicResponse"
+        saved:
+          type: boolean
+    QuoteTopicResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
     ApiResponseListEntryTimelineResponse:
       type: object
       properties:
@@ -5121,16 +5168,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/QuoteTopicResponse"
-    QuoteTopicResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        code:
-          type: string
-        name:
-          type: string
     ApiResponseListQuoteResponse:
       type: object
       properties:
@@ -5138,31 +5175,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/QuoteResponse"
-    QuoteResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        text:
-          type: string
-        authorName:
-          type: string
-        sourceName:
-          type: string
-        sourceUrl:
-          type: string
-        topics:
-          type: array
-          items:
-            $ref: "#/components/schemas/QuoteTopicResponse"
-        saved:
-          type: boolean
-    ApiResponseQuoteResponse:
-      type: object
-      properties:
-        data:
-          $ref: "#/components/schemas/QuoteResponse"
     ApiResponseListSavedQuoteResponse:
       type: object
       properties:
