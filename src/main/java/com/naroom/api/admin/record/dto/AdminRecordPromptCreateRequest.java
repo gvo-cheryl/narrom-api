@@ -7,8 +7,8 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import java.time.Instant;
 
+// code는 사용자가 입력하지 않는다 - 생성 시 서버가 자동으로 부여한다.
 public record AdminRecordPromptCreateRequest(
-		@NotBlank String code,
 		@NotBlank String questionText,
 		String helperText,
 		@NotNull EntryType entryType,

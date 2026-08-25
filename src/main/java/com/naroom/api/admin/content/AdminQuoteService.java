@@ -1,5 +1,6 @@
 package com.naroom.api.admin.content;
 
+import com.naroom.api.admin.common.AdminCodeGenerator;
 import com.naroom.api.admin.common.AdminSearchSpecifications;
 import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.content.dto.AdminQuoteCreateRequest;
@@ -55,12 +56,9 @@ public class AdminQuoteService {
 
 	@Transactional
 	public AdminQuoteResponse create(AdminQuoteCreateRequest request, UUID actingAdminId) {
-		if (quoteRepository.existsByCode(request.code())) {
-			throw new BusinessException(ContentErrorCode.QUOTE_CODE_ALREADY_EXISTS);
-		}
 		Quote quote = Quote.create(
-				request.code(), 1, request.text(), request.authorName(), request.sourceName(), request.sourceUrl(),
-				request.activeFrom(), request.activeUntil(), null, actingAdminId);
+				AdminCodeGenerator.generate("quote"), 1, request.text(), request.authorName(), request.sourceName(),
+				request.sourceUrl(), request.activeFrom(), request.activeUntil(), null, actingAdminId);
 		quote.replaceTopics(resolveTopics(request.topicIds()));
 		return AdminQuoteResponse.from(quoteRepository.save(quote));
 	}

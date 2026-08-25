@@ -57,18 +57,17 @@ class AdminExperimentProgramControllerTest {
 		ExperimentMission m1 = newMission(topic, true);
 		ExperimentMission m2 = newMission(topic, true);
 		ExperimentMission m3 = newMission(topic, true);
-		String code = "program-" + System.nanoTime();
 
 		String createResponse = mockMvc.perform(post("/api/v1/admin/experiments/programs")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
-						.content(programRequestJson(code, topic, m1, m2, m3)))
+						.content(programRequestJson(topic, m1, m2, m3)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.code").value(code))
 				.andExpect(jsonPath("$.data.contentVersion").value(1))
 				.andExpect(jsonPath("$.data.status").value("DRAFT"))
 				.andExpect(jsonPath("$.data.days.length()").value(3))
 				.andReturn().getResponse().getContentAsString();
 		String draftId = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.id");
+		String code = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.code");
 
 		mockMvc.perform(post("/api/v1/admin/experiments/programs/" + draftId + "/publish").cookie(cookie).with(csrf()))
 				.andExpect(status().isOk())
@@ -96,40 +95,19 @@ class AdminExperimentProgramControllerTest {
 	}
 
 	@Test
-	void create_duplicateCode_returnsConflict() throws Exception {
-		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
-		ExperimentTopic topic = newTopic();
-		ExperimentMission m1 = newMission(topic, true);
-		ExperimentMission m2 = newMission(topic, true);
-		ExperimentMission m3 = newMission(topic, true);
-		String code = "dup-program-" + System.nanoTime();
-		String body = programRequestJson(code, topic, m1, m2, m3);
-
-		mockMvc.perform(post("/api/v1/admin/experiments/programs")
-						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isOk());
-
-		mockMvc.perform(post("/api/v1/admin/experiments/programs")
-						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value("EXPERIMENT_PROGRAM_CODE_DUPLICATE"));
-	}
-
-	@Test
 	void create_missingDay_returnsBadRequest() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
 		ExperimentTopic topic = newTopic();
 		ExperimentMission m1 = newMission(topic, true);
 		ExperimentMission m2 = newMission(topic, true);
-		String code = "gap-program-" + System.nanoTime();
 
 		String body = """
-				{"code":"%s","primaryTopicId":"%s","title":"제목","description":"설명","durationDays":3,
+				{"primaryTopicId":"%s","title":"제목","description":"설명","durationDays":3,
 				"sourceType":"TEMPLATE","estimatedMinutesMin":5,"estimatedMinutesMax":10,"featured":false,
 				"beginner":true,"displayOrder":0,
 				"days":[{"dayNumber":1,"missionId":"%s","replaceable":false,"replacementGroup":null},
 				{"dayNumber":2,"missionId":"%s","replaceable":false,"replacementGroup":null}]}
-				""".formatted(code, topic.getId(), m1.getId(), m2.getId());
+				""".formatted(topic.getId(), m1.getId(), m2.getId());
 
 		mockMvc.perform(post("/api/v1/admin/experiments/programs")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
@@ -144,11 +122,10 @@ class AdminExperimentProgramControllerTest {
 		ExperimentMission m1 = newMission(topic, true);
 		ExperimentMission m2 = newMission(topic, true);
 		ExperimentMission m3 = newMission(topic, false);
-		String code = "inactive-program-" + System.nanoTime();
 
 		String createResponse = mockMvc.perform(post("/api/v1/admin/experiments/programs")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
-						.content(programRequestJson(code, topic, m1, m2, m3)))
+						.content(programRequestJson(topic, m1, m2, m3)))
 				.andExpect(status().isOk())
 				.andReturn().getResponse().getContentAsString();
 		String draftId = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.id");
@@ -165,16 +142,15 @@ class AdminExperimentProgramControllerTest {
 		ExperimentMission m1 = newMission(topic, true);
 		ExperimentMission m2 = newMission(topic, true);
 		ExperimentMission m3 = newMission(topic, true);
-		String code = "lone-group-program-" + System.nanoTime();
 
 		String body = """
-				{"code":"%s","primaryTopicId":"%s","title":"제목","description":"설명","durationDays":3,
+				{"primaryTopicId":"%s","title":"제목","description":"설명","durationDays":3,
 				"sourceType":"TEMPLATE","estimatedMinutesMin":5,"estimatedMinutesMax":10,"featured":false,
 				"beginner":true,"displayOrder":0,
 				"days":[{"dayNumber":1,"missionId":"%s","replaceable":true,"replacementGroup":"solo-group"},
 				{"dayNumber":2,"missionId":"%s","replaceable":false,"replacementGroup":null},
 				{"dayNumber":3,"missionId":"%s","replaceable":false,"replacementGroup":null}]}
-				""".formatted(code, topic.getId(), m1.getId(), m2.getId(), m3.getId());
+				""".formatted(topic.getId(), m1.getId(), m2.getId(), m3.getId());
 
 		String createResponse = mockMvc.perform(post("/api/v1/admin/experiments/programs")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
@@ -198,11 +174,11 @@ class AdminExperimentProgramControllerTest {
 
 		mockMvc.perform(post("/api/v1/admin/experiments/programs")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
-						.content(programRequestJson("q-match-" + System.nanoTime(), uniqueMarker + " 코스", topic, m1, m2, m3)))
+						.content(programRequestJson(uniqueMarker + " 코스", topic, m1, m2, m3)))
 				.andExpect(status().isOk());
 		mockMvc.perform(post("/api/v1/admin/experiments/programs")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
-						.content(programRequestJson("q-nomatch-" + System.nanoTime(), "관련 없는 코스", topic, m1, m2, m3)))
+						.content(programRequestJson("관련 없는 코스", topic, m1, m2, m3)))
 				.andExpect(status().isOk());
 
 		mockMvc.perform(get("/api/v1/admin/experiments/programs").cookie(cookie).param("q", uniqueMarker))
@@ -221,27 +197,27 @@ class AdminExperimentProgramControllerTest {
 	}
 
 	private String programRequestJson(
-			String code, String title, ExperimentTopic topic, ExperimentMission m1, ExperimentMission m2, ExperimentMission m3) {
+			String title, ExperimentTopic topic, ExperimentMission m1, ExperimentMission m2, ExperimentMission m3) {
 		return """
-				{"code":"%s","primaryTopicId":"%s","title":"%s","description":"코스 설명","durationDays":3,
+				{"primaryTopicId":"%s","title":"%s","description":"코스 설명","durationDays":3,
 				"sourceType":"TEMPLATE","estimatedMinutesMin":5,"estimatedMinutesMax":10,"featured":false,
 				"beginner":true,"displayOrder":0,
 				"days":[{"dayNumber":1,"missionId":"%s","replaceable":false,"replacementGroup":null},
 				{"dayNumber":2,"missionId":"%s","replaceable":false,"replacementGroup":null},
 				{"dayNumber":3,"missionId":"%s","replaceable":false,"replacementGroup":null}]}
-				""".formatted(code, topic.getId(), title, m1.getId(), m2.getId(), m3.getId());
+				""".formatted(topic.getId(), title, m1.getId(), m2.getId(), m3.getId());
 	}
 
 	private String programRequestJson(
-			String code, ExperimentTopic topic, ExperimentMission m1, ExperimentMission m2, ExperimentMission m3) {
+			ExperimentTopic topic, ExperimentMission m1, ExperimentMission m2, ExperimentMission m3) {
 		return """
-				{"code":"%s","primaryTopicId":"%s","title":"코스 제목","description":"코스 설명","durationDays":3,
+				{"primaryTopicId":"%s","title":"코스 제목","description":"코스 설명","durationDays":3,
 				"sourceType":"TEMPLATE","estimatedMinutesMin":5,"estimatedMinutesMax":10,"featured":false,
 				"beginner":true,"displayOrder":0,
 				"days":[{"dayNumber":1,"missionId":"%s","replaceable":false,"replacementGroup":null},
 				{"dayNumber":2,"missionId":"%s","replaceable":false,"replacementGroup":null},
 				{"dayNumber":3,"missionId":"%s","replaceable":false,"replacementGroup":null}]}
-				""".formatted(code, topic.getId(), m1.getId(), m2.getId(), m3.getId());
+				""".formatted(topic.getId(), m1.getId(), m2.getId(), m3.getId());
 	}
 
 	private ExperimentTopic newTopic() {

@@ -1,5 +1,6 @@
 package com.naroom.api.admin.experiment;
 
+import com.naroom.api.admin.common.AdminCodeGenerator;
 import com.naroom.api.admin.common.AdminSearchSpecifications;
 import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.experiment.dto.AdminExperimentTopicCreateRequest;
@@ -23,7 +24,8 @@ public class AdminExperimentTopicService {
 
 	// docs/contracts/drafts/admin-list-search-sort.md 권장안.
 	private static final List<String> SEARCH_FIELDS = List.of("name", "code", "description");
-	private static final Set<String> SORTABLE_FIELDS = Set.of("name", "code", "displayOrder", "updatedAt", "createdAt");
+	private static final Set<String> SORTABLE_FIELDS =
+			Set.of("name", "code", "displayOrder", "active", "updatedAt", "createdAt");
 	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.ASC, "displayOrder");
 
 	private final ExperimentTopicRepository experimentTopicRepository;
@@ -48,11 +50,9 @@ public class AdminExperimentTopicService {
 
 	@Transactional
 	public AdminExperimentTopicResponse create(AdminExperimentTopicCreateRequest request) {
-		experimentTopicRepository.findByCode(request.code()).ifPresent(existing -> {
-			throw new BusinessException(ExperimentErrorCode.TOPIC_CODE_DUPLICATE);
-		});
 		ExperimentTopic topic = ExperimentTopic.create(
-				request.code(), request.name(), request.description(), request.displayOrder(), request.active());
+				AdminCodeGenerator.generate("topic"), request.name(), request.description(), request.displayOrder(),
+				request.active());
 		return AdminExperimentTopicResponse.from(experimentTopicRepository.save(topic));
 	}
 
