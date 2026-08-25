@@ -14,7 +14,9 @@ public final class AdminSearchSpecifications {
 
 	public static <T> Specification<T> containsAnyIgnoreCase(String q, List<String> fields) {
 		if (q == null || q.isBlank()) {
-			return null;
+			// Spring Data JPA 4.x의 Specification.where()는 null을 더 이상 허용하지 않는다 - 검색어가 없을 때는
+			// 필터링 없는 상태를 나타내는 unrestricted()를 대신 반환한다.
+			return Specification.unrestricted();
 		}
 		String pattern = "%" + q.toLowerCase() + "%";
 		return (root, query, criteriaBuilder) -> {

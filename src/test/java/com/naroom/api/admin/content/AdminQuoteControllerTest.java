@@ -144,6 +144,15 @@ class AdminQuoteControllerTest {
 	}
 
 	@Test
+	void list_withoutParams_returnsAll() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+		createQuote(cookie, "noparam-" + System.nanoTime(), "문장");
+
+		mockMvc.perform(get("/api/v1/admin/content/quotes").cookie(cookie))
+				.andExpect(status().isOk());
+	}
+
+	@Test
 	void list_withQ_returnsOnlyMatchingQuotes() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
 		String uniqueMarker = "찾아줘" + System.nanoTime();
