@@ -160,6 +160,20 @@ class AdminQuoteControllerTest {
 	}
 
 	@Test
+	void list_withMultipleSortFields_ordersByPriority() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+		String marker = "multisort-" + System.nanoTime();
+		createQuoteWithActiveFrom(cookie, marker + " b", "2026-02-01T00:00:00Z");
+		createQuoteWithActiveFrom(cookie, marker + " a", "2026-01-01T00:00:00Z");
+
+		mockMvc.perform(get("/api/v1/admin/content/quotes")
+						.cookie(cookie).param("q", marker).param("sort", "activeFrom,asc;status,asc"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].text").value(marker + " a"))
+				.andExpect(jsonPath("$.data[1].text").value(marker + " b"));
+	}
+
+	@Test
 	void list_withDisallowedSortField_returnsValidationError() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
 
