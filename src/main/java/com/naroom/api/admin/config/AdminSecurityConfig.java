@@ -23,6 +23,13 @@ import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 /**
  * 회원 JWT 체인(SecurityConfig)과 완전히 분리된 관리자 전용 체인. /api/v1/admin/** 요청만 이 체인을
@@ -47,6 +54,7 @@ public class AdminSecurityConfig {
 	private final AdminSessionProperties adminSessionProperties;
 	private final AdminAuthenticationEntryPoint adminAuthenticationEntryPoint;
 	private final AdminAccessDeniedHandler adminAccessDeniedHandler;
+	private final AdminCsrfCookieFilter adminCsrfCookieFilter;
 
 	public AdminSecurityConfig(
 			AdminOidcUserService adminOidcUserService,
@@ -55,7 +63,8 @@ public class AdminSecurityConfig {
 			AdminSessionService adminSessionService,
 			AdminSessionProperties adminSessionProperties,
 			AdminAuthenticationEntryPoint adminAuthenticationEntryPoint,
-			AdminAccessDeniedHandler adminAccessDeniedHandler) {
+			AdminAccessDeniedHandler adminAccessDeniedHandler,
+			AdminCsrfCookieFilter adminCsrfCookieFilter) {
 		this.adminOidcUserService = adminOidcUserService;
 		this.adminAuthenticationSuccessHandler = adminAuthenticationSuccessHandler;
 		this.adminAuthenticationFailureHandler = adminAuthenticationFailureHandler;
@@ -63,6 +72,7 @@ public class AdminSecurityConfig {
 		this.adminSessionProperties = adminSessionProperties;
 		this.adminAuthenticationEntryPoint = adminAuthenticationEntryPoint;
 		this.adminAccessDeniedHandler = adminAccessDeniedHandler;
+		this.adminCsrfCookieFilter = adminCsrfCookieFilter;
 	}
 
 	@Bean
@@ -85,12 +95,32 @@ public class AdminSecurityConfig {
 		return new InMemoryClientRegistrationRepository(google);
 	}
 
+	// naroom-admin은 naroom-api와 다른 origin에서 쿠키 인증으로 호출하므로 admin 체인에만 크리덴셜 포함
+	// CORS를 허용한다 - 회원 체인(SecurityConfig)은 브라우저에서 직접 호출하지 않아 CORS가 필요 없다.
+	@Bean
+	public CorsConfigurationSource adminCorsConfigurationSource(AdminCorsProperties properties) {
+		CorsConfiguration configuration = new CorsConfiguration();
+		configuration.setAllowedOrigins(properties.allowedOrigins());
+		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+		configuration.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN", "X-Trace-Id"));
+		configuration.setAllowCredentials(true);
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/api/v1/admin/**", configuration);
+		return source;
+	}
+
 	@Bean
 	@Order(1)
-	public SecurityFilterChain adminSecurityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain adminSecurityFilterChain(
+			HttpSecurity http, CorsConfigurationSource adminCorsConfigurationSource) throws Exception {
 		http
 				.securityMatcher("/api/v1/admin/**")
-				.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+				.cors(cors -> cors.configurationSource(adminCorsConfigurationSource))
+				.csrf(csrf -> csrf
+						.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+						.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+				.addFilterAfter(adminCsrfCookieFilter, CsrfFilter.class)
 				// OAuth2 Login의 authorization request(state/nonce/PKCE)는 콜백까지의 짧은 구간만 HttpSession이
 				// 필요하다 - 로그인 이후 실제 요청 인증은 AdminSessionAuthenticationFilter의 자체 쿠키가 담당한다.
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

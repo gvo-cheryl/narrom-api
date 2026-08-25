@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -29,8 +30,9 @@ public class AdminExperimentMissionController {
 	}
 
 	@GetMapping
-	public ApiResponse<List<AdminExperimentMissionResponse>> list() {
-		return ApiResponse.of(adminExperimentMissionService.list());
+	public ApiResponse<List<AdminExperimentMissionResponse>> list(
+			@RequestParam(required = false) String q, @RequestParam(required = false) String sort) {
+		return ApiResponse.of(adminExperimentMissionService.list(q, sort));
 	}
 
 	@GetMapping("/{id}")

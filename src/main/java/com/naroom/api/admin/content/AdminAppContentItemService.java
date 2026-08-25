@@ -1,5 +1,7 @@
 package com.naroom.api.admin.content;
 
+import com.naroom.api.admin.common.AdminSearchSpecifications;
+import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.content.dto.AdminAppContentItemCreateRequest;
 import com.naroom.api.admin.content.dto.AdminAppContentItemResponse;
 import com.naroom.api.admin.content.dto.AdminAppContentItemUpdateRequest;
@@ -8,16 +10,27 @@ import com.naroom.api.appcontent.domain.entity.AppContentItemStatus;
 import com.naroom.api.appcontent.domain.error.AppContentErrorCode;
 import com.naroom.api.appcontent.domain.repository.AppContentItemRepository;
 import com.naroom.api.global.error.exception.BusinessException;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class AdminAppContentItemService {
 
 	private static final String DEFAULT_LOCALE = "ko-KR";
+
+	// docs/contracts/drafts/admin-list-search-sort.md 권장안.
+	private static final List<String> SEARCH_FIELDS = List.of("contentKey", "valueText", "surface");
+	private static final Set<String> SORTABLE_FIELDS =
+			Set.of("contentKey", "surface", "status", "updatedAt", "createdAt");
+	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.ASC, "contentKey")
+			.and(Sort.by(Sort.Direction.ASC, "locale"))
+			.and(Sort.by(Sort.Direction.DESC, "versionNo"));
 
 	private final AppContentItemRepository appContentItemRepository;
 
@@ -26,8 +39,10 @@ public class AdminAppContentItemService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AdminAppContentItemResponse> list() {
-		return appContentItemRepository.findAllByOrderByContentKeyAscLocaleAscVersionNoDesc().stream()
+	public List<AdminAppContentItemResponse> list(String q, String sort) {
+		Specification<AppContentItem> specification = AdminSearchSpecifications.containsAnyIgnoreCase(q, SEARCH_FIELDS);
+		Sort resolvedSort = AdminSortParser.parse(sort, SORTABLE_FIELDS, DEFAULT_SORT);
+		return appContentItemRepository.findAll(Specification.where(specification), resolvedSort).stream()
 				.map(AdminAppContentItemResponse::from)
 				.toList();
 	}

@@ -1,5 +1,7 @@
 package com.naroom.api.admin.experiment;
 
+import com.naroom.api.admin.common.AdminSearchSpecifications;
+import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.experiment.dto.AdminExperimentTopicCreateRequest;
 import com.naroom.api.admin.experiment.dto.AdminExperimentTopicResponse;
 import com.naroom.api.admin.experiment.dto.AdminExperimentTopicUpdateRequest;
@@ -7,15 +9,22 @@ import com.naroom.api.experiment.domain.entity.ExperimentTopic;
 import com.naroom.api.experiment.domain.error.ExperimentErrorCode;
 import com.naroom.api.experiment.domain.repository.ExperimentTopicRepository;
 import com.naroom.api.global.error.exception.BusinessException;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class AdminExperimentTopicService {
+
+	// docs/contracts/drafts/admin-list-search-sort.md 권장안.
+	private static final List<String> SEARCH_FIELDS = List.of("name", "code", "description");
+	private static final Set<String> SORTABLE_FIELDS = Set.of("name", "code", "displayOrder", "updatedAt", "createdAt");
+	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.ASC, "displayOrder");
 
 	private final ExperimentTopicRepository experimentTopicRepository;
 
@@ -24,9 +33,10 @@ public class AdminExperimentTopicService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AdminExperimentTopicResponse> list() {
-		return experimentTopicRepository.findAll().stream()
-				.sorted(Comparator.comparingInt(ExperimentTopic::getDisplayOrder))
+	public List<AdminExperimentTopicResponse> list(String q, String sort) {
+		Specification<ExperimentTopic> specification = AdminSearchSpecifications.containsAnyIgnoreCase(q, SEARCH_FIELDS);
+		Sort resolvedSort = AdminSortParser.parse(sort, SORTABLE_FIELDS, DEFAULT_SORT);
+		return experimentTopicRepository.findAll(Specification.where(specification), resolvedSort).stream()
 				.map(AdminExperimentTopicResponse::from)
 				.toList();
 	}

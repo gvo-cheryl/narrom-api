@@ -3,12 +3,13 @@ package com.naroom.api.experiment.domain.repository;
 import com.naroom.api.experiment.domain.entity.ExperimentProgram;
 import com.naroom.api.experiment.domain.entity.ExperimentProgramStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ExperimentProgramRepository extends JpaRepository<ExperimentProgram, UUID> {
+public interface ExperimentProgramRepository extends JpaRepository<ExperimentProgram, UUID>, JpaSpecificationExecutor<ExperimentProgram> {
 
 	List<ExperimentProgram> findByStatusOrderByDisplayOrderAsc(ExperimentProgramStatus status);
 
@@ -25,7 +26,5 @@ public interface ExperimentProgramRepository extends JpaRepository<ExperimentPro
 	Optional<ExperimentProgram> findByCodeAndStatus(String code, ExperimentProgramStatus status);
 
 	boolean existsByCode(String code);
-
-	List<ExperimentProgram> findAllByOrderByCodeAscContentVersionDesc();
 
 }

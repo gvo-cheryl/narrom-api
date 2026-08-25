@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Set;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -184,6 +185,51 @@ class AdminExperimentProgramControllerTest {
 		mockMvc.perform(post("/api/v1/admin/experiments/programs/" + draftId + "/publish").cookie(cookie).with(csrf()))
 				.andExpect(status().isUnprocessableEntity())
 				.andExpect(jsonPath("$.code").value("EXPERIMENT_PROGRAM_REPLACEMENT_GROUP_INVALID"));
+	}
+
+	@Test
+	void list_withQ_returnsOnlyMatchingPrograms() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+		ExperimentTopic topic = newTopic();
+		ExperimentMission m1 = newMission(topic, true);
+		ExperimentMission m2 = newMission(topic, true);
+		ExperimentMission m3 = newMission(topic, true);
+		String uniqueMarker = "찾아줘" + System.nanoTime();
+
+		mockMvc.perform(post("/api/v1/admin/experiments/programs")
+						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+						.content(programRequestJson("q-match-" + System.nanoTime(), uniqueMarker + " 코스", topic, m1, m2, m3)))
+				.andExpect(status().isOk());
+		mockMvc.perform(post("/api/v1/admin/experiments/programs")
+						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+						.content(programRequestJson("q-nomatch-" + System.nanoTime(), "관련 없는 코스", topic, m1, m2, m3)))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(get("/api/v1/admin/experiments/programs").cookie(cookie).param("q", uniqueMarker))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.length()").value(1))
+				.andExpect(jsonPath("$.data[0].title").value(uniqueMarker + " 코스"));
+	}
+
+	@Test
+	void list_withDisallowedSortField_returnsValidationError() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+
+		mockMvc.perform(get("/api/v1/admin/experiments/programs").cookie(cookie).param("sort", "description,asc"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
+	}
+
+	private String programRequestJson(
+			String code, String title, ExperimentTopic topic, ExperimentMission m1, ExperimentMission m2, ExperimentMission m3) {
+		return """
+				{"code":"%s","primaryTopicId":"%s","title":"%s","description":"코스 설명","durationDays":3,
+				"sourceType":"TEMPLATE","estimatedMinutesMin":5,"estimatedMinutesMax":10,"featured":false,
+				"beginner":true,"displayOrder":0,
+				"days":[{"dayNumber":1,"missionId":"%s","replaceable":false,"replacementGroup":null},
+				{"dayNumber":2,"missionId":"%s","replaceable":false,"replacementGroup":null},
+				{"dayNumber":3,"missionId":"%s","replaceable":false,"replacementGroup":null}]}
+				""".formatted(code, topic.getId(), title, m1.getId(), m2.getId(), m3.getId());
 	}
 
 	private String programRequestJson(
