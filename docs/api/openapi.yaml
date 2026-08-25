@@ -96,6 +96,264 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseAiFeedbackResponse"
+  /api/v1/admin/experiments/topics/{id}:
+    get:
+      tags:
+      - admin-experiment-topic-controller
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentTopicResponse"
+    put:
+      tags:
+      - admin-experiment-topic-controller
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminExperimentTopicUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentTopicResponse"
+  /api/v1/admin/experiments/programs/{id}:
+    get:
+      tags:
+      - admin-experiment-program-controller
+      operationId: get_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentProgramResponse"
+    put:
+      tags:
+      - admin-experiment-program-controller
+      operationId: update_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminExperimentProgramUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentProgramResponse"
+  /api/v1/admin/experiments/missions/{id}:
+    get:
+      tags:
+      - admin-experiment-mission-controller
+      operationId: get_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentMissionResponse"
+    put:
+      tags:
+      - admin-experiment-mission-controller
+      operationId: update_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminExperimentMissionUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentMissionResponse"
+  /api/v1/admin/content/record-prompts/{id}:
+    get:
+      tags:
+      - admin-record-prompt-controller
+      operationId: get_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminRecordPromptResponse"
+    put:
+      tags:
+      - admin-record-prompt-controller
+      operationId: update_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRecordPromptUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminRecordPromptResponse"
+  /api/v1/admin/content/quotes/{id}:
+    get:
+      tags:
+      - admin-quote-controller
+      operationId: get_4
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminQuoteResponse"
+    put:
+      tags:
+      - admin-quote-controller
+      operationId: update_4
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminQuoteUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminQuoteResponse"
+  /api/v1/admin/content/app-copy/{id}:
+    get:
+      tags:
+      - admin-app-content-item-controller
+      operationId: get_5
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAppContentItemResponse"
+    put:
+      tags:
+      - admin-app-content-item-controller
+      operationId: update_5
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAppContentItemUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAppContentItemResponse"
   /api/v1/account/notification-preferences/{type}:
     put:
       tags:
@@ -851,6 +1109,492 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseAiFeedbackReportResponse"
+  /api/v1/admin/preview/sessions:
+    post:
+      tags:
+      - admin-preview-session-controller
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminPreviewSessionCreateRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminPreviewSessionResponse"
+  /api/v1/admin/experiments/topics:
+    get:
+      tags:
+      - admin-experiment-topic-controller
+      operationId: list
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAdminExperimentTopicResponse"
+    post:
+      tags:
+      - admin-experiment-topic-controller
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminExperimentTopicCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentTopicResponse"
+  /api/v1/admin/experiments/programs:
+    get:
+      tags:
+      - admin-experiment-program-controller
+      operationId: list_1
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAdminExperimentProgramResponse"
+    post:
+      tags:
+      - admin-experiment-program-controller
+      operationId: create_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminExperimentProgramCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentProgramResponse"
+  /api/v1/admin/experiments/programs/{id}/versions:
+    post:
+      tags:
+      - admin-experiment-program-controller
+      operationId: createRevision
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentProgramResponse"
+  /api/v1/admin/experiments/programs/{id}/publish:
+    post:
+      tags:
+      - admin-experiment-program-controller
+      operationId: publish
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentProgramResponse"
+  /api/v1/admin/experiments/programs/{id}/archive:
+    post:
+      tags:
+      - admin-experiment-program-controller
+      operationId: archive
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentProgramResponse"
+  /api/v1/admin/experiments/missions:
+    get:
+      tags:
+      - admin-experiment-mission-controller
+      operationId: list_2
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAdminExperimentMissionResponse"
+    post:
+      tags:
+      - admin-experiment-mission-controller
+      operationId: create_3
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminExperimentMissionCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminExperimentMissionResponse"
+  /api/v1/admin/content/record-prompts:
+    get:
+      tags:
+      - admin-record-prompt-controller
+      operationId: list_3
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAdminRecordPromptResponse"
+    post:
+      tags:
+      - admin-record-prompt-controller
+      operationId: create_4
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRecordPromptCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminRecordPromptResponse"
+  /api/v1/admin/content/record-prompts/{id}/revisions:
+    post:
+      tags:
+      - admin-record-prompt-controller
+      operationId: createRevision_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminRecordPromptResponse"
+  /api/v1/admin/content/record-prompts/{id}/publish:
+    post:
+      tags:
+      - admin-record-prompt-controller
+      operationId: publish_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminRecordPromptResponse"
+  /api/v1/admin/content/record-prompts/{id}/archive:
+    post:
+      tags:
+      - admin-record-prompt-controller
+      operationId: archive_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminRecordPromptResponse"
+  /api/v1/admin/content/quotes:
+    get:
+      tags:
+      - admin-quote-controller
+      operationId: list_4
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAdminQuoteResponse"
+    post:
+      tags:
+      - admin-quote-controller
+      operationId: create_5
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminQuoteCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminQuoteResponse"
+  /api/v1/admin/content/quotes/{id}/revisions:
+    post:
+      tags:
+      - admin-quote-controller
+      operationId: createRevision_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminQuoteResponse"
+  /api/v1/admin/content/quotes/{id}/publish:
+    post:
+      tags:
+      - admin-quote-controller
+      operationId: publish_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminQuoteResponse"
+  /api/v1/admin/content/quotes/{id}/archive:
+    post:
+      tags:
+      - admin-quote-controller
+      operationId: archive_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminQuoteResponse"
+  /api/v1/admin/content/app-copy:
+    get:
+      tags:
+      - admin-app-content-item-controller
+      operationId: list_5
+      parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAdminAppContentItemResponse"
+    post:
+      tags:
+      - admin-app-content-item-controller
+      operationId: create_6
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAppContentItemCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAppContentItemResponse"
+  /api/v1/admin/content/app-copy/{id}/revisions:
+    post:
+      tags:
+      - admin-app-content-item-controller
+      operationId: createRevision_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAppContentItemResponse"
+  /api/v1/admin/content/app-copy/{id}/publish:
+    post:
+      tags:
+      - admin-app-content-item-controller
+      operationId: publish_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAppContentItemResponse"
+  /api/v1/admin/content/app-copy/{id}/archive:
+    post:
+      tags:
+      - admin-app-content-item-controller
+      operationId: archive_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAppContentItemResponse"
   /api/v1/account/withdrawal:
     post:
       tags:
@@ -1106,6 +1850,18 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseEntryAiReflectionResponse"
+  /api/v1/preview/session:
+    get:
+      tags:
+      - preview-session-info-controller
+      operationId: get_6
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePreviewSessionInfoResponse"
   /api/v1/lifetime/timeline:
     get:
       tags:
@@ -1553,6 +2309,30 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseSessionCheckResponse"
+  /api/v1/admin/auth/session:
+    get:
+      tags:
+      - admin-session-controller
+      operationId: session_1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminSessionResponse"
+  /api/v1/admin/ai/runtime-status:
+    get:
+      tags:
+      - admin-ai-runtime-status-controller
+      operationId: list_6
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAdminAiRuntimeStatusResponse"
   /api/v1/account/notification-preferences:
     get:
       tags:
@@ -1763,6 +2543,591 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/AiFeedbackResponse"
+    AdminExperimentTopicUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        displayOrder:
+          type: integer
+          format: int32
+        active:
+          type: boolean
+      required:
+      - active
+      - displayOrder
+      - name
+    AdminExperimentTopicResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        displayOrder:
+          type: integer
+          format: int32
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApiResponseAdminExperimentTopicResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminExperimentTopicResponse"
+    AdminExperimentProgramDayMissionRequest:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        missionId:
+          type: string
+          format: uuid
+        replaceable:
+          type: boolean
+        replacementGroup:
+          type: string
+      required:
+      - missionId
+      - replaceable
+    AdminExperimentProgramUpdateRequest:
+      type: object
+      properties:
+        primaryTopicId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        durationDays:
+          type: integer
+          format: int32
+        sourceType:
+          type: string
+          enum:
+          - TEMPLATE
+          - RANDOM
+          - AI_RECOMMENDED
+          - USER_COMPOSED
+        estimatedMinutesMin:
+          type: integer
+          format: int32
+        estimatedMinutesMax:
+          type: integer
+          format: int32
+        featured:
+          type: boolean
+        beginner:
+          type: boolean
+        displayOrder:
+          type: integer
+          format: int32
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminExperimentProgramDayMissionRequest"
+          minItems: 1
+      required:
+      - beginner
+      - days
+      - description
+      - featured
+      - primaryTopicId
+      - sourceType
+      - title
+    AdminExperimentProgramDayMissionResponse:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+          format: int32
+        missionId:
+          type: string
+          format: uuid
+        missionCode:
+          type: string
+        missionTitle:
+          type: string
+        missionActive:
+          type: boolean
+        replaceable:
+          type: boolean
+        replacementGroup:
+          type: string
+    AdminExperimentProgramResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        contentVersion:
+          type: integer
+          format: int32
+        primaryTopicId:
+          type: string
+          format: uuid
+        primaryTopicCode:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        durationDays:
+          type: integer
+          format: int32
+        sourceType:
+          type: string
+          enum:
+          - TEMPLATE
+          - RANDOM
+          - AI_RECOMMENDED
+          - USER_COMPOSED
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          - ARCHIVED
+        estimatedMinutesMin:
+          type: integer
+          format: int32
+        estimatedMinutesMax:
+          type: integer
+          format: int32
+        featured:
+          type: boolean
+        beginner:
+          type: boolean
+        displayOrder:
+          type: integer
+          format: int32
+        supersedesProgramId:
+          type: string
+          format: uuid
+        createdByAdminId:
+          type: string
+          format: uuid
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminExperimentProgramDayMissionResponse"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApiResponseAdminExperimentProgramResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminExperimentProgramResponse"
+    AdminExperimentMissionUpdateRequest:
+      type: object
+      properties:
+        topicId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        instruction:
+          type: string
+          minLength: 1
+        missionType:
+          type: string
+          enum:
+          - OBSERVATION
+          - QUESTION
+          - ACTION
+          - RECORD
+          - REVIEW
+        responseType:
+          type: string
+          minLength: 1
+        estimatedMinutes:
+          type: integer
+          format: int32
+        emotionalLoad:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+        reflectionQuestions:
+          type: string
+          minLength: 1
+        examples:
+          type: string
+          minLength: 1
+        responseSchema:
+          type: string
+          minLength: 1
+        safetyNote:
+          type: string
+        active:
+          type: boolean
+      required:
+      - active
+      - description
+      - emotionalLoad
+      - examples
+      - instruction
+      - missionType
+      - reflectionQuestions
+      - responseSchema
+      - responseType
+      - title
+      - topicId
+    AdminExperimentMissionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        contentVersion:
+          type: integer
+          format: int32
+        topicId:
+          type: string
+          format: uuid
+        topicCode:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        instruction:
+          type: string
+        missionType:
+          type: string
+          enum:
+          - OBSERVATION
+          - QUESTION
+          - ACTION
+          - RECORD
+          - REVIEW
+        responseType:
+          type: string
+        estimatedMinutes:
+          type: integer
+          format: int32
+        emotionalLoad:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+        reflectionQuestions:
+          type: string
+        examples:
+          type: string
+        responseSchema:
+          type: string
+        safetyNote:
+          type: string
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApiResponseAdminExperimentMissionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminExperimentMissionResponse"
+    AdminRecordPromptUpdateRequest:
+      type: object
+      properties:
+        questionText:
+          type: string
+          minLength: 1
+        helperText:
+          type: string
+        entryType:
+          type: string
+          enum:
+          - FREE
+          - CHECK_IN
+          - GRATITUDE
+          - EMOTION
+          - PROMPT
+          - QUOTE_REFLECTION
+          - EXPERIMENT_MISSION
+          - EXPERIMENT_REVIEW
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - SELF_SUMMARY
+        displayOrder:
+          type: integer
+          format: int32
+        activeFrom:
+          type: string
+          format: date-time
+        activeUntil:
+          type: string
+          format: date-time
+      required:
+      - displayOrder
+      - entryType
+      - questionText
+    AdminRecordPromptResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        versionNo:
+          type: integer
+          format: int32
+        questionText:
+          type: string
+        helperText:
+          type: string
+        entryType:
+          type: string
+          enum:
+          - FREE
+          - CHECK_IN
+          - GRATITUDE
+          - EMOTION
+          - PROMPT
+          - QUOTE_REFLECTION
+          - EXPERIMENT_MISSION
+          - EXPERIMENT_REVIEW
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - SELF_SUMMARY
+        displayOrder:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          - ARCHIVED
+        activeFrom:
+          type: string
+          format: date-time
+        activeUntil:
+          type: string
+          format: date-time
+        supersedesPromptId:
+          type: string
+          format: uuid
+        createdByAdminId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApiResponseAdminRecordPromptResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminRecordPromptResponse"
+    AdminQuoteUpdateRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+        authorName:
+          type: string
+        sourceName:
+          type: string
+        sourceUrl:
+          type: string
+        topicIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          uniqueItems: true
+        activeFrom:
+          type: string
+          format: date-time
+        activeUntil:
+          type: string
+          format: date-time
+      required:
+      - text
+      - topicIds
+    AdminQuoteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        versionNo:
+          type: integer
+          format: int32
+        text:
+          type: string
+        authorName:
+          type: string
+        sourceName:
+          type: string
+        sourceUrl:
+          type: string
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          - ARCHIVED
+        activeFrom:
+          type: string
+          format: date-time
+        activeUntil:
+          type: string
+          format: date-time
+        supersedesQuoteId:
+          type: string
+          format: uuid
+        createdByAdminId:
+          type: string
+          format: uuid
+        topicIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          uniqueItems: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApiResponseAdminQuoteResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminQuoteResponse"
+    AdminAppContentItemUpdateRequest:
+      type: object
+      properties:
+        surface:
+          type: string
+          minLength: 1
+        valueType:
+          type: string
+          enum:
+          - TEXT
+          - JSON
+        valueText:
+          type: string
+        valueJson:
+          type: string
+        schemaVersion:
+          type: string
+          minLength: 1
+        activeFrom:
+          type: string
+          format: date-time
+        activeUntil:
+          type: string
+          format: date-time
+        fallbackRequired:
+          type: boolean
+      required:
+      - fallbackRequired
+      - schemaVersion
+      - surface
+      - valueType
+    AdminAppContentItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        contentKey:
+          type: string
+        surface:
+          type: string
+        locale:
+          type: string
+        valueType:
+          type: string
+          enum:
+          - TEXT
+          - JSON
+        valueText:
+          type: string
+        valueJson:
+          type: string
+        schemaVersion:
+          type: string
+        versionNo:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          - ARCHIVED
+        activeFrom:
+          type: string
+          format: date-time
+        activeUntil:
+          type: string
+          format: date-time
+        fallbackRequired:
+          type: boolean
+        createdByAdminId:
+          type: string
+          format: uuid
+        supersedesItemId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ApiResponseAdminAppContentItemResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminAppContentItemResponse"
     NotificationPreferenceUpdateRequest:
       type: object
       properties:
@@ -2757,6 +4122,275 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/AiFeedbackReportResponse"
+    AdminPreviewSessionCreateRequest:
+      type: object
+      properties:
+        selectedContentVersions:
+          type: object
+          additionalProperties:
+            type: string
+            format: uuid
+        scenarioKey:
+          type: string
+      required:
+      - selectedContentVersions
+    AdminPreviewSessionResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    ApiResponseAdminPreviewSessionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminPreviewSessionResponse"
+    AdminExperimentTopicCreateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        displayOrder:
+          type: integer
+          format: int32
+        active:
+          type: boolean
+      required:
+      - active
+      - code
+      - displayOrder
+      - name
+    AdminExperimentProgramCreateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        primaryTopicId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        durationDays:
+          type: integer
+          format: int32
+        sourceType:
+          type: string
+          enum:
+          - TEMPLATE
+          - RANDOM
+          - AI_RECOMMENDED
+          - USER_COMPOSED
+        estimatedMinutesMin:
+          type: integer
+          format: int32
+        estimatedMinutesMax:
+          type: integer
+          format: int32
+        featured:
+          type: boolean
+        beginner:
+          type: boolean
+        displayOrder:
+          type: integer
+          format: int32
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminExperimentProgramDayMissionRequest"
+          minItems: 1
+      required:
+      - beginner
+      - code
+      - days
+      - description
+      - featured
+      - primaryTopicId
+      - sourceType
+      - title
+    AdminExperimentMissionCreateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        topicId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        instruction:
+          type: string
+          minLength: 1
+        missionType:
+          type: string
+          enum:
+          - OBSERVATION
+          - QUESTION
+          - ACTION
+          - RECORD
+          - REVIEW
+        responseType:
+          type: string
+          minLength: 1
+        estimatedMinutes:
+          type: integer
+          format: int32
+        emotionalLoad:
+          type: string
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+        reflectionQuestions:
+          type: string
+          minLength: 1
+        examples:
+          type: string
+          minLength: 1
+        responseSchema:
+          type: string
+          minLength: 1
+        safetyNote:
+          type: string
+        active:
+          type: boolean
+      required:
+      - active
+      - code
+      - description
+      - emotionalLoad
+      - examples
+      - instruction
+      - missionType
+      - reflectionQuestions
+      - responseSchema
+      - responseType
+      - title
+      - topicId
+    AdminRecordPromptCreateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        questionText:
+          type: string
+          minLength: 1
+        helperText:
+          type: string
+        entryType:
+          type: string
+          enum:
+          - FREE
+          - CHECK_IN
+          - GRATITUDE
+          - EMOTION
+          - PROMPT
+          - QUOTE_REFLECTION
+          - EXPERIMENT_MISSION
+          - EXPERIMENT_REVIEW
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - SELF_SUMMARY
+        displayOrder:
+          type: integer
+          format: int32
+        activeFrom:
+          type: string
+          format: date-time
+        activeUntil:
+          type: string
+          format: date-time
+      required:
+      - code
+      - displayOrder
+      - entryType
+      - questionText
+    AdminQuoteCreateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        text:
+          type: string
+          minLength: 1
+        authorName:
+          type: string
+        sourceName:
+          type: string
+        sourceUrl:
+          type: string
+        topicIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          uniqueItems: true
+        activeFrom:
+          type: string
+          format: date-time
+        activeUntil:
+          type: string
+          format: date-time
+      required:
+      - code
+      - text
+      - topicIds
+    AdminAppContentItemCreateRequest:
+      type: object
+      properties:
+        contentKey:
+          type: string
+          minLength: 1
+        surface:
+          type: string
+          minLength: 1
+        locale:
+          type: string
+        valueType:
+          type: string
+          enum:
+          - TEXT
+          - JSON
+        valueText:
+          type: string
+        valueJson:
+          type: string
+        schemaVersion:
+          type: string
+          minLength: 1
+        activeFrom:
+          type: string
+          format: date-time
+        activeUntil:
+          type: string
+          format: date-time
+        fallbackRequired:
+          type: boolean
+      required:
+      - contentKey
+      - fallbackRequired
+      - schemaVersion
+      - surface
+      - valueType
     AccountWithdrawalResponse:
       type: object
       properties:
@@ -2994,6 +4628,24 @@ components:
         completedAt:
           type: string
           format: date-time
+    ApiResponsePreviewSessionInfoResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PreviewSessionInfoResponse"
+    PreviewSessionInfoResponse:
+      type: object
+      properties:
+        previewSessionId:
+          type: string
+          format: uuid
+        selectedContentVersions:
+          type: object
+          additionalProperties:
+            type: string
+            format: uuid
+        scenarioKey:
+          type: string
     ApiResponseListEntryTimelineResponse:
       type: object
       properties:
@@ -3585,6 +5237,125 @@ components:
           enum:
           - COMPLETE_ONBOARDING
           - ENTER_APP
+    ApiResponseListAdminExperimentTopicResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminExperimentTopicResponse"
+    ApiResponseListAdminExperimentProgramResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminExperimentProgramResponse"
+    ApiResponseListAdminExperimentMissionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminExperimentMissionResponse"
+    ApiResponseListAdminRecordPromptResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminRecordPromptResponse"
+    ApiResponseListAdminQuoteResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminQuoteResponse"
+    ApiResponseListAdminAppContentItemResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAppContentItemResponse"
+    AdminSessionResponse:
+      type: object
+      properties:
+        adminId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+            - SUPER_ADMIN
+            - CONTENT_EDITOR
+            - AI_OPERATOR
+            - SUPPORT_READ_ONLY
+          uniqueItems: true
+        expiresAt:
+          type: string
+          format: date-time
+    ApiResponseAdminSessionResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminSessionResponse"
+    AdminAiRuntimeStatusResponse:
+      type: object
+      properties:
+        featureType:
+          type: string
+          enum:
+          - ENTRY_REFLECTION
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - CONVERSATION_REPLY
+          - CONVERSATION_SUMMARY
+        modelName:
+          type: string
+        commonPromptVersionLabel:
+          type: string
+        commonPromptOutputSchemaVersion:
+          type: string
+        featurePromptVersionLabel:
+          type: string
+        featurePromptOutputSchemaVersion:
+          type: string
+        windowDays:
+          type: integer
+          format: int32
+        totalJobCount:
+          type: integer
+          format: int64
+        completedJobCount:
+          type: integer
+          format: int64
+        successRate:
+          type: number
+          format: double
+        avgLatencyMs:
+          type: number
+          format: double
+        avgInputTokens:
+          type: number
+          format: double
+        avgOutputTokens:
+          type: number
+          format: double
+    ApiResponseListAdminAiRuntimeStatusResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAiRuntimeStatusResponse"
     ApiResponseListNotificationPreferenceResponse:
       type: object
       properties:
