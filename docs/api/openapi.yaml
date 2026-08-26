@@ -2345,11 +2345,71 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseAdminSessionResponse"
+  /api/v1/admin/audit-logs:
+    get:
+      tags:
+      - admin-audit-log-controller
+      operationId: list_6
+      parameters:
+      - name: actorAdminId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: action
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: resourceType
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: outcome
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - SUCCESS
+          - FAILURE
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseCursorPageResponseAdminAuditLogResponse"
   /api/v1/admin/ai/runtime-status:
     get:
       tags:
       - admin-ai-runtime-status-controller
-      operationId: list_6
+      operationId: list_7
       responses:
         "200":
           description: OK
@@ -5315,6 +5375,60 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/AdminSessionResponse"
+    AdminAuditLogResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        actorAdminId:
+          type: string
+          format: uuid
+        actorDisplayName:
+          type: string
+        action:
+          type: string
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        changeReason:
+          type: string
+        traceId:
+          type: string
+        requestMethod:
+          type: string
+        requestPath:
+          type: string
+        outcome:
+          type: string
+          enum:
+          - SUCCESS
+          - FAILURE
+        createdAt:
+          type: string
+          format: date-time
+    ApiResponseCursorPageResponseAdminAuditLogResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/CursorPageResponseAdminAuditLogResponse"
+    CursorPageResponseAdminAuditLogResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAuditLogResponse"
+        page:
+          $ref: "#/components/schemas/PageInfo"
+    PageInfo:
+      type: object
+      properties:
+        nextCursor:
+          type: string
+        hasNext:
+          type: boolean
     AdminAiRuntimeStatusResponse:
       type: object
       properties:
