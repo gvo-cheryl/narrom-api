@@ -2711,6 +2711,8 @@ components:
           format: uuid
         primaryTopicCode:
           type: string
+        primaryTopicName:
+          type: string
         title:
           type: string
         description:
@@ -2840,6 +2842,8 @@ components:
           type: string
           format: uuid
         topicCode:
+          type: string
+        topicName:
           type: string
         title:
           type: string
@@ -4174,9 +4178,6 @@ components:
     AdminExperimentTopicCreateRequest:
       type: object
       properties:
-        code:
-          type: string
-          minLength: 1
         name:
           type: string
           minLength: 1
@@ -4189,15 +4190,11 @@ components:
           type: boolean
       required:
       - active
-      - code
       - displayOrder
       - name
     AdminExperimentProgramCreateRequest:
       type: object
       properties:
-        code:
-          type: string
-          minLength: 1
         primaryTopicId:
           type: string
           format: uuid
@@ -4237,7 +4234,6 @@ components:
           minItems: 1
       required:
       - beginner
-      - code
       - days
       - description
       - featured
@@ -4247,9 +4243,6 @@ components:
     AdminExperimentMissionCreateRequest:
       type: object
       properties:
-        code:
-          type: string
-          minLength: 1
         topicId:
           type: string
           format: uuid
@@ -4297,7 +4290,6 @@ components:
           type: boolean
       required:
       - active
-      - code
       - description
       - emotionalLoad
       - examples
@@ -4311,9 +4303,6 @@ components:
     AdminRecordPromptCreateRequest:
       type: object
       properties:
-        code:
-          type: string
-          minLength: 1
         questionText:
           type: string
           minLength: 1
@@ -4343,16 +4332,12 @@ components:
           type: string
           format: date-time
       required:
-      - code
       - displayOrder
       - entryType
       - questionText
     AdminQuoteCreateRequest:
       type: object
       properties:
-        code:
-          type: string
-          minLength: 1
         text:
           type: string
           minLength: 1
@@ -4375,7 +4360,6 @@ components:
           type: string
           format: date-time
       required:
-      - code
       - text
       - topicIds
     AdminAppContentItemCreateRequest:
