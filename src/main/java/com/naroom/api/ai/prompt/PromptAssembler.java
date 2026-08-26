@@ -30,8 +30,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-// 14장 5단계 조립 구조 중 1~2·5단계(공통 지침·기능별 지침·출력 스키마 버전)는 AiInstructionCatalog가 담당하고,
-// 이 클래스는 3~4단계(회원 선호도·현재 요청 맥락)를 실제 데이터로 채운다.
+// 14장 5단계 조립 구조 중 1~2단계(공통 지침·기능별 지침)는 AiPromptResolver가 담당하고(관리자가 발행한
+// 지침이 있으면 그것을, 없으면 AiInstructionCatalog 코드 기본값을 쓴다), 이 클래스는 3~4단계(회원
+// 선호도·현재 요청 맥락)를 실제 데이터로 채운다. 5단계(출력 스키마 버전)는 여전히 AiInstructionCatalog다.
 @Service
 @Transactional(readOnly = true)
 public class PromptAssembler {
@@ -44,6 +45,7 @@ public class PromptAssembler {
 	private final MemberAiPreferenceRepository memberAiPreferenceRepository;
 	private final CheckInRepository checkInRepository;
 	private final AiReflectionRepository aiReflectionRepository;
+	private final AiPromptResolver aiPromptResolver;
 
 	public PromptAssembler(
 			EntryRepository entryRepository,
@@ -51,13 +53,15 @@ public class PromptAssembler {
 			EntrySelfReflectionRepository entrySelfReflectionRepository,
 			MemberAiPreferenceRepository memberAiPreferenceRepository,
 			CheckInRepository checkInRepository,
-			AiReflectionRepository aiReflectionRepository) {
+			AiReflectionRepository aiReflectionRepository,
+			AiPromptResolver aiPromptResolver) {
 		this.entryRepository = entryRepository;
 		this.entryTagRepository = entryTagRepository;
 		this.entrySelfReflectionRepository = entrySelfReflectionRepository;
 		this.memberAiPreferenceRepository = memberAiPreferenceRepository;
 		this.checkInRepository = checkInRepository;
 		this.aiReflectionRepository = aiReflectionRepository;
+		this.aiPromptResolver = aiPromptResolver;
 	}
 
 	public AssembledPrompt assembleForEntryReflection(UUID entryId) {
@@ -76,14 +80,19 @@ public class PromptAssembler {
 		MemberAiPreference preference =
 				memberAiPreferenceRepository.findByMember_Id(entry.getMember().getId()).orElse(null);
 
+		AiPromptResolver.ResolvedCommonInstructions common = aiPromptResolver.resolveCommon();
+		AiPromptResolver.ResolvedFeatureInstructions feature = aiPromptResolver.resolveFeature(AiFeatureType.ENTRY_REFLECTION);
+
 		return new AssembledPrompt(
-				AiInstructionCatalog.COMMON_INSTRUCTIONS_VERSION,
-				AiInstructionCatalog.COMMON_INSTRUCTIONS,
-				AiInstructionCatalog.featureInstructionsVersion(AiFeatureType.ENTRY_REFLECTION),
-				AiInstructionCatalog.featureInstructions(AiFeatureType.ENTRY_REFLECTION),
+				common.versionLabel(),
+				common.content(),
+				feature.versionLabel(),
+				feature.content(),
 				buildPreferenceInstructions(preference),
 				buildContextContent(entry, confirmedTags, selfReflections),
-				AiInstructionCatalog.outputSchemaVersion(AiFeatureType.ENTRY_REFLECTION));
+				AiInstructionCatalog.outputSchemaVersion(AiFeatureType.ENTRY_REFLECTION),
+				feature.modelName(),
+				feature.outputMaxLength());
 	}
 
 	// 9.2절: 확정(CONFIRMED) 또는 시스템 적용(SYSTEM) 태그만 "확정 태그"로 취급한다. SUGGESTED는 아직 사용자
@@ -119,16 +128,21 @@ public class PromptAssembler {
 
 		MemberAiPreference preference = memberAiPreferenceRepository.findByMember_Id(member.getId()).orElse(null);
 
+		AiPromptResolver.ResolvedCommonInstructions common = aiPromptResolver.resolveCommon();
+		AiPromptResolver.ResolvedFeatureInstructions feature = aiPromptResolver.resolveFeature(featureType);
+
 		return new AssembledPrompt(
-				AiInstructionCatalog.COMMON_INSTRUCTIONS_VERSION,
-				AiInstructionCatalog.COMMON_INSTRUCTIONS,
-				AiInstructionCatalog.featureInstructionsVersion(featureType),
-				AiInstructionCatalog.featureInstructions(featureType),
+				common.versionLabel(),
+				common.content(),
+				feature.versionLabel(),
+				feature.content(),
 				buildPreferenceInstructions(preference),
 				buildPeriodContextContent(
 						periodStart, periodEnd, checkIns, evidenceEntries,
 						confirmedTagsByEntry, selfReflectionsByEntry, aiSummaryByEntry),
-				AiInstructionCatalog.outputSchemaVersion(featureType));
+				AiInstructionCatalog.outputSchemaVersion(featureType),
+				feature.modelName(),
+				feature.outputMaxLength());
 	}
 
 	// 14.3절: 회원 선호도는 공통 안전 규칙(금지 원칙)보다 우선할 수 없다. 이 레이어는 스타일 지시만 담고,

@@ -11,7 +11,6 @@ import com.naroom.api.ai.domain.entity.AiSafetyGrade;
 import com.naroom.api.ai.domain.repository.AiConversationRepository;
 import com.naroom.api.ai.domain.repository.AiReflectionRepository;
 import com.naroom.api.ai.dto.AiJobResponse;
-import com.naroom.api.ai.infra.openai.OpenAiProperties;
 import com.naroom.api.ai.outcome.EntryReflectionOutcomeService;
 import com.naroom.api.ai.result.EntryReflectionResponseParser;
 import com.naroom.api.ai.prompt.PromptAssembler;
@@ -213,8 +212,7 @@ class EntryReflectionJobProcessorTest {
 				generationClient,
 				responseParser,
 				outcomeService,
-				aiJobService,
-				new OpenAiProperties("", "fake-model"));
+				aiJobService);
 	}
 
 	private String verbatimOutputJson(java.util.UUID entryId, String body) {

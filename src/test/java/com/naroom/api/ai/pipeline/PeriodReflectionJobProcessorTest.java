@@ -9,7 +9,6 @@ import com.naroom.api.ai.domain.entity.AiJobStatus;
 import com.naroom.api.ai.domain.entity.AiSafetyGrade;
 import com.naroom.api.ai.domain.repository.AiConversationRepository;
 import com.naroom.api.ai.dto.AiJobResponse;
-import com.naroom.api.ai.infra.openai.OpenAiProperties;
 import com.naroom.api.ai.outcome.PeriodReflectionOutcomeService;
 import com.naroom.api.ai.prompt.PromptAssembler;
 import com.naroom.api.ai.result.PeriodReflectionResponseParser;
@@ -297,8 +296,7 @@ class PeriodReflectionJobProcessorTest {
 				generationClient,
 				responseParser,
 				outcomeService,
-				aiJobService,
-				new OpenAiProperties("", "fake-model"));
+				aiJobService);
 	}
 
 	private Entry publishedEntry(Member member, String body) {

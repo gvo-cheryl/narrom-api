@@ -8,7 +8,6 @@ import com.naroom.api.ai.GenerationResult;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.ai.domain.entity.AiSafetyGrade;
 import com.naroom.api.ai.dto.AiJobResponse;
-import com.naroom.api.ai.infra.openai.OpenAiProperties;
 import com.naroom.api.ai.outcome.EntryReflectionGenerationContext;
 import com.naroom.api.ai.outcome.EntryReflectionOutcomeService;
 import com.naroom.api.ai.prompt.AiInstructionCatalog;
@@ -44,7 +43,6 @@ public class EntryReflectionJobProcessor {
 	private final EntryReflectionResponseParser responseParser;
 	private final EntryReflectionOutcomeService outcomeService;
 	private final AiJobService aiJobService;
-	private final OpenAiProperties openAiProperties;
 
 	public EntryReflectionJobProcessor(
 			PromptAssembler promptAssembler,
@@ -52,15 +50,13 @@ public class EntryReflectionJobProcessor {
 			AiResponseGenerationClient generationClient,
 			EntryReflectionResponseParser responseParser,
 			EntryReflectionOutcomeService outcomeService,
-			AiJobService aiJobService,
-			OpenAiProperties openAiProperties) {
+			AiJobService aiJobService) {
 		this.promptAssembler = promptAssembler;
 		this.moderationClient = moderationClient;
 		this.generationClient = generationClient;
 		this.responseParser = responseParser;
 		this.outcomeService = outcomeService;
 		this.aiJobService = aiJobService;
-		this.openAiProperties = openAiProperties;
 	}
 
 	public void process(AiJobResponse job) {
@@ -91,7 +87,7 @@ public class EntryReflectionJobProcessor {
 				prompt.contextContent(),
 				MAX_OUTPUT_TOKENS,
 				prompt.outputSchemaVersion(),
-				AiInstructionCatalog.outputSchema(AiFeatureType.ENTRY_REFLECTION));
+				AiInstructionCatalog.outputSchema(AiFeatureType.ENTRY_REFLECTION, prompt.outputMaxLength()));
 		long generationStartedAt = System.currentTimeMillis();
 		GenerationResult generationResult = generationClient.generate(request);
 		int latencyMs = (int) (System.currentTimeMillis() - generationStartedAt);
@@ -113,7 +109,7 @@ public class EntryReflectionJobProcessor {
 				job.startedAt(),
 				job.entryId(),
 				1, // TODO: 4-J/재생성 기능이 붙으면 실제 회원 재생성 횟수 기준 버전 번호로 교체한다.
-				openAiProperties.model(),
+				prompt.modelName(),
 				prompt.commonInstructionsVersion(),
 				prompt.featureInstructionsVersion(),
 				prompt.outputSchemaVersion(),

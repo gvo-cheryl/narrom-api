@@ -354,6 +354,49 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseAdminAppContentItemResponse"
+  /api/v1/admin/ai/prompts/{id}:
+    get:
+      tags:
+      - admin-ai-prompt-controller
+      operationId: get_6
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAiPromptResponse"
+    put:
+      tags:
+      - admin-ai-prompt-controller
+      operationId: update_6
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAiPromptUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAiPromptResponse"
   /api/v1/account/notification-preferences/{type}:
     put:
       tags:
@@ -1595,6 +1638,98 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseAdminAppContentItemResponse"
+  /api/v1/admin/ai/prompts:
+    get:
+      tags:
+      - admin-ai-prompt-controller
+      operationId: list_6
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseListAdminAiPromptResponse"
+    post:
+      tags:
+      - admin-ai-prompt-controller
+      operationId: create_7
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAiPromptCreateRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAiPromptResponse"
+  /api/v1/admin/ai/prompts/{id}/revisions:
+    post:
+      tags:
+      - admin-ai-prompt-controller
+      operationId: createRevision_4
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminAiPromptCreateRevisionRequest"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAiPromptResponse"
+  /api/v1/admin/ai/prompts/{id}/publish:
+    post:
+      tags:
+      - admin-ai-prompt-controller
+      operationId: publish_4
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAiPromptResponse"
+  /api/v1/admin/ai/prompts/{id}/archive:
+    post:
+      tags:
+      - admin-ai-prompt-controller
+      operationId: archive_4
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAiPromptResponse"
   /api/v1/account/withdrawal:
     post:
       tags:
@@ -1854,7 +1989,7 @@ paths:
     get:
       tags:
       - preview-session-info-controller
-      operationId: get_6
+      operationId: get_7
       responses:
         "200":
           description: OK
@@ -2349,7 +2484,7 @@ paths:
     get:
       tags:
       - admin-audit-log-controller
-      operationId: list_6
+      operationId: list_7
       parameters:
       - name: actorAdminId
         in: query
@@ -2409,7 +2544,7 @@ paths:
     get:
       tags:
       - admin-ai-runtime-status-controller
-      operationId: list_7
+      operationId: list_8
       responses:
         "200":
           description: OK
@@ -3216,6 +3351,71 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/AdminAppContentItemResponse"
+    AdminAiPromptUpdateRequest:
+      type: object
+      properties:
+        versionLabel:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+        modelName:
+          type: string
+        outputMaxLength:
+          type: integer
+          format: int32
+      required:
+      - content
+      - versionLabel
+    AdminAiPromptResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          enum:
+          - COMMON
+          - FEATURE
+        featureType:
+          type: string
+          enum:
+          - ENTRY_REFLECTION
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - CONVERSATION_REPLY
+          - CONVERSATION_SUMMARY
+        versionLabel:
+          type: string
+        content:
+          type: string
+        modelName:
+          type: string
+        outputMaxLength:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+          - DRAFT
+          - PUBLISHED
+          - ARCHIVED
+        supersedesVersionId:
+          type: string
+          format: uuid
+        createdByAdminId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    ApiResponseAdminAiPromptResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminAiPromptResponse"
     NotificationPreferenceUpdateRequest:
       type: object
       properties:
@@ -4459,6 +4659,45 @@ components:
       - schemaVersion
       - surface
       - valueType
+    AdminAiPromptCreateRequest:
+      type: object
+      properties:
+        scope:
+          type: string
+          enum:
+          - COMMON
+          - FEATURE
+        featureType:
+          type: string
+          enum:
+          - ENTRY_REFLECTION
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - CONVERSATION_REPLY
+          - CONVERSATION_SUMMARY
+        versionLabel:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+        modelName:
+          type: string
+        outputMaxLength:
+          type: integer
+          format: int32
+      required:
+      - content
+      - scope
+      - versionLabel
+    AdminAiPromptCreateRevisionRequest:
+      type: object
+      properties:
+        versionLabel:
+          type: string
+          minLength: 1
+      required:
+      - versionLabel
     AccountWithdrawalResponse:
       type: object
       properties:
@@ -5450,6 +5689,9 @@ components:
           type: string
         featurePromptOutputSchemaVersion:
           type: string
+        outputMaxLength:
+          type: integer
+          format: int32
         windowDays:
           type: integer
           format: int32
@@ -5478,6 +5720,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AdminAiRuntimeStatusResponse"
+    ApiResponseListAdminAiPromptResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAiPromptResponse"
     ApiResponseListNotificationPreferenceResponse:
       type: object
       properties:

@@ -11,7 +11,7 @@ class AssembledPromptTest {
 	@Test
 	void combinedInstructions_withPreference_includesSafetyReminderBeforePreference() {
 		AssembledPrompt prompt = new AssembledPrompt(
-				"common-v1", "공통 지침", "feature-v1", "기능별 지침", "말투 선호: DIRECT", "본문", "schema-v1");
+				"common-v1", "공통 지침", "feature-v1", "기능별 지침", "말투 선호: DIRECT", "본문", "schema-v1", "gpt-4o", null);
 
 		String combined = prompt.combinedInstructions();
 
@@ -27,7 +27,7 @@ class AssembledPromptTest {
 	@Test
 	void combinedInstructions_withoutPreference_omitsPreferenceSection() {
 		AssembledPrompt prompt = new AssembledPrompt(
-				"common-v1", "공통 지침", "feature-v1", "기능별 지침", "", "본문", "schema-v1");
+				"common-v1", "공통 지침", "feature-v1", "기능별 지침", "", "본문", "schema-v1", "gpt-4o", null);
 
 		String combined = prompt.combinedInstructions();
 
@@ -37,9 +37,9 @@ class AssembledPromptTest {
 	@Test
 	void combinedInstructions_blankPreference_treatedAsAbsent() {
 		AssembledPrompt withNull = new AssembledPrompt(
-				"common-v1", "공통 지침", "feature-v1", "기능별 지침", null, "본문", "schema-v1");
+				"common-v1", "공통 지침", "feature-v1", "기능별 지침", null, "본문", "schema-v1", "gpt-4o", null);
 		AssembledPrompt withBlank = new AssembledPrompt(
-				"common-v1", "공통 지침", "feature-v1", "기능별 지침", "   ", "본문", "schema-v1");
+				"common-v1", "공통 지침", "feature-v1", "기능별 지침", "   ", "본문", "schema-v1", "gpt-4o", null);
 
 		assertEquals(withNull.combinedInstructions().contains("회원 선호도를 참고"), false);
 		assertEquals(withBlank.combinedInstructions().contains("회원 선호도를 참고"), false);

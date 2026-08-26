@@ -15,6 +15,7 @@ import com.naroom.api.ai.domain.entity.AiSafetyGrade;
 import com.naroom.api.ai.domain.repository.AiGenerationRunRepository;
 import com.naroom.api.ai.domain.repository.AiJobRepository;
 import com.naroom.api.ai.domain.repository.AiPromptVersionRepository;
+import com.naroom.api.ai.prompt.AiInstructionCatalog;
 import com.naroom.api.record.domain.entity.Entry;
 import com.naroom.api.record.domain.entity.EntryType;
 import com.naroom.api.record.domain.repository.EntryRepository;
@@ -65,8 +66,11 @@ class AdminAiRuntimeStatusControllerTest {
 	@Autowired
 	private AiGenerationRunRepository aiGenerationRunRepository;
 
+	// 코드 북마킹용 row(content가 없는 forCommon/forFeature)는 화면 표시에 쓰이지 않는다 - 관리자가 발행한
+	// content가 있는 row가 없으면 항상 AiInstructionCatalog의 코드 기본값을 보여준다. 그래서 여기서 만드는
+	// commonLabel/featureLabel과 실제 응답 라벨은 다르며, 코드 기본 라벨이 나오는지를 검증한다.
 	@Test
-	void list_reflectsActivePromptVersionsAndRecentJobAggregates() throws Exception {
+	void list_withoutPublishedAdminContent_reflectsCodeDefaultsAndRecentJobAggregates() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.AI_OPERATOR));
 
 		Member member = memberRepository.save(Member.create("지연"));
@@ -93,15 +97,35 @@ class AdminAiRuntimeStatusControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.length()").value(5))
 				.andExpect(jsonPath("$.data[?(@.featureType=='ENTRY_REFLECTION')].commonPromptVersionLabel")
-						.value(commonLabel))
+						.value(AiInstructionCatalog.COMMON_INSTRUCTIONS_VERSION))
 				.andExpect(jsonPath("$.data[?(@.featureType=='ENTRY_REFLECTION')].featurePromptVersionLabel")
-						.value(featureLabel))
+						.value(AiInstructionCatalog.featureInstructionsVersion(AiFeatureType.ENTRY_REFLECTION)))
 				.andExpect(jsonPath("$.data[?(@.featureType=='ENTRY_REFLECTION')].totalJobCount")
 						.value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.greaterThanOrEqualTo(1))))
 				.andExpect(jsonPath("$.data[?(@.featureType=='ENTRY_REFLECTION')].successRate")
 						.value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.notNullValue())))
 				.andExpect(jsonPath("$.data[?(@.featureType=='ENTRY_REFLECTION')].avgLatencyMs")
 						.value(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.notNullValue())));
+	}
+
+	@Test
+	void list_withPublishedAdminContent_reflectsAdminAuthoredVersion() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.AI_OPERATOR));
+		String featureLabel = "entry-reflection-admin-" + System.nanoTime();
+
+		aiPromptVersionRepository.save(AiPromptVersion.draftFeature(
+				AiFeatureType.ENTRY_REFLECTION, featureLabel, "관리자가 작성한 지침", "gpt-4o-mini", 500, null, null));
+		AiPromptVersion published = aiPromptVersionRepository
+				.findByFeatureTypeAndVersionLabel(AiFeatureType.ENTRY_REFLECTION, featureLabel).orElseThrow();
+		published.publish();
+		aiPromptVersionRepository.save(published);
+
+		mockMvc.perform(get("/api/v1/admin/ai/runtime-status").cookie(cookie))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[?(@.featureType=='ENTRY_REFLECTION')].featurePromptVersionLabel")
+						.value(featureLabel))
+				.andExpect(jsonPath("$.data[?(@.featureType=='ENTRY_REFLECTION')].modelName").value("gpt-4o-mini"))
+				.andExpect(jsonPath("$.data[?(@.featureType=='ENTRY_REFLECTION')].outputMaxLength").value(500));
 	}
 
 	private Cookie sessionCookie(Set<AdminRole> roles) {
