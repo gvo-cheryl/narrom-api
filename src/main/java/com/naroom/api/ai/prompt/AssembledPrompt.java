@@ -9,7 +9,9 @@ public record AssembledPrompt(
 		String featureInstructions,
 		String preferenceInstructions,
 		String contextContent,
-		String outputSchemaVersion) {
+		String outputSchemaVersion,
+		String modelName,
+		Integer outputMaxLength) {
 
 	// 14.3절: 회원 선호도는 공통 안전 규칙보다 우선할 수 없다. 순서상 공통 지침을 먼저 두고, 선호도 레이어 앞에
 	// 그 사실을 다시 명시해 모델이 선호도를 안전 규칙보다 우선시키지 않게 한다.

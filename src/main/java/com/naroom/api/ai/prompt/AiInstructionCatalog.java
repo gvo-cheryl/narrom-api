@@ -6,8 +6,10 @@ import com.naroom.api.ai.result.PeriodReflectionSchema;
 
 import java.util.Map;
 
-// 14.6절: 공통·기능별 지침은 외부 Dashboard의 변경 가능한 Prompt 객체가 아니라 여기(백엔드 코드)에서 버전 관리한다.
-// 지침 텍스트를 바꾸면 반드시 버전 라벨도 같이 올린다 - AiGenerationRun에 버전이 기록되어 이전 결과와 비교 평가에 쓰인다.
+// 14.6절: 공통·기능별 지침의 코드 기본값(관리 파일 역할). 관리자가 관리자 웹에서 지침을 작성해 발행하면
+// AiPromptResolver가 그것을 우선 쓰고, 아직 아무도 발행하지 않은 기능만 여기 값으로 돌아간다. 코드에서
+// 이 지침 텍스트를 바꿀 때도 반드시 버전 라벨을 같이 올린다 - AiGenerationRun에 버전이 기록되어 이전
+// 결과와 비교 평가에 쓰인다.
 public final class AiInstructionCatalog {
 
 	public static final String COMMON_INSTRUCTIONS_VERSION = "common-v2";
@@ -132,10 +134,11 @@ public final class AiInstructionCatalog {
 	}
 
 	// 4-G: 실제 Structured Output JSON Schema. outputSchemaVersion()의 라벨과 짝을 이룬다.
-	public static Map<String, Object> outputSchema(AiFeatureType featureType) {
+	// summaryMaxLength는 관리자가 발행한 FEATURE 지침의 outputMaxLength다 - null이면 글자 수 제한을 두지 않는다.
+	public static Map<String, Object> outputSchema(AiFeatureType featureType, Integer summaryMaxLength) {
 		return switch (featureType) {
-			case ENTRY_REFLECTION -> EntryReflectionSchema.SCHEMA;
-			case WEEKLY_REFLECTION, THREE_DAY_REFLECTION -> PeriodReflectionSchema.SCHEMA;
+			case ENTRY_REFLECTION -> EntryReflectionSchema.schema(summaryMaxLength);
+			case WEEKLY_REFLECTION, THREE_DAY_REFLECTION -> PeriodReflectionSchema.schema(summaryMaxLength);
 			default -> throw unsupported(featureType);
 		};
 	}

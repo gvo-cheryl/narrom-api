@@ -8,7 +8,6 @@ import com.naroom.api.ai.GenerationResult;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
 import com.naroom.api.ai.domain.entity.AiSafetyGrade;
 import com.naroom.api.ai.dto.AiJobResponse;
-import com.naroom.api.ai.infra.openai.OpenAiProperties;
 import com.naroom.api.ai.outcome.PeriodReflectionGenerationContext;
 import com.naroom.api.ai.outcome.PeriodReflectionOutcomeService;
 import com.naroom.api.ai.prompt.AiInstructionCatalog;
@@ -50,7 +49,6 @@ public class PeriodReflectionJobProcessor {
 	private final PeriodReflectionResponseParser responseParser;
 	private final PeriodReflectionOutcomeService outcomeService;
 	private final AiJobService aiJobService;
-	private final OpenAiProperties openAiProperties;
 
 	public PeriodReflectionJobProcessor(
 			PeriodReflectionService periodReflectionService,
@@ -59,8 +57,7 @@ public class PeriodReflectionJobProcessor {
 			AiResponseGenerationClient generationClient,
 			PeriodReflectionResponseParser responseParser,
 			PeriodReflectionOutcomeService outcomeService,
-			AiJobService aiJobService,
-			OpenAiProperties openAiProperties) {
+			AiJobService aiJobService) {
 		this.periodReflectionService = periodReflectionService;
 		this.promptAssembler = promptAssembler;
 		this.moderationClient = moderationClient;
@@ -68,7 +65,6 @@ public class PeriodReflectionJobProcessor {
 		this.responseParser = responseParser;
 		this.outcomeService = outcomeService;
 		this.aiJobService = aiJobService;
-		this.openAiProperties = openAiProperties;
 	}
 
 	public void process(AiJobResponse job) {
@@ -134,7 +130,7 @@ public class PeriodReflectionJobProcessor {
 				prompt.contextContent(),
 				maxOutputTokens(job.featureType()),
 				prompt.outputSchemaVersion(),
-				AiInstructionCatalog.outputSchema(job.featureType()));
+				AiInstructionCatalog.outputSchema(job.featureType(), prompt.outputMaxLength()));
 		long generationStartedAt = System.currentTimeMillis();
 		GenerationResult generationResult = generationClient.generate(request);
 		int latencyMs = (int) (System.currentTimeMillis() - generationStartedAt);
@@ -167,7 +163,7 @@ public class PeriodReflectionJobProcessor {
 				job.id(),
 				job.startedAt(),
 				periodReflection.getId(),
-				openAiProperties.model(),
+				prompt.modelName(),
 				prompt.commonInstructionsVersion(),
 				prompt.featureInstructionsVersion(),
 				prompt.outputSchemaVersion(),

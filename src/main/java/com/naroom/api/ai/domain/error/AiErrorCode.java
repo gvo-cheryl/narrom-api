@@ -55,6 +55,46 @@ public enum AiErrorCode implements ErrorCode {
 			"이 AI 생성 이력에 대한 평가가 아직 없습니다. 먼저 평가를 제출해 주세요.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROMPT_VERSION_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"AI_PROMPT_VERSION_NOT_FOUND",
+			"urn:naroom:problem:ai-prompt-version-not-found",
+			"프롬프트 버전을 찾을 수 없습니다",
+			"삭제되었거나 존재하지 않는 프롬프트 버전입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROMPT_VERSION_NOT_DRAFT(
+			HttpStatus.CONFLICT,
+			"AI_PROMPT_VERSION_NOT_DRAFT",
+			"urn:naroom:problem:ai-prompt-version-not-draft",
+			"수정할 수 없는 상태입니다",
+			"초안(DRAFT) 상태의 프롬프트 버전만 수정하거나 발행할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROMPT_VERSION_NOT_PUBLISHED(
+			HttpStatus.CONFLICT,
+			"AI_PROMPT_VERSION_NOT_PUBLISHED",
+			"urn:naroom:problem:ai-prompt-version-not-published",
+			"처리할 수 없는 상태입니다",
+			"발행(PUBLISHED) 상태의 프롬프트 버전에만 적용할 수 있습니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	PROMPT_VERSION_LABEL_ALREADY_EXISTS(
+			HttpStatus.CONFLICT,
+			"AI_PROMPT_VERSION_LABEL_ALREADY_EXISTS",
+			"urn:naroom:problem:ai-prompt-version-label-already-exists",
+			"이미 사용 중인 버전 라벨입니다",
+			"같은 범위(공통 또는 같은 기능)에서 다른 라벨을 입력해 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

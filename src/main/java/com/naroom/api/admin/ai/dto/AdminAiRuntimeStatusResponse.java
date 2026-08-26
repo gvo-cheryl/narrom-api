@@ -9,6 +9,7 @@ public record AdminAiRuntimeStatusResponse(
 		String commonPromptOutputSchemaVersion,
 		String featurePromptVersionLabel,
 		String featurePromptOutputSchemaVersion,
+		Integer outputMaxLength,
 		int windowDays,
 		long totalJobCount,
 		long completedJobCount,
