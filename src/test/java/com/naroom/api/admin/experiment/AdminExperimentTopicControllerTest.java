@@ -53,28 +53,11 @@ class AdminExperimentTopicControllerTest {
 						.with(csrf())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{"code":"emotion","name":"감정","description":"감정 관찰","displayOrder":1,"active":true}
+								{"name":"감정","description":"감정 관찰","displayOrder":1,"active":true}
 								"""))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.code").value("emotion"))
 				.andExpect(jsonPath("$.data.name").value("감정"))
 				.andExpect(jsonPath("$.data.active").value(true));
-	}
-
-	@Test
-	void create_duplicateCode_returnsConflict() throws Exception {
-		experimentTopicRepository.save(ExperimentTopic.create("relationship", "관계", null, 1, true));
-		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
-
-		mockMvc.perform(post("/api/v1/admin/experiments/topics")
-						.cookie(cookie)
-						.with(csrf())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("""
-								{"code":"relationship","name":"관계2","displayOrder":2,"active":true}
-								"""))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value("EXPERIMENT_TOPIC_CODE_DUPLICATE"));
 	}
 
 	@Test
@@ -86,7 +69,7 @@ class AdminExperimentTopicControllerTest {
 						.with(csrf())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{"code":"thought","name":"생각","displayOrder":1,"active":true}
+								{"name":"생각","displayOrder":1,"active":true}
 								"""))
 				.andExpect(status().isForbidden())
 				.andExpect(jsonPath("$.code").value("ADMIN_ACCESS_DENIED"));

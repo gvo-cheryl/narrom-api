@@ -1,5 +1,6 @@
 package com.naroom.api.admin.record;
 
+import com.naroom.api.admin.common.AdminCodeGenerator;
 import com.naroom.api.admin.common.AdminSearchSpecifications;
 import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.record.dto.AdminRecordPromptCreateRequest;
@@ -50,12 +51,10 @@ public class AdminRecordPromptService {
 
 	@Transactional
 	public AdminRecordPromptResponse create(AdminRecordPromptCreateRequest request, UUID actingAdminId) {
-		if (recordPromptRepository.existsByCode(request.code())) {
-			throw new BusinessException(RecordErrorCode.PROMPT_CODE_ALREADY_EXISTS);
-		}
 		RecordPrompt prompt = RecordPrompt.create(
-				request.code(), 1, request.questionText(), request.helperText(), request.entryType(),
-				request.displayOrder(), request.activeFrom(), request.activeUntil(), null, actingAdminId);
+				AdminCodeGenerator.generate("prompt"), 1, request.questionText(), request.helperText(),
+				request.entryType(), request.displayOrder(), request.activeFrom(), request.activeUntil(), null,
+				actingAdminId);
 		return AdminRecordPromptResponse.from(recordPromptRepository.save(prompt));
 	}
 

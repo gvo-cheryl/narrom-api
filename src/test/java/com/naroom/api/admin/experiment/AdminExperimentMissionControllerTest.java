@@ -60,7 +60,6 @@ class AdminExperimentMissionControllerTest {
 
 		String createBody = """
 				{
-				  "code": "mission-1",
 				  "topicId": "%s",
 				  "title": "오늘의 감정 관찰",
 				  "description": "설명",
@@ -83,13 +82,13 @@ class AdminExperimentMissionControllerTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(createBody))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.code").value("mission-1"))
 				.andExpect(jsonPath("$.data.contentVersion").value(1))
 				.andReturn()
 				.getResponse()
 				.getContentAsString();
 
 		String missionId = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.id");
+		String code = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.code");
 
 		String updateBody = """
 				{
@@ -114,7 +113,7 @@ class AdminExperimentMissionControllerTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(updateBody))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.code").value("mission-1"))
+				.andExpect(jsonPath("$.data.code").value(code))
 				.andExpect(jsonPath("$.data.contentVersion").value(2))
 				.andExpect(jsonPath("$.data.title").value("오늘의 감정 관찰(수정)"))
 				.andExpect(jsonPath("$.data.missionType").value("QUESTION"));
@@ -126,7 +125,6 @@ class AdminExperimentMissionControllerTest {
 
 		String body = """
 				{
-				  "code": "mission-unknown-topic",
 				  "topicId": "%s",
 				  "title": "제목",
 				  "description": "설명",
@@ -149,42 +147,6 @@ class AdminExperimentMissionControllerTest {
 						.content(body))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.code").value("EXPERIMENT_TOPIC_NOT_FOUND"));
-	}
-
-	@Test
-	void create_duplicateCode_returnsConflict() throws Exception {
-		ExperimentTopic topic = experimentTopicRepository.save(
-				ExperimentTopic.create("relationship-" + System.nanoTime(), "관계", null, 1, true));
-		experimentMissionRepository.save(ExperimentMission.create(
-				"dup-mission", topic, "제목", "설명", "지시문", ExperimentMissionType.RECORD, "TEXT",
-				(short) 5, ExperimentEmotionalLoad.LOW, "[]", "[]", "{}", null, true));
-		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
-
-		String body = """
-				{
-				  "code": "dup-mission",
-				  "topicId": "%s",
-				  "title": "제목2",
-				  "description": "설명",
-				  "instruction": "지시문",
-				  "missionType": "REVIEW",
-				  "responseType": "TEXT",
-				  "estimatedMinutes": 5,
-				  "emotionalLoad": "HIGH",
-				  "reflectionQuestions": "[]",
-				  "examples": "[]",
-				  "responseSchema": "{}",
-				  "active": true
-				}
-				""".formatted(topic.getId());
-
-		mockMvc.perform(post("/api/v1/admin/experiments/missions")
-						.cookie(cookie)
-						.with(csrf())
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(body))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value("EXPERIMENT_MISSION_CODE_DUPLICATE"));
 	}
 
 	@Test

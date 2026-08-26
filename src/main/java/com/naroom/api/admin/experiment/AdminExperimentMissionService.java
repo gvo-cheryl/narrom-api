@@ -1,5 +1,6 @@
 package com.naroom.api.admin.experiment;
 
+import com.naroom.api.admin.common.AdminCodeGenerator;
 import com.naroom.api.admin.common.AdminSearchSpecifications;
 import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.experiment.dto.AdminExperimentMissionCreateRequest;
@@ -26,7 +27,7 @@ public class AdminExperimentMissionService {
 	// docs/contracts/drafts/admin-list-search-sort.md 권장안.
 	private static final List<String> SEARCH_FIELDS = List.of("title", "code", "description", "instruction");
 	private static final Set<String> SORTABLE_FIELDS =
-			Set.of("code", "title", "missionType", "updatedAt", "createdAt");
+			Set.of("code", "title", "missionType", "active", "updatedAt", "createdAt");
 	private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "updatedAt");
 
 	private final ExperimentMissionRepository experimentMissionRepository;
@@ -54,12 +55,9 @@ public class AdminExperimentMissionService {
 
 	@Transactional
 	public AdminExperimentMissionResponse create(AdminExperimentMissionCreateRequest request) {
-		experimentMissionRepository.findByCode(request.code()).ifPresent(existing -> {
-			throw new BusinessException(ExperimentErrorCode.MISSION_CODE_DUPLICATE);
-		});
 		ExperimentTopic topic = findTopicOrThrow(request.topicId());
 		ExperimentMission mission = ExperimentMission.create(
-				request.code(),
+				AdminCodeGenerator.generate("mission"),
 				topic,
 				request.title(),
 				request.description(),

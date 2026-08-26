@@ -1,5 +1,6 @@
 package com.naroom.api.admin.experiment;
 
+import com.naroom.api.admin.common.AdminCodeGenerator;
 import com.naroom.api.admin.common.AdminSearchSpecifications;
 import com.naroom.api.admin.common.AdminSortParser;
 import com.naroom.api.admin.experiment.dto.AdminExperimentProgramCreateRequest;
@@ -73,15 +74,13 @@ public class AdminExperimentProgramService {
 
 	@Transactional
 	public AdminExperimentProgramResponse create(AdminExperimentProgramCreateRequest request, UUID actingAdminId) {
-		if (experimentProgramRepository.existsByCode(request.code())) {
-			throw new BusinessException(ExperimentErrorCode.PROGRAM_CODE_DUPLICATE);
-		}
 		requireAllowedDuration(request.durationDays());
 		ExperimentTopic primaryTopic = findTopicOrThrow(request.primaryTopicId());
 		ExperimentProgram program = ExperimentProgram.create(
-				request.code(), 1, primaryTopic, request.title(), request.description(), request.durationDays(),
-				request.sourceType(), request.estimatedMinutesMin(), request.estimatedMinutesMax(),
-				request.featured(), request.beginner(), request.displayOrder(), null, actingAdminId);
+				AdminCodeGenerator.generate("program"), 1, primaryTopic, request.title(), request.description(),
+				request.durationDays(), request.sourceType(), request.estimatedMinutesMin(),
+				request.estimatedMinutesMax(), request.featured(), request.beginner(), request.displayOrder(), null,
+				actingAdminId);
 		program = experimentProgramRepository.save(program);
 		List<ExperimentProgramMission> programMissions = buildDayMissions(program, request.durationDays(), request.days());
 		experimentProgramMissionRepository.saveAll(programMissions);

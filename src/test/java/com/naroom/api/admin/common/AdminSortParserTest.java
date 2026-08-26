@@ -38,4 +38,18 @@ class AdminSortParserTest {
 				.isInstanceOf(BusinessException.class);
 	}
 
+	@Test
+	void multipleFields_parsesInOrder() {
+		Sort sort = AdminSortParser.parse("code,desc;updatedAt,asc", ALLOWED, FALLBACK);
+		assertThat(sort.getOrderFor("code").getDirection()).isEqualTo(Sort.Direction.DESC);
+		assertThat(sort.getOrderFor("updatedAt").getDirection()).isEqualTo(Sort.Direction.ASC);
+		assertThat(sort.stream().map(Sort.Order::getProperty).toList()).containsExactly("code", "updatedAt");
+	}
+
+	@Test
+	void multipleFields_oneDisallowed_throwsBusinessException() {
+		assertThatThrownBy(() -> AdminSortParser.parse("code,asc;email,desc", ALLOWED, FALLBACK))
+				.isInstanceOf(BusinessException.class);
+	}
+
 }

@@ -42,22 +42,21 @@ class AdminRecordPromptControllerTest {
 	@Test
 	void fullLifecycle_createPublishReviseAndArchive() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.CONTENT_EDITOR));
-		String code = "today-feeling-" + System.nanoTime();
 
 		String createResponse = mockMvc.perform(post("/api/v1/admin/content/record-prompts")
 						.cookie(cookie)
 						.with(csrf())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{"code":"%s","questionText":"오늘 기분은 어땠나요?","helperText":"편하게 적어보세요",
+								{"questionText":"오늘 기분은 어땠나요?","helperText":"편하게 적어보세요",
 								"entryType":"PROMPT","displayOrder":1,"activeFrom":null,"activeUntil":null}
-								""".formatted(code)))
+								"""))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.code").value(code))
 				.andExpect(jsonPath("$.data.versionNo").value(1))
 				.andExpect(jsonPath("$.data.status").value("DRAFT"))
 				.andReturn().getResponse().getContentAsString();
 		String draftId = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.id");
+		String code = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.code");
 
 		mockMvc.perform(put("/api/v1/admin/content/record-prompts/" + draftId)
 						.cookie(cookie)
@@ -104,33 +103,14 @@ class AdminRecordPromptControllerTest {
 	}
 
 	@Test
-	void create_duplicateCode_returnsConflict() throws Exception {
-		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
-		String code = "dup-prompt-" + System.nanoTime();
-		String body = """
-				{"code":"%s","questionText":"질문","entryType":"PROMPT","displayOrder":1}
-				""".formatted(code);
-
-		mockMvc.perform(post("/api/v1/admin/content/record-prompts")
-						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isOk());
-
-		mockMvc.perform(post("/api/v1/admin/content/record-prompts")
-						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value("RECORD_PROMPT_CODE_ALREADY_EXISTS"));
-	}
-
-	@Test
 	void archive_onlyPublishedPrompt_isBlocked() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
-		String code = "solo-prompt-" + System.nanoTime();
 
 		String createResponse = mockMvc.perform(post("/api/v1/admin/content/record-prompts")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{"code":"%s","questionText":"질문","entryType":"PROMPT","displayOrder":1}
-								""".formatted(code)))
+								{"questionText":"질문","entryType":"PROMPT","displayOrder":1}
+								"""))
 				.andExpect(status().isOk())
 				.andReturn().getResponse().getContentAsString();
 		String id = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.id");
@@ -147,8 +127,8 @@ class AdminRecordPromptControllerTest {
 	void list_withQ_returnsOnlyMatchingPrompts() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
 		String uniqueMarker = "찾아줘" + System.nanoTime();
-		createPrompt(cookie, "rp-match-" + System.nanoTime(), uniqueMarker + " 질문");
-		createPrompt(cookie, "rp-nomatch-" + System.nanoTime(), "관련 없는 질문");
+		createPrompt(cookie, uniqueMarker + " 질문");
+		createPrompt(cookie, "관련 없는 질문");
 
 		mockMvc.perform(get("/api/v1/admin/content/record-prompts").cookie(cookie).param("q", uniqueMarker))
 				.andExpect(status().isOk())
@@ -165,12 +145,12 @@ class AdminRecordPromptControllerTest {
 				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
 	}
 
-	private void createPrompt(Cookie cookie, String code, String questionText) throws Exception {
+	private void createPrompt(Cookie cookie, String questionText) throws Exception {
 		mockMvc.perform(post("/api/v1/admin/content/record-prompts")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{"code":"%s","questionText":"%s","entryType":"PROMPT","displayOrder":1}
-								""".formatted(code, questionText)))
+								{"questionText":"%s","entryType":"PROMPT","displayOrder":1}
+								""".formatted(questionText)))
 				.andExpect(status().isOk());
 	}
 

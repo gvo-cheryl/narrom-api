@@ -10,8 +10,8 @@ import jakarta.validation.constraints.Positive;
 import java.util.List;
 import java.util.UUID;
 
+// code는 사용자가 입력하지 않는다 - 생성 시 서버가 자동으로 부여한다.
 public record AdminExperimentProgramCreateRequest(
-		@NotBlank String code,
 		@NotNull UUID primaryTopicId,
 		@NotBlank String title,
 		@NotBlank String description,

@@ -48,23 +48,22 @@ class AdminQuoteControllerTest {
 	void fullLifecycle_createPublishReviseAndArchive() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.CONTENT_EDITOR));
 		QuoteTopic topic = quoteTopicRepository.save(QuoteTopic.create("topic-" + System.nanoTime(), "쉼과 속도"));
-		String code = "quote-" + System.nanoTime();
 
 		String createResponse = mockMvc.perform(post("/api/v1/admin/content/quotes")
 						.cookie(cookie)
 						.with(csrf())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{"code":"%s","text":"오늘도 잘 하고 있어요","authorName":null,"sourceName":null,
+								{"text":"오늘도 잘 하고 있어요","authorName":null,"sourceName":null,
 								"sourceUrl":null,"topicIds":["%s"],"activeFrom":null,"activeUntil":null}
-								""".formatted(code, topic.getId())))
+								""".formatted(topic.getId())))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.code").value(code))
 				.andExpect(jsonPath("$.data.versionNo").value(1))
 				.andExpect(jsonPath("$.data.status").value("DRAFT"))
 				.andExpect(jsonPath("$.data.topicIds[0]").value(topic.getId().toString()))
 				.andReturn().getResponse().getContentAsString();
 		String draftId = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.id");
+		String code = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.code");
 
 		mockMvc.perform(put("/api/v1/admin/content/quotes/" + draftId)
 						.cookie(cookie)
@@ -104,33 +103,14 @@ class AdminQuoteControllerTest {
 	}
 
 	@Test
-	void create_duplicateCode_returnsConflict() throws Exception {
-		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
-		String code = "dup-quote-" + System.nanoTime();
-		String body = """
-				{"code":"%s","text":"문장","topicIds":[]}
-				""".formatted(code);
-
-		mockMvc.perform(post("/api/v1/admin/content/quotes")
-						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isOk());
-
-		mockMvc.perform(post("/api/v1/admin/content/quotes")
-						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value("CONTENT_QUOTE_CODE_ALREADY_EXISTS"));
-	}
-
-	@Test
 	void archive_publishedQuote_succeeds() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
-		String code = "solo-quote-" + System.nanoTime();
 
 		String createResponse = mockMvc.perform(post("/api/v1/admin/content/quotes")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{"code":"%s","text":"문장","topicIds":[]}
-								""".formatted(code)))
+								{"text":"문장","topicIds":[]}
+								"""))
 				.andExpect(status().isOk())
 				.andReturn().getResponse().getContentAsString();
 		String id = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.id");
@@ -146,7 +126,7 @@ class AdminQuoteControllerTest {
 	@Test
 	void list_withoutParams_returnsAll() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
-		createQuote(cookie, "noparam-" + System.nanoTime(), "문장");
+		createQuote(cookie, "문장");
 
 		mockMvc.perform(get("/api/v1/admin/content/quotes").cookie(cookie))
 				.andExpect(status().isOk());
@@ -156,8 +136,8 @@ class AdminQuoteControllerTest {
 	void list_withQ_returnsOnlyMatchingQuotes() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
 		String uniqueMarker = "찾아줘" + System.nanoTime();
-		createQuote(cookie, "q-match-" + System.nanoTime(), uniqueMarker + " 문장");
-		createQuote(cookie, "q-nomatch-" + System.nanoTime(), "관련 없는 문장");
+		createQuote(cookie, uniqueMarker + " 문장");
+		createQuote(cookie, "관련 없는 문장");
 
 		mockMvc.perform(get("/api/v1/admin/content/quotes").cookie(cookie).param("q", uniqueMarker))
 				.andExpect(status().isOk())
@@ -168,14 +148,29 @@ class AdminQuoteControllerTest {
 	@Test
 	void list_withSort_ordersByRequestedField() throws Exception {
 		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
-		String prefix = "sort-" + System.nanoTime() + "-";
-		createQuote(cookie, prefix + "b", "b 문장");
-		createQuote(cookie, prefix + "a", "a 문장");
+		String marker = "sort-" + System.nanoTime();
+		createQuoteWithActiveFrom(cookie, marker + " b", "2026-02-01T00:00:00Z");
+		createQuoteWithActiveFrom(cookie, marker + " a", "2026-01-01T00:00:00Z");
 
-		mockMvc.perform(get("/api/v1/admin/content/quotes").cookie(cookie).param("q", prefix).param("sort", "code,asc"))
+		mockMvc.perform(get("/api/v1/admin/content/quotes")
+						.cookie(cookie).param("q", marker).param("sort", "activeFrom,asc"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data[0].code").value(prefix + "a"))
-				.andExpect(jsonPath("$.data[1].code").value(prefix + "b"));
+				.andExpect(jsonPath("$.data[0].text").value(marker + " a"))
+				.andExpect(jsonPath("$.data[1].text").value(marker + " b"));
+	}
+
+	@Test
+	void list_withMultipleSortFields_ordersByPriority() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.SUPER_ADMIN));
+		String marker = "multisort-" + System.nanoTime();
+		createQuoteWithActiveFrom(cookie, marker + " b", "2026-02-01T00:00:00Z");
+		createQuoteWithActiveFrom(cookie, marker + " a", "2026-01-01T00:00:00Z");
+
+		mockMvc.perform(get("/api/v1/admin/content/quotes")
+						.cookie(cookie).param("q", marker).param("sort", "activeFrom,asc;status,asc"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].text").value(marker + " a"))
+				.andExpect(jsonPath("$.data[1].text").value(marker + " b"));
 	}
 
 	@Test
@@ -187,12 +182,21 @@ class AdminQuoteControllerTest {
 				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
 	}
 
-	private void createQuote(Cookie cookie, String code, String text) throws Exception {
+	private void createQuote(Cookie cookie, String text) throws Exception {
 		mockMvc.perform(post("/api/v1/admin/content/quotes")
 						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
 						.content("""
-								{"code":"%s","text":"%s","topicIds":[]}
-								""".formatted(code, text)))
+								{"text":"%s","topicIds":[]}
+								""".formatted(text)))
+				.andExpect(status().isOk());
+	}
+
+	private void createQuoteWithActiveFrom(Cookie cookie, String text, String activeFrom) throws Exception {
+		mockMvc.perform(post("/api/v1/admin/content/quotes")
+						.cookie(cookie).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"text":"%s","topicIds":[],"activeFrom":"%s"}
+								""".formatted(text, activeFrom)))
 				.andExpect(status().isOk());
 	}
 
