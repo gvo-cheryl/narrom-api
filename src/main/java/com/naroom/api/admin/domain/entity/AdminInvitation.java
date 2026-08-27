@@ -17,6 +17,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -62,9 +63,11 @@ public class AdminInvitation {
 	protected AdminInvitation() {
 	}
 
+	// roles를 방어적으로 복사한다 - AdminUser와 마찬가지로, 호출부가 다른 곳에서 쓰는 Set 인스턴스를
+	// 그대로 넘기면 같은 컬렉션 객체가 두 @ElementCollection에 동시에 걸려 flush 시 Hibernate가 거부한다.
 	private AdminInvitation(String email, Set<AdminRole> roles, UUID invitedByAdminId) {
 		this.email = email;
-		this.roles = roles;
+		this.roles = new HashSet<>(roles);
 		this.invitedByAdminId = invitedByAdminId;
 	}
 

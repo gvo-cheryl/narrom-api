@@ -68,6 +68,9 @@ class AdminLoginResolverTest {
 				AdminInvitation.invite(email, Set.of(AdminRole.CONTENT_EDITOR), inviter.getId()));
 
 		AdminUser resolved = adminLoginResolver.resolve("new-sub-" + System.nanoTime(), email, true, "신규 관리자");
+		// AdminInvitation.roles 컬렉션 인스턴스를 그대로 재사용하면 flush 시점에야 Hibernate가
+		// "Found shared references to a collection"으로 거부한다 - 저장만으로는 드러나지 않는다.
+		adminUserRepository.flush();
 
 		assertEquals(Set.of(AdminRole.CONTENT_EDITOR), resolved.getRoles());
 		assertEquals(inviter.getId(), resolved.getApprovedByAdminId());
