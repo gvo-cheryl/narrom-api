@@ -2,9 +2,14 @@ package com.naroom.api.admin.ai;
 
 import com.naroom.api.admin.ai.dto.AdminAiPromptCreateRequest;
 import com.naroom.api.admin.ai.dto.AdminAiPromptCreateRevisionRequest;
+import com.naroom.api.admin.ai.dto.AdminAiPromptEffectiveResponse;
 import com.naroom.api.admin.ai.dto.AdminAiPromptResponse;
 import com.naroom.api.admin.ai.dto.AdminAiPromptUpdateRequest;
 import com.naroom.api.admin.auth.AdminAuthentication;
+import com.naroom.api.ai.domain.entity.AiFeatureType;
+import com.naroom.api.ai.domain.entity.AiPromptScope;
+import com.naroom.api.global.error.code.CommonErrorCode;
+import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,6 +47,15 @@ public class AdminAiPromptController {
 	@GetMapping("/{id}")
 	public ApiResponse<AdminAiPromptResponse> get(@PathVariable UUID id) {
 		return ApiResponse.of(adminAiPromptService.get(id));
+	}
+
+	@GetMapping("/effective")
+	public ApiResponse<AdminAiPromptEffectiveResponse> getEffective(
+			@RequestParam AiPromptScope scope, @RequestParam(required = false) AiFeatureType featureType) {
+		if (scope == AiPromptScope.FEATURE && featureType == null) {
+			throw new BusinessException(CommonErrorCode.VALIDATION_FAILED);
+		}
+		return ApiResponse.of(adminAiPromptService.getEffective(scope, featureType));
 	}
 
 	@PostMapping

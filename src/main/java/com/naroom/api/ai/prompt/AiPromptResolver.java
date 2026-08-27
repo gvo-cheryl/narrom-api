@@ -25,9 +25,9 @@ public class AiPromptResolver {
 	public ResolvedCommonInstructions resolveCommon() {
 		return aiPromptVersionRepository
 				.findFirstByScopeAndContentIsNotNullAndStatusOrderByCreatedAtDesc(AiPromptScope.COMMON, AiPromptVersionStatus.PUBLISHED)
-				.map(version -> new ResolvedCommonInstructions(version.getVersionLabel(), version.getContent()))
+				.map(version -> new ResolvedCommonInstructions(version.getVersionLabel(), version.getContent(), true))
 				.orElseGet(() -> new ResolvedCommonInstructions(
-						AiInstructionCatalog.COMMON_INSTRUCTIONS_VERSION, AiInstructionCatalog.COMMON_INSTRUCTIONS));
+						AiInstructionCatalog.COMMON_INSTRUCTIONS_VERSION, AiInstructionCatalog.COMMON_INSTRUCTIONS, false));
 	}
 
 	public ResolvedFeatureInstructions resolveFeature(AiFeatureType featureType) {
@@ -37,18 +37,21 @@ public class AiPromptResolver {
 						version.getVersionLabel(),
 						version.getContent(),
 						version.getModelName() != null ? version.getModelName() : openAiProperties.model(),
-						version.getOutputMaxLength()))
+						version.getOutputMaxLength(),
+						true))
 				.orElseGet(() -> new ResolvedFeatureInstructions(
 						AiInstructionCatalog.featureInstructionsVersion(featureType),
 						AiInstructionCatalog.featureInstructions(featureType),
 						openAiProperties.model(),
-						null));
+						null,
+						false));
 	}
 
-	public record ResolvedCommonInstructions(String versionLabel, String content) {
+	public record ResolvedCommonInstructions(String versionLabel, String content, boolean fromAdminContent) {
 	}
 
-	public record ResolvedFeatureInstructions(String versionLabel, String content, String modelName, Integer outputMaxLength) {
+	public record ResolvedFeatureInstructions(
+			String versionLabel, String content, String modelName, Integer outputMaxLength, boolean fromAdminContent) {
 	}
 
 }
