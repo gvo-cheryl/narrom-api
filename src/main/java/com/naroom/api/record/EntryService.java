@@ -12,8 +12,10 @@ import com.naroom.api.content.domain.repository.QuoteRepository;
 import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.record.domain.entity.Entry;
 import com.naroom.api.record.domain.entity.EntryType;
+import com.naroom.api.record.domain.entity.RecordContentLimit;
 import com.naroom.api.record.domain.error.RecordErrorCode;
 import com.naroom.api.record.domain.repository.EntryRepository;
+import com.naroom.api.record.domain.repository.RecordContentLimitRepository;
 import com.naroom.api.record.dto.EntryCreateRequest;
 import com.naroom.api.record.dto.EntryResponse;
 import com.naroom.api.record.dto.EntryUpdateRequest;
@@ -31,6 +33,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -53,6 +56,7 @@ public class EntryService {
 	private final EntryRepository entryRepository;
 	private final MemberRepository memberRepository;
 	private final QuoteRepository quoteRepository;
+	private final RecordContentLimitRepository recordContentLimitRepository;
 	private final AiJobService aiJobService;
 	private final BadgeAwardService badgeAwardService;
 	private final TransactionTemplate requiresNewTransactionTemplate;
@@ -61,12 +65,14 @@ public class EntryService {
 			EntryRepository entryRepository,
 			MemberRepository memberRepository,
 			QuoteRepository quoteRepository,
+			RecordContentLimitRepository recordContentLimitRepository,
 			AiJobService aiJobService,
 			BadgeAwardService badgeAwardService,
 			PlatformTransactionManager transactionManager) {
 		this.entryRepository = entryRepository;
 		this.memberRepository = memberRepository;
 		this.quoteRepository = quoteRepository;
+		this.recordContentLimitRepository = recordContentLimitRepository;
 		this.aiJobService = aiJobService;
 		this.badgeAwardService = badgeAwardService;
 		this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager);
@@ -78,6 +84,7 @@ public class EntryService {
 		if (!USER_CREATABLE_TYPES.contains(request.entryType())) {
 			throw new BusinessException(RecordErrorCode.ENTRY_TYPE_NOT_USER_CREATABLE);
 		}
+		requireBodyWithinLimit(request.body());
 		Member member = memberRepository.getReferenceById(memberId);
 		Entry parentEntry = resolveParentEntry(memberId, request.parentEntryId());
 		Quote quote = resolveQuote(request.entryType(), request.quoteId());
@@ -155,8 +162,23 @@ public class EntryService {
 		if (!entry.getVersion().equals(request.version())) {
 			throw new BusinessException(RecordErrorCode.ENTRY_VERSION_CONFLICT);
 		}
+		requireBodyWithinLimit(request.body());
 		entry.update(request.title(), request.body());
 		return EntryResponse.from(entryRepository.saveAndFlush(entry));
+	}
+
+	// 관리자가 record-content-limits에서 바꾸는 값을 그때그때 반영한다 - 배포 없이 바로 적용된다.
+	private void requireBodyWithinLimit(String body) {
+		if (body == null) {
+			return;
+		}
+		int maxLength = recordContentLimitRepository.findById(RecordContentLimit.SINGLETON_ID)
+				.orElseThrow(() -> new IllegalStateException("record_content_limits singleton row missing"))
+				.getBodyMaxLength();
+		if (body.length() > maxLength) {
+			throw new BusinessException(
+					RecordErrorCode.ENTRY_BODY_TOO_LONG, Map.of("maxLength", maxLength, "actualLength", body.length()));
+		}
 	}
 
 	@Transactional

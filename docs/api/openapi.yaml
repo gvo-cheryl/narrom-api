@@ -96,11 +96,40 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseAiFeedbackResponse"
+  /api/v1/admin/record/content-limits:
+    get:
+      tags:
+      - admin-record-content-limit-controller
+      operationId: get
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminRecordContentLimitResponse"
+    put:
+      tags:
+      - admin-record-content-limit-controller
+      operationId: update
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRecordContentLimitUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminRecordContentLimitResponse"
   /api/v1/admin/experiments/topics/{id}:
     get:
       tags:
       - admin-experiment-topic-controller
-      operationId: get
+      operationId: get_1
       parameters:
       - name: id
         in: path
@@ -118,7 +147,7 @@ paths:
     put:
       tags:
       - admin-experiment-topic-controller
-      operationId: update
+      operationId: update_1
       parameters:
       - name: id
         in: path
@@ -143,7 +172,7 @@ paths:
     get:
       tags:
       - admin-experiment-program-controller
-      operationId: get_1
+      operationId: get_2
       parameters:
       - name: id
         in: path
@@ -161,7 +190,7 @@ paths:
     put:
       tags:
       - admin-experiment-program-controller
-      operationId: update_1
+      operationId: update_2
       parameters:
       - name: id
         in: path
@@ -186,7 +215,7 @@ paths:
     get:
       tags:
       - admin-experiment-mission-controller
-      operationId: get_2
+      operationId: get_3
       parameters:
       - name: id
         in: path
@@ -204,7 +233,7 @@ paths:
     put:
       tags:
       - admin-experiment-mission-controller
-      operationId: update_2
+      operationId: update_3
       parameters:
       - name: id
         in: path
@@ -229,7 +258,7 @@ paths:
     get:
       tags:
       - admin-record-prompt-controller
-      operationId: get_3
+      operationId: get_4
       parameters:
       - name: id
         in: path
@@ -247,7 +276,7 @@ paths:
     put:
       tags:
       - admin-record-prompt-controller
-      operationId: update_3
+      operationId: update_4
       parameters:
       - name: id
         in: path
@@ -272,7 +301,7 @@ paths:
     get:
       tags:
       - admin-quote-controller
-      operationId: get_4
+      operationId: get_5
       parameters:
       - name: id
         in: path
@@ -290,7 +319,7 @@ paths:
     put:
       tags:
       - admin-quote-controller
-      operationId: update_4
+      operationId: update_5
       parameters:
       - name: id
         in: path
@@ -315,7 +344,7 @@ paths:
     get:
       tags:
       - admin-app-content-item-controller
-      operationId: get_5
+      operationId: get_6
       parameters:
       - name: id
         in: path
@@ -333,7 +362,7 @@ paths:
     put:
       tags:
       - admin-app-content-item-controller
-      operationId: update_5
+      operationId: update_6
       parameters:
       - name: id
         in: path
@@ -358,7 +387,7 @@ paths:
     get:
       tags:
       - admin-ai-prompt-controller
-      operationId: get_6
+      operationId: get_7
       parameters:
       - name: id
         in: path
@@ -376,7 +405,7 @@ paths:
     put:
       tags:
       - admin-ai-prompt-controller
-      operationId: update_6
+      operationId: update_7
       parameters:
       - name: id
         in: path
@@ -1989,7 +2018,7 @@ paths:
     get:
       tags:
       - preview-session-info-controller
-      operationId: get_7
+      operationId: get_8
       responses:
         "200":
           description: OK
@@ -2794,6 +2823,33 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/AiFeedbackResponse"
+    AdminRecordContentLimitUpdateRequest:
+      type: object
+      properties:
+        bodyMaxLength:
+          type: integer
+          format: int32
+          maximum: 20000
+          minimum: 1
+      required:
+      - bodyMaxLength
+    AdminRecordContentLimitResponse:
+      type: object
+      properties:
+        bodyMaxLength:
+          type: integer
+          format: int32
+        updatedByAdminId:
+          type: string
+          format: uuid
+        updatedAt:
+          type: string
+          format: date-time
+    ApiResponseAdminRecordContentLimitResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminRecordContentLimitResponse"
     AdminExperimentTopicUpdateRequest:
       type: object
       properties:
@@ -3531,7 +3587,7 @@ components:
           minLength: 0
         body:
           type: string
-          maxLength: 2000
+          maxLength: 20000
           minLength: 0
         recordDate:
           type: string
@@ -4858,7 +4914,7 @@ components:
           minLength: 0
         body:
           type: string
-          maxLength: 2000
+          maxLength: 20000
           minLength: 0
         version:
           type: integer
