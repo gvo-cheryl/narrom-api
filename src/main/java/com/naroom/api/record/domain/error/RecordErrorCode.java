@@ -47,6 +47,16 @@ public enum RecordErrorCode implements ErrorCode {
 			ClientAction.CHECK_REQUEST,
 			false),
 
+	ENTRY_BODY_TOO_LONG(
+			HttpStatus.BAD_REQUEST,
+			"RECORD_ENTRY_BODY_TOO_LONG",
+			"urn:naroom:problem:record-entry-body-too-long",
+			"기록 내용이 너무 깁니다",
+			"허용된 글자 수를 넘었습니다. context.maxLength를 확인해 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
 	TAG_NOT_FOUND(
 			HttpStatus.NOT_FOUND,
 			"RECORD_TAG_NOT_FOUND",

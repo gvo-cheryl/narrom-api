@@ -12,6 +12,7 @@ import com.naroom.api.global.security.SecurityProblemWriter;
 import com.naroom.api.ai.domain.entity.AiJobStatus;
 import com.naroom.api.record.domain.entity.EntryStatus;
 import com.naroom.api.record.domain.entity.EntryType;
+import com.naroom.api.record.domain.entity.RecordContentLimit;
 import com.naroom.api.record.domain.entity.TagCategory;
 import com.naroom.api.record.domain.entity.TagScope;
 import com.naroom.api.record.domain.error.RecordErrorCode;
@@ -136,9 +137,12 @@ class RecordControllerTest {
 				.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_FAILED"));
 	}
 
+	// 실제로 적용되는 글자 수 제한(record_content_limits, 관리자 설정)은 EntryService에서 검증한다 -
+	// 이 컨트롤러 계층 테스트는 EntryService를 목으로 대체하므로 EntryServiceTest에서 검증한다. 여기서는
+	// 그 설정값과 무관하게 항상 걸려야 하는 절대 상한(RecordContentLimit.HARD_MAX_BODY_LENGTH)만 확인한다.
 	@Test
-	void createEntry_bodyExceedsLimit_returnsValidationFailed() throws Exception {
-		String tooLong = "가".repeat(2001);
+	void createEntry_bodyExceedsHardCeiling_returnsValidationFailed() throws Exception {
+		String tooLong = "가".repeat(RecordContentLimit.HARD_MAX_BODY_LENGTH + 1);
 
 		mockMvc.perform(post("/api/v1/record/entries")
 						.with(authentication(memberAuthentication()))

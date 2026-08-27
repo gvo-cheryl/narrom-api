@@ -10,8 +10,10 @@ import com.naroom.api.global.error.exception.BusinessException;
 import com.naroom.api.record.domain.entity.Entry;
 import com.naroom.api.record.domain.entity.EntryStatus;
 import com.naroom.api.record.domain.entity.EntryType;
+import com.naroom.api.record.domain.entity.RecordContentLimit;
 import com.naroom.api.record.domain.error.RecordErrorCode;
 import com.naroom.api.record.domain.repository.EntryRepository;
+import com.naroom.api.record.domain.repository.RecordContentLimitRepository;
 import com.naroom.api.record.dto.EntryCreateRequest;
 import com.naroom.api.record.dto.EntryResponse;
 import com.naroom.api.record.dto.EntryUpdateRequest;
@@ -48,6 +50,40 @@ class EntryServiceTest {
 
 	@Autowired
 	private MemberBadgeRepository memberBadgeRepository;
+
+	@Autowired
+	private RecordContentLimitRepository recordContentLimitRepository;
+
+	@Test
+	void createEntry_bodyExceedsConfiguredLimit_throwsEntryBodyTooLong() {
+		setBodyMaxLength(10);
+		Member member = memberRepository.save(Member.create("지연"));
+		EntryCreateRequest request = new EntryCreateRequest(
+				EntryType.FREE, null, "12345678901", LocalDate.now(), null, null, null);
+
+		BusinessException exception = assertThrows(
+				BusinessException.class, () -> entryService.createEntry(member.getId(), request));
+		assertEquals(RecordErrorCode.ENTRY_BODY_TOO_LONG, exception.errorCode());
+	}
+
+	@Test
+	void updateEntry_bodyExceedsConfiguredLimit_throwsEntryBodyTooLong() {
+		Member member = memberRepository.save(Member.create("지연"));
+		EntryResponse created = entryService.createEntry(member.getId(), createRequest(EntryType.FREE, null, null));
+		setBodyMaxLength(10);
+
+		BusinessException exception = assertThrows(
+				BusinessException.class,
+				() -> entryService.updateEntry(
+						member.getId(), created.id(), new EntryUpdateRequest(null, "12345678901", 0L)));
+		assertEquals(RecordErrorCode.ENTRY_BODY_TOO_LONG, exception.errorCode());
+	}
+
+	private void setBodyMaxLength(int bodyMaxLength) {
+		RecordContentLimit limit = recordContentLimitRepository.findById(RecordContentLimit.SINGLETON_ID).orElseThrow();
+		limit.update(bodyMaxLength, null);
+		recordContentLimitRepository.saveAndFlush(limit);
+	}
 
 	@Test
 	void createEntry_userCreatableType_createsDraftEntry() {
