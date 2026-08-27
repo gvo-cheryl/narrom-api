@@ -40,6 +40,9 @@ naroom:
       allowed-audiences:
         - ${APPLE_OAUTH_CLIENT_ID:}
   admin:
+    # 이 이메일로 처음 로그인하면 AdminSuperAdminInvitationSeeder가 미리 만들어둔 초대를 통해 즉시
+    # SUPER_ADMIN으로 전환된다(AdminLoginResolver). 값이 비어 있으면 아무것도 하지 않는다.
+    super-admin-bootstrap-email: ${ADMIN_SUPER_ADMIN_BOOTSTRAP_EMAIL:}
     session:
       idle-timeout: ${ADMIN_SESSION_IDLE_TIMEOUT:30m}
       absolute-timeout: ${ADMIN_SESSION_ABSOLUTE_TIMEOUT:8h}
