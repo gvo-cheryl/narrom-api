@@ -5,6 +5,7 @@ import com.naroom.api.admin.auth.IssuedAdminSession;
 import com.naroom.api.admin.domain.entity.AdminRole;
 import com.naroom.api.admin.domain.entity.AdminUser;
 import com.naroom.api.admin.domain.repository.AdminUserRepository;
+import com.naroom.api.ai.prompt.AiInstructionCatalog;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,6 +134,53 @@ class AdminAiPromptControllerTest {
 		mockMvc.perform(post("/api/v1/admin/ai/prompts/" + id + "/publish").cookie(cookie).with(csrf()))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.code").value("AI_PROMPT_VERSION_NOT_DRAFT"));
+	}
+
+	@Test
+	void getEffective_forCommonWithoutAdminContent_returnsCodeDefault() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.AI_OPERATOR));
+
+		mockMvc.perform(get("/api/v1/admin/ai/prompts/effective").cookie(cookie).param("scope", "COMMON"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.versionLabel").value(AiInstructionCatalog.COMMON_INSTRUCTIONS_VERSION))
+				.andExpect(jsonPath("$.data.content").value(AiInstructionCatalog.COMMON_INSTRUCTIONS))
+				.andExpect(jsonPath("$.data.fromAdminContent").value(false));
+	}
+
+	@Test
+	void getEffective_forFeatureWithPublishedAdminContent_returnsAdminContent() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.AI_OPERATOR));
+		String label = "ef-test-" + (System.nanoTime() % 100000);
+		String createResponse = mockMvc.perform(post("/api/v1/admin/ai/prompts").cookie(cookie).with(csrf())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"scope":"FEATURE","featureType":"ENTRY_REFLECTION","versionLabel":"%s",
+								"content":"발행된 지침","modelName":"gpt-4o-mini","outputMaxLength":300}
+								""".formatted(label)))
+				.andExpect(status().isCreated())
+				.andReturn().getResponse().getContentAsString();
+		String id = com.jayway.jsonpath.JsonPath.read(createResponse, "$.data.id");
+		mockMvc.perform(post("/api/v1/admin/ai/prompts/" + id + "/publish").cookie(cookie).with(csrf()))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(get("/api/v1/admin/ai/prompts/effective").cookie(cookie)
+						.param("scope", "FEATURE").param("featureType", "ENTRY_REFLECTION"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data.versionLabel").value(label))
+				.andExpect(jsonPath("$.data.content").value("발행된 지침"))
+				.andExpect(jsonPath("$.data.modelName").value("gpt-4o-mini"))
+				.andExpect(jsonPath("$.data.outputMaxLength").value(300))
+				.andExpect(jsonPath("$.data.fromAdminContent").value(true));
+	}
+
+	@Test
+	void getEffective_forNotEditableFeatureType_returnsConflict() throws Exception {
+		Cookie cookie = sessionCookie(Set.of(AdminRole.AI_OPERATOR));
+
+		mockMvc.perform(get("/api/v1/admin/ai/prompts/effective").cookie(cookie)
+						.param("scope", "FEATURE").param("featureType", "CONVERSATION_REPLY"))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("AI_FEATURE_TYPE_NOT_EDITABLE"));
 	}
 
 	@Test

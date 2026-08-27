@@ -1,6 +1,7 @@
 package com.naroom.api.admin.ai;
 
 import com.naroom.api.admin.ai.dto.AdminAiPromptCreateRequest;
+import com.naroom.api.admin.ai.dto.AdminAiPromptEffectiveResponse;
 import com.naroom.api.admin.ai.dto.AdminAiPromptResponse;
 import com.naroom.api.admin.ai.dto.AdminAiPromptUpdateRequest;
 import com.naroom.api.ai.domain.entity.AiFeatureType;
@@ -9,6 +10,7 @@ import com.naroom.api.ai.domain.entity.AiPromptVersion;
 import com.naroom.api.ai.domain.entity.AiPromptVersionStatus;
 import com.naroom.api.ai.domain.error.AiErrorCode;
 import com.naroom.api.ai.domain.repository.AiPromptVersionRepository;
+import com.naroom.api.ai.prompt.AiPromptResolver;
 import com.naroom.api.global.error.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,9 +25,25 @@ import java.util.UUID;
 public class AdminAiPromptService {
 
 	private final AiPromptVersionRepository aiPromptVersionRepository;
+	private final AiPromptResolver aiPromptResolver;
 
-	public AdminAiPromptService(AiPromptVersionRepository aiPromptVersionRepository) {
+	public AdminAiPromptService(AiPromptVersionRepository aiPromptVersionRepository, AiPromptResolver aiPromptResolver) {
 		this.aiPromptVersionRepository = aiPromptVersionRepository;
+		this.aiPromptResolver = aiPromptResolver;
+	}
+
+	// 새 초안을 빈 화면에서 시작하지 않도록, 지금 실제로 쓰이는 내용(관리자가 발행한 것 또는 코드 기본값)을
+	// 보여준다. CONVERSATION_REPLY/CONVERSATION_SUMMARY는 아직 지침 자체가 없어 편집 대상이 아니다.
+	@Transactional(readOnly = true)
+	public AdminAiPromptEffectiveResponse getEffective(AiPromptScope scope, AiFeatureType featureType) {
+		if (scope == AiPromptScope.COMMON) {
+			return AdminAiPromptEffectiveResponse.from(aiPromptResolver.resolveCommon());
+		}
+		try {
+			return AdminAiPromptEffectiveResponse.from(aiPromptResolver.resolveFeature(featureType));
+		} catch (UnsupportedOperationException e) {
+			throw new BusinessException(AiErrorCode.FEATURE_TYPE_NOT_EDITABLE);
+		}
 	}
 
 	@Transactional(readOnly = true)

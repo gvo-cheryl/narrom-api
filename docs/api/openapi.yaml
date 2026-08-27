@@ -2552,6 +2552,38 @@ paths:
             '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseListAdminAiRuntimeStatusResponse"
+  /api/v1/admin/ai/prompts/effective:
+    get:
+      tags:
+      - admin-ai-prompt-controller
+      operationId: getEffective
+      parameters:
+      - name: scope
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - COMMON
+          - FEATURE
+      - name: featureType
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - ENTRY_REFLECTION
+          - THREE_DAY_REFLECTION
+          - WEEKLY_REFLECTION
+          - CONVERSATION_REPLY
+          - CONVERSATION_SUMMARY
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseAdminAiPromptEffectiveResponse"
   /api/v1/account/notification-preferences:
     get:
       tags:
@@ -5727,6 +5759,25 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AdminAiPromptResponse"
+    AdminAiPromptEffectiveResponse:
+      type: object
+      properties:
+        versionLabel:
+          type: string
+        content:
+          type: string
+        modelName:
+          type: string
+        outputMaxLength:
+          type: integer
+          format: int32
+        fromAdminContent:
+          type: boolean
+    ApiResponseAdminAiPromptEffectiveResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminAiPromptEffectiveResponse"
     ApiResponseListNotificationPreferenceResponse:
       type: object
       properties:

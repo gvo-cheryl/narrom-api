@@ -95,6 +95,16 @@ public enum AiErrorCode implements ErrorCode {
 			"같은 범위(공통 또는 같은 기능)에서 다른 라벨을 입력해 주세요.",
 			ErrorStage.REQUEST,
 			ClientAction.CHECK_REQUEST,
+			false),
+
+	FEATURE_TYPE_NOT_EDITABLE(
+			HttpStatus.CONFLICT,
+			"AI_FEATURE_TYPE_NOT_EDITABLE",
+			"urn:naroom:problem:ai-feature-type-not-editable",
+			"아직 편집할 수 없는 기능입니다",
+			"이 기능은 아직 구현된 프롬프트가 없어 관리자 편집 대상이 아닙니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;
