@@ -19,6 +19,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -82,13 +83,16 @@ public class AdminUser {
 	protected AdminUser() {
 	}
 
+	// roles를 그대로 참조로 들고 있으면 안 된다 - AdminLoginResolver처럼 다른 엔티티(AdminInvitation)의
+	// roles 컬렉션 인스턴스를 그대로 넘기는 호출부가 있으면, 같은 컬렉션 객체가 서로 다른 두 엔티티의
+	// @ElementCollection에 동시에 걸려 flush 시 Hibernate가 "Found shared references to a collection"으로 거부한다.
 	private AdminUser(String googleSub, String email, boolean emailVerified, String displayName, Set<AdminRole> roles) {
 		this.googleSub = googleSub;
 		this.email = email;
 		this.emailVerified = emailVerified;
 		this.displayName = displayName;
 		this.status = AdminStatus.ACTIVE;
-		this.roles = roles;
+		this.roles = new HashSet<>(roles);
 	}
 
 	// bootstrap 명령 전용 - 웹 로그인 경로로는 호출되지 않는다(관리자 자동 가입 금지).
