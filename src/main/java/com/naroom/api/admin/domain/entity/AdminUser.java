@@ -96,6 +96,21 @@ public class AdminUser {
 		return new AdminUser(googleSub, email, true, displayName, roles);
 	}
 
+	// AdminLoginResolver 전용 - 이메일이 일치하는 대기 중인 admin_invitations가 있을 때만 호출된다.
+	// approvedByAdminId는 그 초대를 만든 관리자다(NULL이면 SUPER_ADMIN 자동 시드 초대).
+	public static AdminUser activateFromInvitation(
+			String googleSub, String email, String displayName, Set<AdminRole> roles, UUID approvedByAdminId) {
+		AdminUser adminUser = new AdminUser(googleSub, email, true, displayName, roles);
+		adminUser.approvedByAdminId = approvedByAdminId;
+		adminUser.approvedAt = Instant.now();
+		return adminUser;
+	}
+
+	// DISABLED면 AdminLoginResolver가 다음 로그인 시도부터 거부한다 - 기존 세션도 다음 요청에서 거부된다.
+	public void disable() {
+		this.status = AdminStatus.DISABLED;
+	}
+
 	// Google 로그인 성공 후 매번 호출된다. 이메일은 인가 키가 아니라 표시·변경 감지용이라 최신화한다.
 	public void recordLogin(String email, boolean emailVerified, String displayName) {
 		this.email = email;

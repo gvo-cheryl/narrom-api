@@ -66,6 +66,36 @@ public enum AdminErrorCode implements ErrorCode {
 			"다시 로그인한 뒤 시도해 주세요.",
 			ErrorStage.SESSION,
 			ClientAction.LOGIN_REQUIRED,
+			false),
+
+	ADMIN_INVITATION_NOT_FOUND(
+			HttpStatus.NOT_FOUND,
+			"ADMIN_INVITATION_NOT_FOUND",
+			"urn:naroom:problem:admin-invitation-not-found",
+			"초대를 찾을 수 없습니다",
+			"존재하지 않는 관리자 초대입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	ADMIN_INVITATION_ALREADY_EXISTS(
+			HttpStatus.CONFLICT,
+			"ADMIN_INVITATION_ALREADY_EXISTS",
+			"urn:naroom:problem:admin-invitation-already-exists",
+			"이미 등록되었거나 초대된 이메일입니다",
+			"기존 초대를 취소하거나, 이미 관리자로 등록된 계정인지 확인해 주세요.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
+			false),
+
+	ADMIN_INVITATION_NOT_PENDING(
+			HttpStatus.CONFLICT,
+			"ADMIN_INVITATION_NOT_PENDING",
+			"urn:naroom:problem:admin-invitation-not-pending",
+			"처리할 수 없는 상태입니다",
+			"이미 사용되었거나 취소된 초대입니다.",
+			ErrorStage.REQUEST,
+			ClientAction.CHECK_REQUEST,
 			false);
 
 	private final HttpStatus httpStatus;

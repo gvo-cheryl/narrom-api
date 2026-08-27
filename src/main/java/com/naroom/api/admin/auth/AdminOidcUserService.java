@@ -1,8 +1,5 @@
 package com.naroom.api.admin.auth;
 
-import com.naroom.api.admin.domain.entity.AdminStatus;
-import com.naroom.api.admin.domain.entity.AdminUser;
-import com.naroom.api.admin.domain.repository.AdminUserRepository;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -12,38 +9,32 @@ import org.springframework.stereotype.Service;
 
 /**
  * Admin Web Implementation Spec 17.1: "Google 인증"과 "Naroom 관리자 인가"는 반드시 분리된 두 단계다.
- * super.loadUser()가 서명·iss·aud·exp·nonce를 이미 검증한 뒤 여기서는 그 결과(sub)가 사전 승인된
- * admin_users와 일치하는지만 확인한다. 일치하지 않으면 이 시점에 예외를 던져 SecurityContext에
- * 인증 정보가 절대 채워지지 않게 한다 - 미승인 계정으로 admin_users row를 자동 생성하지 않는다.
+ * super.loadUser()가 서명·iss·aud·exp·nonce를 이미 검증한 뒤, 실제 인가 판단은 AdminLoginResolver에
+ * 위임한다(OidcUserRequest를 직접 다루지 않는 순수 로직이라 단위 테스트가 쉽다).
  */
 @Service
 public class AdminOidcUserService extends OidcUserService {
 
-	private static final String ERROR_NOT_ALLOWLISTED = "admin_not_allowlisted";
-	private static final String ERROR_ACCOUNT_DISABLED = "admin_account_disabled";
+	private final AdminLoginResolver adminLoginResolver;
 
-	private final AdminUserRepository adminUserRepository;
-
-	public AdminOidcUserService(AdminUserRepository adminUserRepository) {
-		this.adminUserRepository = adminUserRepository;
+	public AdminOidcUserService(AdminLoginResolver adminLoginResolver) {
+		this.adminLoginResolver = adminLoginResolver;
 	}
 
 	@Override
 	public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
 		OidcUser oidcUser = super.loadUser(userRequest);
-		String sub = oidcUser.getSubject();
-
-		// OAuth2Error.description을 sub 전달용으로 사용한다 - AdminAuthenticationFailureHandler가 이 값을
-		// 감사 로그에만 기록하고(브라우저 응답에는 노출하지 않음) 신규 관리자 등록 시 sub 확인 용도로 쓴다.
-		AdminUser adminUser = adminUserRepository.findByGoogleSub(sub)
-				.orElseThrow(() -> new OAuth2AuthenticationException(new OAuth2Error(ERROR_NOT_ALLOWLISTED, sub, null)));
-		if (adminUser.getStatus() != AdminStatus.ACTIVE) {
-			throw new OAuth2AuthenticationException(new OAuth2Error(ERROR_ACCOUNT_DISABLED, sub, null));
+		try {
+			adminLoginResolver.resolve(
+					oidcUser.getSubject(),
+					oidcUser.getEmail(),
+					Boolean.TRUE.equals(oidcUser.getEmailVerified()),
+					oidcUser.getFullName());
+		} catch (AdminLoginRejectedException e) {
+			// OAuth2Error.description을 sub 전달용으로 쓴다 - AdminAuthenticationFailureHandler가 이 값을
+			// 감사 로그에만 기록하고(브라우저 응답에는 노출하지 않음) 관리자 초대 시 sub 확인 용도로 쓴다.
+			throw new OAuth2AuthenticationException(new OAuth2Error(e.reason().errorCode(), e.googleSub(), null));
 		}
-
-		adminUser.recordLogin(oidcUser.getEmail(), Boolean.TRUE.equals(oidcUser.getEmailVerified()), oidcUser.getFullName());
-		adminUserRepository.save(adminUser);
-
 		return oidcUser;
 	}
 
